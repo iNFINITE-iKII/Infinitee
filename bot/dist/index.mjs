@@ -91604,13 +91604,18 @@ async function whitelistRemove(interaction) {
   const [entry] = await db.select().from(whitelist2).where(eq(whitelist2.discordUserId, user.id));
   if (!entry) return interaction.editReply({ content: `\u274C User <@${user.id}> tidak terdaftar di whitelist.` });
   const owned = await db.select().from(licenseOwners).where(eq(licenseOwners.discordUserId, user.id));
-  for (const o of owned) {
-    await db.delete(licenses).where(eq(licenses.key, o.licenseKey));
+  const keys = owned.map((o) => o.licenseKey);
+  if (keys.length > 0) {
+    await db.delete(licenses).where(inArray(licenses.key, keys));
   }
   await db.delete(whitelist2).where(eq(whitelist2.discordUserId, user.id));
+  const embed = new import_discord15.EmbedBuilder().setColor(15158332).setTitle("\u{1F5D1}\uFE0F User Dihapus dari Whitelist VIP").addFields(
+    { name: "User", value: `<@${user.id}>`, inline: true },
+    { name: "Key Dihapus", value: `${owned.length}`, inline: true }
+  ).setTimestamp();
+  await interaction.editReply({ embeds: [embed] });
   if (interaction.guild) {
-    try {
-      const member = await interaction.guild.members.fetch(user.id);
+    interaction.guild.members.fetch(user.id).then(async (member) => {
       const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? "PREMIUM";
       const premiumRole = interaction.guild.roles.cache.find((r) => r.name === premiumRoleName);
       const vipRole = interaction.guild.roles.cache.find((r) => r.name === "VIP");
@@ -91618,15 +91623,10 @@ async function whitelistRemove(interaction) {
       });
       if (vipRole) await member.roles.remove(vipRole).catch(() => {
       });
-    } catch {
-    }
+    }).catch(() => {
+    });
   }
-  const embed = new import_discord15.EmbedBuilder().setColor(15158332).setTitle("\u{1F5D1}\uFE0F User Dihapus dari Whitelist VIP").addFields(
-    { name: "User", value: `<@${user.id}>`, inline: true },
-    { name: "Key Dihapus", value: `${owned.length}`, inline: true }
-  ).setTimestamp();
-  await interaction.editReply({ embeds: [embed] });
-  await sendLog(logEmbed("\u{1F5D1}\uFE0F Whitelist Dihapus", 15158332).addFields(
+  sendLog(logEmbed("\u{1F5D1}\uFE0F Whitelist Dihapus", 15158332).addFields(
     { name: "User", value: `<@${user.id}>`, inline: true },
     { name: "Oleh", value: `<@${interaction.user.id}>`, inline: true }
   ));
