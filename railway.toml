@@ -1,5 +1,5 @@
 [build]
-buildCommand = "cd bot && npm install --omit=dev"
+buildCommand = "echo 'dist already bundled, skipping install'"
 
 [deploy]
 startCommand = "cd bot && node dist/index.mjs"
