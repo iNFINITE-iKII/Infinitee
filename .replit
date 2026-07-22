@@ -5,3 +5,32 @@ channel = "stable-25_05"
 
 [agent]
 expertMode = true
+
+[userenv]
+
+[userenv.shared]
+DISCORD_CLIENT_ID = "1529350189934973109"
+DISCORD_GUILD_ID = "1343656009154957474"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Discord Bot"
+
+[[workflows.workflow]]
+name = "Discord Bot"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd bot && node dist/index.mjs"
+
+[workflows.workflow.metadata]
+outputType = "console"
