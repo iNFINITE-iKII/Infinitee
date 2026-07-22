@@ -1,6 +1,6 @@
 [build]
-buildCommand = "npm run build"
+buildCommand = "cd bot && npm install"
 
 [deploy]
-startCommand = "npm run start"
+startCommand = "cd bot && node_modules/.bin/tsx src/index.ts"
 restartPolicyType = "always"
