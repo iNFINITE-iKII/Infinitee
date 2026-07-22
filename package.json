@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd bot && npm install",
-    "start": "cd bot && node_modules/.bin/tsx src/index.ts"
+    "build": "cd bot && npm install && npm run build",
+    "start": "cd bot && node dist/index.mjs"
   }
 }

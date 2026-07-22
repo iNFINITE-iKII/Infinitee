@@ -1,6 +1,6 @@
 [build]
-buildCommand = "cd bot && npm install"
+buildCommand = "cd bot && npm install && npm run build"
 
 [deploy]
-startCommand = "cd bot && node_modules/.bin/tsx src/index.ts"
+startCommand = "cd bot && node dist/index.mjs"
 restartPolicyType = "always"
