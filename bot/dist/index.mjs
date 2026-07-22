@@ -88260,6 +88260,25 @@ import path from "path";
 import { fileURLToPath } from "url";
 var __dirname2 = path.dirname(fileURLToPath(import.meta.url));
 var GAMES_DIR = path.resolve(__dirname2, "../../games");
+var RAILWAY_URL = "https://xifil-hub-production.up.railway.app";
+function getServerBaseUrl(req) {
+  if (process.env.SERVER_BASE_URL) return process.env.SERVER_BASE_URL.replace(/\/$/, "");
+  if (process.env.LOADER_URL) {
+    try {
+      const u = new URL(process.env.LOADER_URL);
+      return u.origin;
+    } catch {
+    }
+  }
+  const proto = req.headers["x-forwarded-proto"]?.split(",")[0]?.trim() ?? "https";
+  const host = req.headers["x-forwarded-host"]?.split(",")[0]?.trim() ?? req.headers.host ?? "localhost:3000";
+  return `${proto}://${host}`;
+}
+function patchLuaUrls(content, req) {
+  const base = getServerBaseUrl(req);
+  if (base === RAILWAY_URL) return content;
+  return content.replaceAll(RAILWAY_URL, base);
+}
 function parseQuery(url) {
   const q = {};
   const idx = url.indexOf("?");
@@ -88346,7 +88365,7 @@ function handleLoader(req, res, query) {
   }
   try {
     const content = fs2.readFileSync(filePath, "utf-8");
-    return lua(res, content);
+    return lua(res, patchLuaUrls(content, req));
   } catch {
     return json2(res, 500, { error: "Gagal membaca file Lua." });
   }
@@ -88367,7 +88386,7 @@ function handleModule(req, res, pathname) {
   }
   try {
     const content = fs2.readFileSync(filePath, "utf-8");
-    return lua(res, content);
+    return lua(res, patchLuaUrls(content, req));
   } catch {
     return json2(res, 500, { error: "Gagal membaca file Lua." });
   }

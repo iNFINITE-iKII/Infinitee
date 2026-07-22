@@ -12,6 +12,48 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Games ada di <root>/games
 const GAMES_DIR = path.resolve(__dirname, '../../games');
 
+// URL lama yang di-hardcode di semua file Lua
+const RAILWAY_URL = 'https://xifil-hub-production.up.railway.app';
+
+/**
+ * Kembalikan base URL server ini berdasarkan header request.
+ * Urutan prioritas:
+ *   1. Env var SERVER_BASE_URL (override manual)
+ *   2. LOADER_URL env var (potong path-nya, ambil origin saja)
+ *   3. Header X-Forwarded-Proto + X-Forwarded-Host (proxy/Replit)
+ *   4. Header Host biasa
+ */
+function getServerBaseUrl(req: http.IncomingMessage): string {
+  if (process.env.SERVER_BASE_URL) return process.env.SERVER_BASE_URL.replace(/\/$/, '');
+
+  if (process.env.LOADER_URL) {
+    try {
+      const u = new URL(process.env.LOADER_URL);
+      return u.origin;
+    } catch {/* fallthrough */}
+  }
+
+  const proto =
+    (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim() ?? 'https';
+  const host =
+    (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim() ??
+    req.headers.host ??
+    'localhost:3000';
+
+  return `${proto}://${host}`;
+}
+
+/**
+ * Ganti semua referensi ke Railway URL di dalam konten Lua dengan
+ * URL server yang sedang berjalan, supaya script tetap bekerja
+ * di platform manapun (Railway → Replit → dst).
+ */
+function patchLuaUrls(content: string, req: http.IncomingMessage): string {
+  const base = getServerBaseUrl(req);
+  if (base === RAILWAY_URL) return content; // sudah benar, tidak perlu patch
+  return content.replaceAll(RAILWAY_URL, base);
+}
+
 function parseQuery(url: string): Record<string, string> {
   const q: Record<string, string> = {};
   const idx = url.indexOf('?');
@@ -143,7 +185,7 @@ function handleLoader(
 
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
-    return lua(res, content);
+    return lua(res, patchLuaUrls(content, req));
   } catch {
     return json(res, 500, { error: 'Gagal membaca file Lua.' });
   }
@@ -178,7 +220,7 @@ function handleModule(
 
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
-    return lua(res, content);
+    return lua(res, patchLuaUrls(content, req));
   } catch {
     return json(res, 500, { error: 'Gagal membaca file Lua.' });
   }
