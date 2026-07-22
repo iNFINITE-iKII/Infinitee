@@ -132,18 +132,7 @@ async function whitelistRemove(interaction: ChatInputCommandInteraction) {
 
   await db.delete(whitelist).where(eq(whitelist.discordUserId, user.id));
 
-  // Remove roles
-  if (interaction.guild) {
-    try {
-      const member = await interaction.guild.members.fetch(user.id);
-      const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? 'PREMIUM';
-      const premiumRole = interaction.guild.roles.cache.find((r) => r.name === premiumRoleName);
-      const vipRole = interaction.guild.roles.cache.find((r) => r.name === 'VIP');
-      if (premiumRole) await member.roles.remove(premiumRole).catch(() => {});
-      if (vipRole) await member.roles.remove(vipRole).catch(() => {});
-    } catch {}
-  }
-
+  // Reply immediately — do not block on role removal
   const embed = new EmbedBuilder()
     .setColor(0xe74c3c)
     .setTitle('🗑️ User Dihapus dari Whitelist VIP')
@@ -154,7 +143,19 @@ async function whitelistRemove(interaction: ChatInputCommandInteraction) {
     .setTimestamp();
 
   await interaction.editReply({ embeds: [embed] });
-  await sendLog(logEmbed('🗑️ Whitelist Dihapus', 0xe74c3c).addFields(
+
+  // Remove roles in background (fire-and-forget — does not block the response)
+  if (interaction.guild) {
+    interaction.guild.members.fetch(user.id).then(async (member) => {
+      const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? 'PREMIUM';
+      const premiumRole = interaction.guild!.roles.cache.find((r) => r.name === premiumRoleName);
+      const vipRole = interaction.guild!.roles.cache.find((r) => r.name === 'VIP');
+      if (premiumRole) await member.roles.remove(premiumRole).catch(() => {});
+      if (vipRole) await member.roles.remove(vipRole).catch(() => {});
+    }).catch(() => {});
+  }
+
+  sendLog(logEmbed('🗑️ Whitelist Dihapus', 0xe74c3c).addFields(
     { name: 'User', value: `<@${user.id}>`, inline: true },
     { name: 'Oleh', value: `<@${interaction.user.id}>`, inline: true },
   ));
