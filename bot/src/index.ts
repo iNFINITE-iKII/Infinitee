@@ -31,11 +31,11 @@ async function main() {
       }
     } catch (err) {
       log.error({ err }, 'Interaction error');
-      if (!interaction.isRepliable()) return;
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: '❌ Terjadi kesalahan internal. Coba lagi nanti.', ephemeral: true }).catch(() => {});
-      } else if (interaction.deferred && !interaction.replied) {
-        await interaction.editReply({ content: '❌ Terjadi kesalahan internal. Coba lagi nanti.' }).catch(() => {});
+      if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '❌ Terjadi kesalahan internal. Coba lagi nanti.',
+          ephemeral: true,
+        }).catch(() => {});
       }
     }
   });
