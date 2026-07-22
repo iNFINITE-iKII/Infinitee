@@ -1,5 +1,5 @@
 [build]
-buildCommand = "cd bot && NODE_ENV=development npm ci && npm run build"
+buildCommand = "cd bot && npm install --omit=dev"
 
 [deploy]
 startCommand = "cd bot && node dist/index.mjs"

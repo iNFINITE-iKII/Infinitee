@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd bot && NODE_ENV=development npm ci && npm run build",
+    "build": "cd bot && npm install --omit=dev",
     "start": "cd bot && node dist/index.mjs"
   }
 }
