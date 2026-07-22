@@ -87973,7 +87973,7 @@ async function handleBuy(interaction) {
   await interaction.editReply({ content: `\u2705 Tiket berhasil dibuat! Silakan ke <#${ticketChannel.id}>.` });
 }
 async function handleScript(interaction) {
-  const loaderUrl = process.env.LOADER_URL ?? "https://your-api.railway.app/api/lua/loader?game=soul_iron";
+  const loaderUrl = process.env.LOADER_URL ?? "https://xifil-hub-production.up.railway.app/api/lua/loader?game=soul_iron";
   const script2 = `loadstring(game:HttpGet("${loaderUrl}"))()`;
   const embed = new import_discord24.EmbedBuilder().setColor(3447003).setTitle("\u{1F4DC} Script Lua").setDescription(`\`\`\`lua
 ${script2}

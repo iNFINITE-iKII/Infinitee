@@ -209,7 +209,7 @@ async function handleBuy(interaction: ButtonInteraction) {
 
 // ─── Get Script ───────────────────────────────────────────────────────────────
 async function handleScript(interaction: ButtonInteraction) {
-  const loaderUrl = process.env.LOADER_URL ?? 'https://your-api.railway.app/api/lua/loader?game=soul_iron';
+  const loaderUrl = process.env.LOADER_URL ?? 'https://xifil-hub-production.up.railway.app/api/lua/loader?game=soul_iron';
   const script = `loadstring(game:HttpGet("${loaderUrl}"))()`;
 
   const embed = new EmbedBuilder()
