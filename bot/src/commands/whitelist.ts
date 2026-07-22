@@ -4,7 +4,7 @@ import {
   GuildMember,
   SlashCommandBuilder,
 } from 'discord.js';
-import { eq, count, inArray } from 'drizzle-orm';
+import { eq, count, inArray, notInArray } from 'drizzle-orm';
 import { getDb } from '../db/index.js';
 import { licenses, licenseOwners, whitelist } from '../db/schema.js';
 import { isAdmin, adminDeniedEmbed } from '../utils/admin.js';
@@ -121,11 +121,30 @@ async function whitelistRemove(interaction: ChatInputCommandInteraction) {
   const [entry] = await db.select().from(whitelist).where(eq(whitelist.discordUserId, user.id));
   if (!entry) return interaction.editReply({ content: `❌ User <@${user.id}> tidak terdaftar di whitelist.` });
 
-  // Get all keys owned
+  // Get all keys owned by this user
   const owned = await db.select().from(licenseOwners).where(eq(licenseOwners.discordUserId, user.id));
   const keys = owned.map((o) => o.licenseKey);
+
   if (keys.length > 0) {
-    await db.delete(licenses).where(inArray(licenses.key, keys));
+    // Remove ownership records for this user only
+    await db.delete(licenseOwners).where(eq(licenseOwners.discordUserId, user.id));
+
+    // Find keys that still have other owners — keep those licenses intact
+    const stillOwned = await db
+      .select({ licenseKey: licenseOwners.licenseKey })
+      .from(licenseOwners)
+      .where(inArray(licenseOwners.licenseKey, keys));
+
+    const stillOwnedKeys = stillOwned.map((o) => o.licenseKey);
+
+    // Delete only licenses that are now orphaned (no remaining owners)
+    const orphanedKeys = stillOwnedKeys.length > 0
+      ? keys.filter((k) => !stillOwnedKeys.includes(k))
+      : keys;
+
+    if (orphanedKeys.length > 0) {
+      await db.delete(licenses).where(inArray(licenses.key, orphanedKeys));
+    }
   }
 
   await db.delete(whitelist).where(eq(whitelist.discordUserId, user.id));
