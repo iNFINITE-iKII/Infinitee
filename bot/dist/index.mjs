@@ -88408,6 +88408,20 @@ async function main() {
     await registerCommands();
   });
   client.on(import_discord27.Events.InteractionCreate, async (interaction) => {
+    if ("deferReply" in interaction && typeof interaction.deferReply === "function") {
+      const _orig = interaction.deferReply.bind(interaction);
+      interaction.deferReply = async (opts) => {
+        try {
+          return await _orig(opts);
+        } catch (e) {
+          if (e?.code === 40060) {
+            Object.defineProperty(interaction, "deferred", { value: true, writable: true });
+            return;
+          }
+          throw e;
+        }
+      };
+    }
     try {
       if (interaction.isChatInputCommand()) {
         const handler = commandHandlers.get(interaction.commandName);

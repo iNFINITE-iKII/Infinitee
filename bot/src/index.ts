@@ -20,6 +20,25 @@ async function main() {
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {
+    // Patch deferReply so that if another bot instance already acknowledged
+    // this interaction (code 40060), we silently continue instead of throwing.
+    // This lets Replit recover a hanging Railway instance and still send editReply.
+    if ('deferReply' in interaction && typeof (interaction as any).deferReply === 'function') {
+      const _orig = (interaction as any).deferReply.bind(interaction);
+      (interaction as any).deferReply = async (opts?: unknown) => {
+        try {
+          return await _orig(opts);
+        } catch (e: any) {
+          if (e?.code === 40060) {
+            // Already acknowledged by another instance — mark as deferred locally
+            Object.defineProperty(interaction, 'deferred', { value: true, writable: true });
+            return;
+          }
+          throw e;
+        }
+      };
+    }
+
     try {
       if (interaction.isChatInputCommand()) {
         const handler = commandHandlers.get(interaction.commandName);
