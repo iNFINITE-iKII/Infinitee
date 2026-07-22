@@ -90795,7 +90795,7 @@ function getDb() {
 async function initDb() {
   const url = process.env.NEON_DATABASE_URL;
   if (!url) throw new Error("NEON_DATABASE_URL is not set");
-  _sql = src_default(url, { ssl: "require", max: 5 });
+  _sql = src_default(url, { ssl: "require", max: 5, prepare: false });
   _db = drizzle(_sql, { schema: schema_exports });
   const stmts = [
     `DO $$ BEGIN CREATE TYPE key_status AS ENUM ('UNUSED','ACTIVE','EXPIRED','REVOKED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$`,

@@ -15,7 +15,7 @@ export async function initDb() {
   const url = process.env.NEON_DATABASE_URL;
   if (!url) throw new Error('NEON_DATABASE_URL is not set');
 
-  _sql = postgres(url, { ssl: 'require', max: 5 });
+  _sql = postgres(url, { ssl: 'require', max: 5, prepare: false });
   _db = drizzle(_sql, { schema });
 
   const stmts = [
