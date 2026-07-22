@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { getDb } from '../db/index.js';
-import { licenses } from '../db/schema.js';
+import { licenses, robloxAccounts } from '../db/schema.js';
 import { isAdmin, adminDeniedEmbed } from '../utils/admin.js';
 import { normalizeKey } from '../utils/keys.js';
 import { sendLog, logEmbed } from '../utils/discord-logger.js';
@@ -23,8 +23,18 @@ export async function resethwid(interaction: ChatInputCommandInteraction) {
 
   if (!lic) return interaction.editReply({ content: `❌ Key \`${key}\` tidak ditemukan.` });
   if (lic.status === 'REVOKED') return interaction.editReply({ content: `❌ Key REVOKED tidak bisa direset HWID-nya.` });
-  if (!lic.hwid) return interaction.editReply({ content: `ℹ️ Key belum memiliki HWID binding.` });
 
+  const [{ value: boundCount }] = await db
+    .select({ value: count() })
+    .from(robloxAccounts)
+    .where(eq(robloxAccounts.licenseKey, key));
+
+  if (!lic.hwid && boundCount === 0) {
+    return interaction.editReply({ content: `ℹ️ Key belum memiliki HWID binding.` });
+  }
+
+  // Hapus semua binding akun Roblox dan null-kan hwid di licenses
+  await db.delete(robloxAccounts).where(eq(robloxAccounts.licenseKey, key));
   await db.update(licenses).set({ hwid: null }).where(eq(licenses.key, key));
 
   const embed = new EmbedBuilder()
@@ -32,6 +42,7 @@ export async function resethwid(interaction: ChatInputCommandInteraction) {
     .setTitle('🔓 HWID Berhasil Direset (Admin)')
     .addFields(
       { name: 'Key', value: `\`${key}\``, inline: false },
+      { name: 'Akun Dihapus', value: `${boundCount} akun`, inline: true },
       { name: 'Reset oleh', value: `<@${interaction.user.id}>`, inline: true },
     )
     .setTimestamp();

@@ -91411,10 +91411,15 @@ async function resethwid(interaction) {
   const [lic] = await db.select().from(licenses).where(eq(licenses.key, key));
   if (!lic) return interaction.editReply({ content: `\u274C Key \`${key}\` tidak ditemukan.` });
   if (lic.status === "REVOKED") return interaction.editReply({ content: `\u274C Key REVOKED tidak bisa direset HWID-nya.` });
-  if (!lic.hwid) return interaction.editReply({ content: `\u2139\uFE0F Key belum memiliki HWID binding.` });
+  const [{ value: boundCount }] = await db.select({ value: count() }).from(robloxAccounts).where(eq(robloxAccounts.licenseKey, key));
+  if (!lic.hwid && boundCount === 0) {
+    return interaction.editReply({ content: `\u2139\uFE0F Key belum memiliki HWID binding.` });
+  }
+  await db.delete(robloxAccounts).where(eq(robloxAccounts.licenseKey, key));
   await db.update(licenses).set({ hwid: null }).where(eq(licenses.key, key));
   const embed = new import_discord12.EmbedBuilder().setColor(3447003).setTitle("\u{1F513} HWID Berhasil Direset (Admin)").addFields(
     { name: "Key", value: `\`${key}\``, inline: false },
+    { name: "Akun Dihapus", value: `${boundCount} akun`, inline: true },
     { name: "Reset oleh", value: `<@${interaction.user.id}>`, inline: true }
   ).setTimestamp();
   await interaction.editReply({ embeds: [embed] });
