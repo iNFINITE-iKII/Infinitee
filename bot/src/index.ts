@@ -6,9 +6,13 @@ import { registerCommands, commandHandlers } from './commands/registry.js';
 import { handleButton } from './handlers/buttons.js';
 import { handleModal } from './handlers/modals.js';
 import { log } from './utils/log.js';
+import { startServer } from './server.js';
 
 async function main() {
   await initDb();
+
+  const port = parseInt(process.env.PORT ?? '3000', 10);
+  startServer(port);
 
   client.once(Events.ClientReady, async (c) => {
     log.info(`Bot online sebagai ${c.user.tag}`);
