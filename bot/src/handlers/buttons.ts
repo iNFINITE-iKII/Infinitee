@@ -33,6 +33,16 @@ import {
 } from '../utils/time.js';
 import { sendLog, logEmbed } from '../utils/discord-logger.js';
 
+/** Cek apakah user adalah admin atau punya role staff (TICKET_STAFF_ROLE_ID). */
+function isStaff(interaction: ButtonInteraction): boolean {
+  const member = interaction.guild?.members.cache.get(interaction.user.id);
+  if (!member) return false;
+  if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
+  const staffRoleId = process.env.TICKET_STAFF_ROLE_ID;
+  if (staffRoleId && member.roles.cache.has(staffRoleId)) return true;
+  return false;
+}
+
 export async function handleButton(interaction: ButtonInteraction) {
   const id = interaction.customId;
 
@@ -121,17 +131,10 @@ async function handleBuy(interaction: ButtonInteraction) {
     });
   }
 
-  // Cek tiket pending
-  const [pending] = await db.select().from(pendingTickets).where(eq(pendingTickets.discordUserId, userId));
-  if (pending) {
-    return interaction.editReply({
-      content: `⚠️ Kamu sudah memiliki tiket yang sedang diproses: <#${pending.channelId}>. Tunggu response admin.`,
-    });
-  }
-
   if (!interaction.guild) return interaction.editReply({ content: '❌ Error: guild tidak ditemukan.' });
 
-  // Buat channel tiket
+  // Buat channel tiket terlebih dahulu (sementara pakai placeholder channelId)
+  // lalu insert ke DB secara atomik — jika conflict (tiket sudah ada), hapus channel & abort.
   let category = interaction.guild.channels.cache.find(
     (c) => c.type === ChannelType.GuildCategory && c.name === 'Tickets',
   ) as CategoryChannel | undefined;
@@ -156,7 +159,21 @@ async function handleBuy(interaction: ButtonInteraction) {
     ],
   }) as TextChannel;
 
-  await db.insert(pendingTickets).values({ discordUserId: userId, channelId: ticketChannel.id });
+  // Insert atomik — onConflictDoNothing mencegah duplikat meski klik bersamaan
+  const inserted = await db
+    .insert(pendingTickets)
+    .values({ discordUserId: userId, channelId: ticketChannel.id })
+    .onConflictDoNothing()
+    .returning({ id: pendingTickets.discordUserId });
+
+  if (inserted.length === 0) {
+    // Tiket sudah ada (race condition) — hapus channel yang baru dibuat & beri tahu user
+    await ticketChannel.delete().catch(() => {});
+    const [existing] = await db.select().from(pendingTickets).where(eq(pendingTickets.discordUserId, userId));
+    return interaction.editReply({
+      content: `⚠️ Kamu sudah memiliki tiket yang sedang diproses${existing ? `: <#${existing.channelId}>` : ''}. Tunggu response admin.`,
+    });
+  }
 
   // Cek apakah user pernah klaim trial
   const [trial] = await db.select().from(trialClaims).where(eq(trialClaims.discordUserId, userId));
@@ -356,6 +373,10 @@ async function handleCekHwid(interaction: ButtonInteraction) {
 
 // ─── Approve (buka modal) ─────────────────────────────────────────────────────
 async function handleApproveModal(interaction: ButtonInteraction, targetUserId: string) {
+  if (!isStaff(interaction)) {
+    return interaction.reply({ content: '❌ Hanya staff/admin yang bisa menyetujui tiket.', ephemeral: true });
+  }
+
   const modal = new ModalBuilder()
     .setCustomId(`modal_approve_${targetUserId}`)
     .setTitle('✅ Setujui Pembelian PREMIUM');
@@ -384,6 +405,10 @@ async function handleApproveModal(interaction: ButtonInteraction, targetUserId: 
 
 // ─── Reject ───────────────────────────────────────────────────────────────────
 async function handleReject(interaction: ButtonInteraction, targetUserId: string) {
+  if (!isStaff(interaction)) {
+    return interaction.reply({ content: '❌ Hanya staff/admin yang bisa menolak tiket.', ephemeral: true });
+  }
+
   await interaction.deferUpdate();
   const db = getDb();
 
