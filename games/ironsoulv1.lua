@@ -38,14 +38,17 @@ end
 --// BACA / SIMPAN KEY
 --------------------------------------------------------------------------------
 local function readKey()
-    if not isfolder(FOLDER_NAME) then pcall(makefolder, FOLDER_NAME) end
-    if isfile(KEY_FILE) then
-        local ok, content = pcall(readfile, KEY_FILE)
-        if ok and content and content:match("%S") then
-            return content:gsub("%s+", "")
+    local ok, result = pcall(function()
+        if not isfolder(FOLDER_NAME) then pcall(makefolder, FOLDER_NAME) end
+        if isfile(KEY_FILE) then
+            local ok2, content = pcall(readfile, KEY_FILE)
+            if ok2 and content and content:match("%S") then
+                return content:gsub("%s+", "")
+            end
         end
-    end
-    return nil
+        return nil
+    end)
+    return ok and result or nil
 end
 
 local function saveKey(key)
