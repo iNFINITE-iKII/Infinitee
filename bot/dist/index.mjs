@@ -92672,8 +92672,9 @@ async function handleLicenseCheck(req, res, query) {
     const boundAccounts = await db.query.robloxAccounts.findMany({
       where: eq(robloxAccounts.licenseKey, key)
     });
+    const robloxId = hwid.startsWith("rbx-acct-") ? hwid.slice("rbx-acct-".length) : hwid;
     const alreadyBound = boundAccounts.some(
-      (a) => a.id === hwid || a.robloxUsername === hwid
+      (a) => a.id === `${key}-${hwid}` || a.robloxUsername === robloxId
     );
     if (alreadyBound) {
       if (license.status === "UNUSED") {
@@ -92687,7 +92688,6 @@ async function handleLicenseCheck(req, res, query) {
         message: `Key sudah mencapai batas ${license.accountLimit} akun.`
       });
     }
-    const robloxId = hwid.startsWith("rbx-acct-") ? hwid.slice("rbx-acct-".length) : hwid;
     await db.insert(robloxAccounts).values({
       id: `${key}-${hwid}`,
       licenseKey: key,

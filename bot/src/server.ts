@@ -121,9 +121,13 @@ async function handleLicenseCheck(
       where: eq(robloxAccounts.licenseKey, key),
     });
 
+    // Normalkan hwid ke robloxUsername (strip prefix rbx-acct- jika ada)
+    const robloxId = hwid.startsWith('rbx-acct-') ? hwid.slice('rbx-acct-'.length) : hwid;
+
     // Cek apakah HWID ini sudah terdaftar
+    // id tersimpan sebagai "${key}-${hwid}", username tersimpan tanpa prefix rbx-acct-
     const alreadyBound = boundAccounts.some(
-      (a) => a.id === hwid || a.robloxUsername === hwid,
+      (a) => a.id === `${key}-${hwid}` || a.robloxUsername === robloxId,
     );
 
     if (alreadyBound) {
@@ -143,7 +147,6 @@ async function handleLicenseCheck(
     }
 
     // Daftarkan HWID baru
-    const robloxId = hwid.startsWith('rbx-acct-') ? hwid.slice('rbx-acct-'.length) : hwid;
     await db
       .insert(robloxAccounts)
       .values({
