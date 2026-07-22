@@ -4,7 +4,7 @@ import {
   GuildMember,
   SlashCommandBuilder,
 } from 'discord.js';
-import { eq, count } from 'drizzle-orm';
+import { eq, count, inArray } from 'drizzle-orm';
 import { getDb } from '../db/index.js';
 import { licenses, licenseOwners, whitelist } from '../db/schema.js';
 import { isAdmin, adminDeniedEmbed } from '../utils/admin.js';
@@ -123,8 +123,9 @@ async function whitelistRemove(interaction: ChatInputCommandInteraction) {
 
   // Get all keys owned
   const owned = await db.select().from(licenseOwners).where(eq(licenseOwners.discordUserId, user.id));
-  for (const o of owned) {
-    await db.delete(licenses).where(eq(licenses.key, o.licenseKey));
+  const keys = owned.map((o) => o.licenseKey);
+  if (keys.length > 0) {
+    await db.delete(licenses).where(inArray(licenses.key, keys));
   }
 
   await db.delete(whitelist).where(eq(whitelist.discordUserId, user.id));
