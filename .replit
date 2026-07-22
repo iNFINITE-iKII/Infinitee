@@ -34,3 +34,7 @@ args = "cd bot && node dist/index.mjs"
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
