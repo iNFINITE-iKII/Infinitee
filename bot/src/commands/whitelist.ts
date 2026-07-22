@@ -40,7 +40,7 @@ export const WHITELIST_DEF = new SlashCommandBuilder()
   )
   .addSubcommand((s) => s.setName('list').setDescription('Tampilkan semua member whitelist VIP'));
 
-export async function whitelist(interaction: ChatInputCommandInteraction) {
+export async function handleWhitelist(interaction: ChatInputCommandInteraction) {
   if (!isAdmin(interaction)) {
     return interaction.reply({ embeds: [adminDeniedEmbed()], ephemeral: true });
   }

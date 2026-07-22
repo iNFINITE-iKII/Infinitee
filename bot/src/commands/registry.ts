@@ -24,7 +24,7 @@ export async function registerCommands() {
   const { resethwid, RESETHWID_DEF } = await import('./resethwid.js');
   const { setmaxhwid, SETMAXHWID_DEF } = await import('./setmaxhwid.js');
   const { setaccountlimit, SETACCOUNTLIMIT_DEF } = await import('./setaccountlimit.js');
-  const { whitelist, WHITELIST_DEF } = await import('./whitelist.js');
+  const { handleWhitelist, WHITELIST_DEF } = await import('./whitelist.js');
   const { userkey, USERKEY_DEF } = await import('./userkey.js');
   const { stats, STATS_DEF } = await import('./stats.js');
   const { transferkey, TRANSFERKEY_DEF } = await import('./transferkey.js');
@@ -44,7 +44,7 @@ export async function registerCommands() {
   registerHandler('resethwid', resethwid);
   registerHandler('setmaxhwid', setmaxhwid);
   registerHandler('setaccountlimit', setaccountlimit);
-  registerHandler('whitelist', whitelist);
+  registerHandler('whitelist', handleWhitelist);
   registerHandler('userkey', userkey);
   registerHandler('stats', stats);
   registerHandler('transferkey', transferkey);

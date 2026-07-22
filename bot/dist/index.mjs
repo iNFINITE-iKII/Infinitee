@@ -87208,9 +87208,9 @@ var init_setaccountlimit = __esm({
 var whitelist_exports = {};
 __export(whitelist_exports, {
   WHITELIST_DEF: () => WHITELIST_DEF,
-  whitelist: () => whitelist2
+  handleWhitelist: () => handleWhitelist
 });
-async function whitelist2(interaction) {
+async function handleWhitelist(interaction) {
   if (!isAdmin(interaction)) {
     return interaction.reply({ embeds: [adminDeniedEmbed()], ephemeral: true });
   }
@@ -87229,7 +87229,7 @@ async function whitelistAdd(interaction) {
   if (type !== "PERMANENT" && !duration) {
     return interaction.editReply({ content: "\u274C `duration` wajib diisi untuk tipe bukan PERMANENT." });
   }
-  await db.insert(whitelist2).values({ discordUserId: user.id }).onConflictDoNothing();
+  await db.insert(whitelist).values({ discordUserId: user.id }).onConflictDoNothing();
   const keys = generateKeys(keyCount);
   const expiresAt = calcExpiresAt(type, duration);
   await db.insert(licenses).values(
@@ -87250,7 +87250,7 @@ async function whitelistAdd(interaction) {
       const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? "PREMIUM";
       const role = interaction.guild.roles.cache.find((r) => r.name === premiumRoleName);
       if (role) await member.roles.add(role);
-      await db.update(whitelist2).set({ claimedVip: true }).where(eq(whitelist2.discordUserId, user.id));
+      await db.update(whitelist).set({ claimedVip: true }).where(eq(whitelist.discordUserId, user.id));
     } catch {
     }
   }
@@ -87270,14 +87270,14 @@ async function whitelistRemove(interaction) {
   await interaction.deferReply({ ephemeral: true });
   const db = getDb();
   const user = interaction.options.getUser("user", true);
-  const [entry] = await db.select().from(whitelist2).where(eq(whitelist2.discordUserId, user.id));
+  const [entry] = await db.select().from(whitelist).where(eq(whitelist.discordUserId, user.id));
   if (!entry) return interaction.editReply({ content: `\u274C User <@${user.id}> tidak terdaftar di whitelist.` });
   const owned = await db.select().from(licenseOwners).where(eq(licenseOwners.discordUserId, user.id));
   const keys = owned.map((o) => o.licenseKey);
   if (keys.length > 0) {
     await db.delete(licenses).where(inArray(licenses.key, keys));
   }
-  await db.delete(whitelist2).where(eq(whitelist2.discordUserId, user.id));
+  await db.delete(whitelist).where(eq(whitelist.discordUserId, user.id));
   const embed = new import_discord15.EmbedBuilder().setColor(15158332).setTitle("\u{1F5D1}\uFE0F User Dihapus dari Whitelist VIP").addFields(
     { name: "User", value: `<@${user.id}>`, inline: true },
     { name: "Key Dihapus", value: `${owned.length}`, inline: true }
@@ -87303,7 +87303,7 @@ async function whitelistRemove(interaction) {
 async function whitelistList(interaction) {
   await interaction.deferReply({ ephemeral: true });
   const db = getDb();
-  const entries = await db.select().from(whitelist2).limit(25);
+  const entries = await db.select().from(whitelist).limit(25);
   if (entries.length === 0) {
     return interaction.editReply({ content: "\u2139\uFE0F Whitelist masih kosong." });
   }
@@ -87779,7 +87779,7 @@ async function registerCommands() {
   const { resethwid: resethwid2, RESETHWID_DEF: RESETHWID_DEF2 } = await Promise.resolve().then(() => (init_resethwid(), resethwid_exports));
   const { setmaxhwid: setmaxhwid2, SETMAXHWID_DEF: SETMAXHWID_DEF2 } = await Promise.resolve().then(() => (init_setmaxhwid(), setmaxhwid_exports));
   const { setaccountlimit: setaccountlimit2, SETACCOUNTLIMIT_DEF: SETACCOUNTLIMIT_DEF2 } = await Promise.resolve().then(() => (init_setaccountlimit(), setaccountlimit_exports));
-  const { whitelist: whitelist3, WHITELIST_DEF: WHITELIST_DEF2 } = await Promise.resolve().then(() => (init_whitelist(), whitelist_exports));
+  const { handleWhitelist: handleWhitelist2, WHITELIST_DEF: WHITELIST_DEF2 } = await Promise.resolve().then(() => (init_whitelist(), whitelist_exports));
   const { userkey: userkey2, USERKEY_DEF: USERKEY_DEF2 } = await Promise.resolve().then(() => (init_userkey(), userkey_exports));
   const { stats: stats2, STATS_DEF: STATS_DEF2 } = await Promise.resolve().then(() => (init_stats(), stats_exports));
   const { transferkey: transferkey2, TRANSFERKEY_DEF: TRANSFERKEY_DEF2 } = await Promise.resolve().then(() => (init_transferkey(), transferkey_exports));
@@ -87798,7 +87798,7 @@ async function registerCommands() {
   registerHandler("resethwid", resethwid2);
   registerHandler("setmaxhwid", setmaxhwid2);
   registerHandler("setaccountlimit", setaccountlimit2);
-  registerHandler("whitelist", whitelist3);
+  registerHandler("whitelist", handleWhitelist2);
   registerHandler("userkey", userkey2);
   registerHandler("stats", stats2);
   registerHandler("transferkey", transferkey2);
