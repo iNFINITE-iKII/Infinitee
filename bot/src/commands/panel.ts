@@ -19,7 +19,7 @@ export async function panel(interaction: ChatInputCommandInteraction) {
 
   const embed = new EmbedBuilder()
     .setColor(0x9b59b6)
-    .setTitle('✨ Infinitee — Panel VIP')
+    .setTitle('✨ XIFIL HUB — Panel VIP')
     .setDescription(
       '> Selamat datang di panel VIP!\n\n' +
       '**Baris pertama** dapat diakses oleh siapa saja.\n' +
@@ -28,18 +28,38 @@ export async function panel(interaction: ChatInputCommandInteraction) {
     .addFields(
       {
         name: '🎁 Get Trial Key',
-        value: 'Klaim trial key gratis selama 6 jam. **1x per akun, seumur hidup.**',
-        inline: true,
+        value: 'Klaim trial key gratis selama **6 jam**. Hanya **1x per akun**, tidak bisa diklaim ulang.',
+        inline: false,
       },
       {
         name: '💎 Buy PREMIUM',
-        value: 'Buka tiket untuk membeli akses PREMIUM/Lifetime.',
-        inline: true,
+        value: 'Buka tiket pembelian untuk mendapatkan akses **PREMIUM / Lifetime** tanpa batas waktu.',
+        inline: false,
       },
       {
         name: '📜 Get Script',
-        value: 'Dapatkan script Lua untuk digunakan di executor.',
-        inline: true,
+        value: 'Ambil loadstring script Lua untuk dijalankan di executor Roblox kamu.',
+        inline: false,
+      },
+      {
+        name: '🎖️ Get Role VIP',
+        value: 'Klaim role VIP di Discord jika kamu sudah terdaftar di whitelist. Role ini membuka akses channel eksklusif.',
+        inline: false,
+      },
+      {
+        name: '🔑 Get Key',
+        value: 'Lihat semua key yang terdaftar pada akunmu beserta status dan tanggal kadaluarsanya.',
+        inline: false,
+      },
+      {
+        name: '🔄 Reset HWID',
+        value: 'Reset binding HWID pada key kamu. Gunakan jika berganti perangkat atau akun Roblox. **Terbatas sesuai kuota.**',
+        inline: false,
+      },
+      {
+        name: '🔍 Cek HWID',
+        value: 'Tampilkan HWID aktif yang sedang terikat pada key kamu saat ini.',
+        inline: false,
       },
     )
     .setTimestamp()

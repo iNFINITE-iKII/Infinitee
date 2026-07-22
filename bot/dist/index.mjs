@@ -91916,23 +91916,43 @@ async function panel(interaction) {
   if (!isAdmin(interaction)) {
     return interaction.reply({ embeds: [adminDeniedEmbed()], ephemeral: true });
   }
-  const embed = new import_discord20.EmbedBuilder().setColor(10181046).setTitle("\u2728 Infinitee \u2014 Panel VIP").setDescription(
+  const embed = new import_discord20.EmbedBuilder().setColor(10181046).setTitle("\u2728 XIFIL HUB \u2014 Panel VIP").setDescription(
     "> Selamat datang di panel VIP!\n\n**Baris pertama** dapat diakses oleh siapa saja.\n**Baris kedua** khusus untuk member yang sudah terdaftar di whitelist VIP."
   ).addFields(
     {
       name: "\u{1F381} Get Trial Key",
-      value: "Klaim trial key gratis selama 6 jam. **1x per akun, seumur hidup.**",
-      inline: true
+      value: "Klaim trial key gratis selama **6 jam**. Hanya **1x per akun**, tidak bisa diklaim ulang.",
+      inline: false
     },
     {
       name: "\u{1F48E} Buy PREMIUM",
-      value: "Buka tiket untuk membeli akses PREMIUM/Lifetime.",
-      inline: true
+      value: "Buka tiket pembelian untuk mendapatkan akses **PREMIUM / Lifetime** tanpa batas waktu.",
+      inline: false
     },
     {
       name: "\u{1F4DC} Get Script",
-      value: "Dapatkan script Lua untuk digunakan di executor.",
-      inline: true
+      value: "Ambil loadstring script Lua untuk dijalankan di executor Roblox kamu.",
+      inline: false
+    },
+    {
+      name: "\u{1F396}\uFE0F Get Role VIP",
+      value: "Klaim role VIP di Discord jika kamu sudah terdaftar di whitelist. Role ini membuka akses channel eksklusif.",
+      inline: false
+    },
+    {
+      name: "\u{1F511} Get Key",
+      value: "Lihat semua key yang terdaftar pada akunmu beserta status dan tanggal kadaluarsanya.",
+      inline: false
+    },
+    {
+      name: "\u{1F504} Reset HWID",
+      value: "Reset binding HWID pada key kamu. Gunakan jika berganti perangkat atau akun Roblox. **Terbatas sesuai kuota.**",
+      inline: false
+    },
+    {
+      name: "\u{1F50D} Cek HWID",
+      value: "Tampilkan HWID aktif yang sedang terikat pada key kamu saat ini.",
+      inline: false
     }
   ).setTimestamp().setFooter({ text: "Semua respons bersifat ephemeral (hanya terlihat olehmu)" });
   const row1 = new import_discord20.ActionRowBuilder().addComponents(
