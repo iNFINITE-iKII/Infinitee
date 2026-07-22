@@ -7,7 +7,7 @@ await build({
   format: 'esm',
   outfile: 'dist/index.mjs',
   sourcemap: true,
-  external: ['pino', 'pino-pretty', 'thread-stream'],
+  external: [],
   banner: {
     js: [
       `import { createRequire } from 'module';`,
