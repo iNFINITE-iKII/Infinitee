@@ -92750,11 +92750,12 @@ async function main() {
       }
     } catch (err) {
       log.error({ err }, "Interaction error");
-      if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: "\u274C Terjadi kesalahan internal. Coba lagi nanti.",
-          ephemeral: true
-        }).catch(() => {
+      if (!interaction.isRepliable()) return;
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: "\u274C Terjadi kesalahan internal. Coba lagi nanti.", ephemeral: true }).catch(() => {
+        });
+      } else if (interaction.deferred && !interaction.replied) {
+        await interaction.editReply({ content: "\u274C Terjadi kesalahan internal. Coba lagi nanti." }).catch(() => {
         });
       }
     }
