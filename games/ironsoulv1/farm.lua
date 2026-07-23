@@ -101,10 +101,10 @@ local function MoveToEggGround(eggModel)
     local ray     = Workspace:Raycast(eggPos + Vector3.new(0, 8, 0), Vector3.new(0, -35, 0), _eggRayParams)
     local groundPos = ray and ray.Position or eggPos
 
+    myHum.PlatformStand = true
     CombatEngine.ResetPhysics(myHRP)
     myHRP.CFrame = CFrame.new(groundPos + Vector3.new(0, 3, 0), eggPos)
     myHRP.AssemblyLinearVelocity = Vector3.zero
-    myHum:ChangeState(Enum.HumanoidStateType.Running)
     task.wait(0.35)
     return true
 end
