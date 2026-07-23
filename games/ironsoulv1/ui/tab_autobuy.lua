@@ -59,11 +59,10 @@ local function makeCatBtn(label, cat, langKey)
 end
 
 -- Menyisipkan langKey ke masing-masing tombol
-makeCatBtn("💰 Grocery",  "Gold",    "btnCatGrocery")
+makeCatBtn("💰 Grocery",  "Gold",    "btnCatGrocery")  -- Gold via module catalog (tanpa GUI)
 makeCatBtn("💎 Bond Shop", "Bond",   "btnCatBond")
 makeCatBtn("🌸 Season",   "Season", "btnCatSeason")
 makeCatBtn("🌐 All",      "Both",   "btnCatAll")
-makeCatBtn("🔬 GoldV2",   "GoldV2", "btnCatGoldV2")   -- [GoldV2] via module snapshot, tanpa GUI
 
 local BuyButtonsRef = {}
 local ShopListContainer = Instance.new("ScrollingFrame", BuyPage)
@@ -223,33 +222,57 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
         end
     end
 
-    -- Consumable Shop (Gold + Bond)
-    if BuyCategory == "Gold" or BuyCategory == "Bond" or BuyCategory == "Both" then
+    -- Grocery (Gold) — via module catalog, tidak butuh GUI terbuka.
+    -- Jika toko GUI kebetulan terbuka, stok real-time di-overlay ke label tombol.
+    if BuyCategory == "Gold" or BuyCategory == "Both" then
+        local catalog = GetGoldShopCatalog and GetGoldShopCatalog(true) or {}
+        if #catalog == 0 then
+            CustomNotify("ERROR","Grocery: Gagal ambil catalog. Pastikan sudah masuk game!",5)
+            if BuyCategory ~= "Both" then return end
+        else
+            local sf = FindGoldShopScrollingFrame()  -- opsional: overlay stok jika toko terbuka
+            for _, item in ipairs(catalog) do
+                local itemId     = item.ItemId
+                local key        = "GoldV2_" .. itemId
+                local visualName = GetItemDisplayName(itemId)
+                local priceStr   = item.Price and ("  💰"..tostring(item.Price)) or ""
+
+                -- Overlay stok real-time dari GUI jika toko terbuka
+                local stockStr = ""
+                if sf then
+                    for _, guiItem in ipairs(sf:GetChildren()) do
+                        if guiItem.Name:find(itemId, 1, true) then
+                            local stockTXT = guiItem:FindFirstChild("StockTXT", true)
+                            local stok = tonumber(stockTXT and stockTXT.Text:match("%d+"))
+                            if stok and stok >= 1 and stok <= 9 then
+                                stockStr = "  ["..stok.."]"
+                            end
+                            break
+                        end
+                    end
+                end
+
+                total = total + 1
+                AddBuyButton(key, "  💰 "..visualName..priceStr..stockStr, {
+                    Name   = visualName,
+                    Badge  = "💰",
+                    Source = "GoldV2",
+                    ItemId = itemId,
+                    Price  = priceStr,
+                })
+            end
+        end
+    end
+
+    -- Bond Shop — scan GUI ScrollingFrame (membutuhkan toko Consumable terbuka)
+    if BuyCategory == "Bond" or BuyCategory == "Both" then
         local sf = FindGoldShopScrollingFrame()
         if sf then
-            local pfx = {}
-            -- Prefix berdasarkan currency (bukan shop):
-            -- Gold_ = bayar gold (GoldShop & BondShop), Bond_ = bayar bond
-            if BuyCategory == "Gold" or BuyCategory == "Both" then
-                table.insert(pfx, "Gold_GoldShop")
-                table.insert(pfx, "Gold_BondShop")
-            end
-            if BuyCategory == "Bond" or BuyCategory == "Both" then
-                table.insert(pfx, "Bond_BondShop")
-            end
-            scanSF(sf, pfx, "GoldBond")
+            scanSF(sf, {"Bond_BondShop"}, "GoldBond")
         else
-            local pgui    = LocalPlayer:FindFirstChildOfClass("PlayerGui")
-            local mainGui = pgui    and pgui:FindFirstChild("MainGui")
-            local screen  = mainGui and mainGui:FindFirstChild("ScreenConsumableShop")
-            local content = screen  and screen:FindFirstChild("Content")
-            print("[XIFIL BUY] DEBUG CONSUMABLE PATH:")
-            print("  PlayerGui =", pgui    and pgui.Name    or "NIL")
-            print("  MainGui   =", mainGui and mainGui.Name or "NIL")
-            print("  Screen    =", screen  and screen.Name  or "NIL")
-            print("  Content   =", content and content.Name or "NIL")
-            if content then for _, ch in ipairs(content:GetChildren()) do print("  child:", ch.Name, ch.ClassName) end end
-            if BuyCategory ~= "Both" then CustomNotify("ERROR","Consumable Shop tidak ditemukan! Cek Output.",5); return end
+            if BuyCategory ~= "Both" then
+                CustomNotify("ERROR","Consumable Shop tidak ditemukan! Buka toko dulu.",5); return
+            end
         end
     end
 
@@ -325,48 +348,11 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
         end
     end
 
-    -- [GoldV2] Scan via ConsumableShopUtil module — tidak butuh GUI terbuka
-    if BuyCategory == "GoldV2" then
-        local catalog = GetGoldShopCatalog and GetGoldShopCatalog(true) or {}
-        if #catalog == 0 then
-            CustomNotify("ERROR","GoldV2: Gagal ambil catalog. Pastikan kamu sudah masuk game!",5)
-        else
-            for _, item in ipairs(catalog) do
-                local itemId      = item.ItemId
-                local key         = "GoldV2_" .. itemId  -- prefix GoldV2_ untuk bedakan dari Gold biasa
-                local visualName  = GetItemDisplayName(itemId)  -- [FIX] nama visual, bukan ID mentah
-
-                -- Format label harga & stok
-                local priceStr = item.Price and ("  💰"..tostring(item.Price)) or ""
-                local stockStr = ""
-                if item.StockMin and item.StockMax then
-                    if item.StockMin == item.StockMax and item.StockMin and item.StockMin > 0 then
-                        stockStr = "  [×"..item.StockMin.."]"
-                    elseif item.StockMin and item.StockMax and item.StockMin ~= item.StockMax then
-                        stockStr = "  ["..item.StockMin.."-"..item.StockMax.."]"
-                    end
-                end
-
-                total = total + 1
-                AddBuyButton(key, "  🔬 " .. visualName .. priceStr .. stockStr, {
-                    Name   = visualName,  -- [FIX] simpan nama visual, bukan ID
-                    Badge  = "🔬",
-                    Source = "GoldV2",
-                    ItemId = itemId,
-                    Price  = priceStr,
-                })
-            end
-        end
-    end
-
     if total == 0 then
         CustomNotify("SCAN","0 item cocok. Cek nama di Output!",5)
     else
         CustomNotify("SHOP","Memuat "..total.." item ("..BuyCategory..").",3)
-        -- Simpan hasil scan ke cache (GoldV2 tidak disimpan — pakai module catalog sendiri)
-        if BuyCategory ~= "GoldV2" then
-            SaveScanCache()
-        end
+        SaveScanCache()
     end
 end, "btnScanGoldShop")
 
@@ -394,8 +380,21 @@ task.spawn(function()
                 if btn and btn.Parent then
 
                     if data.Source == "GoldV2" then
-                        -- [GoldV2] Tidak ada stok dari GUI; tampilkan nama + harga saja
-                        btn.Text = "  🔬 " .. data.Name .. (data.Price or "")
+                        -- Grocery/Gold: tampilkan nama + harga; overlay stok jika GUI terbuka
+                        local stockOverlay = ""
+                        if sf and data.ItemId then
+                            for _, guiItem in ipairs(sf:GetChildren()) do
+                                if guiItem.Name:find(data.ItemId, 1, true) then
+                                    local stockTXT = guiItem:FindFirstChild("StockTXT", true)
+                                    local stok = tonumber(stockTXT and stockTXT.Text:match("%d+"))
+                                    if stok and stok >= 1 and stok <= 9 then
+                                        stockOverlay = "  ["..stok.."]"
+                                    end
+                                    break
+                                end
+                            end
+                        end
+                        btn.Text = "  "..(data.Badge or "💰").." "..data.Name..(data.Price or "")..stockOverlay
                         btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[itemName] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
                     else
                         -- Pilih SF yang tepat berdasarkan asal item
@@ -431,11 +430,36 @@ task.spawn(function()
     end
 end)
 
--- [CACHE] Auto-load scan cache saat script pertama jalan — tidak perlu Scan ulang
+-- [STARTUP] Auto-load saat script pertama jalan:
+--   1. Gold (Grocery) — langsung dari module catalog (tidak perlu GUI, tidak perlu cache)
+--   2. Bond/Season    — dari cache file jika ada
 task.defer(function()
-    local n = LoadScanCache()
-    if n > 0 then
-        CustomNotify("🛒 AUTO BUY", "📂 " .. n .. " item dimuat dari cache. Tidak perlu Scan lagi!", 4)
+    -- Load Gold dari catalog
+    local catalog = GetGoldShopCatalog and GetGoldShopCatalog(false) or {}
+    local goldCount = 0
+    for _, item in ipairs(catalog) do
+        local itemId     = item.ItemId
+        local key        = "GoldV2_" .. itemId
+        if not BuyButtonsRef[key] then
+            local visualName = GetItemDisplayName(itemId)
+            local priceStr   = item.Price and ("  💰"..tostring(item.Price)) or ""
+            AddBuyButton(key, "  💰 "..visualName..priceStr, {
+                Name   = visualName,
+                Badge  = "💰",
+                Source = "GoldV2",
+                ItemId = itemId,
+                Price  = priceStr,
+            })
+            goldCount = goldCount + 1
+        end
+    end
+
+    -- Load Bond/Season dari cache file
+    local cacheCount = LoadScanCache()
+
+    local total = goldCount + cacheCount
+    if total > 0 then
+        CustomNotify("🛒 AUTO BUY", "📂 "..total.." item dimuat ("..goldCount.." Grocery, "..cacheCount.." cache).", 5)
     end
 end)
 
