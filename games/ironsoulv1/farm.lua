@@ -425,26 +425,42 @@ local function startFarmLoop()
                 Services.RunService.Heartbeat:Wait()
             else
                 if not _autoAttackPaused then myHum.PlatformStand = true end
-                -- Fire trigger sekali jika belum dalam cooldown (spawn agar loop tidak block)
+                -- Trigger awal: approach + ProximityPrompt/HoldKey sekali (jika belum cooldown)
                 if not _eggIsExtracting and os.clock() >= _eggLockEnd then
                     task.spawn(function() TriggerEggIfNeeded(egg) end)
                 end
                 local eggGroundCF = GetEggGroundCFrame(egg)
                 local eggPivot    = eggGroundCF.Position
                 if os.clock() - _eggTriggeredAt < 2 then
-                    -- ▶ FASE 1 (2 detik pertama setelah trigger): CFrame diam di bawah egg, height +3
-                    -- Posisi ini TIDAK mengikuti dropdown — selalu ground level egg
+                    -- ▶ FASE 1 (2 detik pertama setelah trigger):
+                    -- CFrame diam di bawah egg (height +3) + trigger terus-menerus setiap frame
                     local belowEggCF = CFrame.new(eggPivot + Vector3.new(0, 3, 0), eggPivot)
                     CombatEngine.ResetPhysics(myHRP)
                     myHRP.CFrame = belowEggCF
+                    pcall(function()
+                        local prompt = GetEggPrompt(egg)
+                        if prompt then
+                            if fireproximityprompt then
+                                fireproximityprompt(prompt)
+                            else
+                                prompt:InputHoldBegin()
+                            end
+                        end
+                    end)
                 else
-                    -- ▶ FASE 2 (setelah 2 detik): orbit sesuai Posisi Farm yang dipilih di dropdown
+                    -- ▶ FASE 2 (setelah 2 detik): orbit sesuai Posisi Farm + Auto Attack ke egg
                     local dropCF = GetPositionCFrame(eggPivot, EngineConfig.FarmPosition)
                     if (myHRP.Position - eggPivot).Magnitude > 50 then
                         CombatEngine.ResetPhysics(myHRP)
                         myHRP.CFrame = dropCF
                     else
                         ApplyMovement(myHRP, dropCF)
+                    end
+                    local now = tick()
+                    local _atkInterval = EngineConfig.SelectedWeapon == "Bow" and BOW_ATTACK_INTERVAL or FARM_ATTACK_INTERVAL
+                    if now - _lastFarmAttack >= _atkInterval and not _autoAttackPaused then
+                        _lastFarmAttack = now
+                        task.defer(function() FireWeaponAttack(egg, eggGroundCF) end)
                     end
                 end
                 task.wait(EngineConfig.CFrameDelay)
