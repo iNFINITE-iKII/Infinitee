@@ -1008,6 +1008,104 @@ local function GetGoldShopCatalog(ForceRefresh)
     return result
 end
 
+-- [SeasonV2] Catalog Season Shop via ResSeasonShop config module — tidak butuh GUI terbuka
+local _CachedSeasonCatalog = nil
+local function GetSeasonShopCatalog(ForceRefresh)
+    if _CachedSeasonCatalog and not ForceRefresh then
+        return _CachedSeasonCatalog
+    end
+    local ok, ResSeasonShop = pcall(function()
+        return require(
+            Services.ReplicatedStorage
+                :WaitForChild("Configs", 5)
+                :WaitForChild("ResSeasonShop", 5)
+        )
+    end)
+    if not ok or type(ResSeasonShop) ~= "table" then return {} end
+
+    local ById = {}
+    for ShopId, Item in pairs(ResSeasonShop) do
+        if ShopId ~= "__index" and type(Item) == "table" and type(Item.ItemId) == "string" then
+            if not ById[Item.ItemId] then
+                ById[Item.ItemId] = {
+                    ItemId     = Item.ItemId,
+                    ItemType   = Item.ItemType,
+                    Price      = Item.Price,
+                    ItemCount  = Item.ItemCount,
+                    LimitTimes = Item.LimitTimes,
+                    IsSpecial  = Item.IsSpecial == true,
+                    ShopId     = ShopId,
+                }
+            end
+        end
+    end
+
+    local result = {}
+    for _, v in pairs(ById) do table.insert(result, v) end
+    table.sort(result, function(a, b) return tostring(a.ShopId) < tostring(b.ShopId) end)
+    _CachedSeasonCatalog = result
+    return result
+end
+
+-- [BondV2] Catalog Bond Shop via ConsumableShopUtil — tidak butuh GUI terbuka
+-- Prioritas: getupvalues(ShopUtil.BuyItem).Bond → fallback GetShopSnapshot("Bond")
+local _CachedBondCatalog = nil
+local function GetBondShopCatalog(ForceRefresh)
+    if _CachedBondCatalog and not ForceRefresh then
+        return _CachedBondCatalog
+    end
+    local ShopUtil = GetShopUtil()
+    if not ShopUtil then return {} end
+
+    local ById = {}
+    local function AddItem(ItemKey, Item)
+        if type(Item) ~= "table" or type(Item.ItemId) ~= "string" then return end
+        if not ById[Item.ItemId] then
+            ById[Item.ItemId] = {
+                ItemId   = Item.ItemId,
+                ItemType = Item.ItemType,
+                Price    = Item.Price,
+                StockMin = Item.StockMin or Item.Stock,
+                StockMax = Item.StockMax or Item.Stock,
+                ItemKey  = ItemKey,
+            }
+        end
+    end
+
+    local FullPool = nil
+    if getupvalues and type(ShopUtil.BuyItem) == "function" then
+        pcall(function()
+            local Upvalues = getupvalues(ShopUtil.BuyItem)
+            local ShopItems = type(Upvalues) == "table" and Upvalues[2]
+            FullPool = type(ShopItems) == "table" and ShopItems.Bond or nil
+        end)
+    end
+
+    if type(FullPool) == "table" then
+        for _, ItemKey in ipairs(FullPool.__index or {}) do
+            AddItem(ItemKey, FullPool[ItemKey])
+        end
+        for ItemKey, Item in pairs(FullPool) do
+            if ItemKey ~= "__index" then AddItem(ItemKey, Item) end
+        end
+    else
+        pcall(function()
+            local Snapshot = ShopUtil:GetShopSnapshot(LocalPlayer, "Bond")
+            if Snapshot and type(Snapshot.Items) == "table" then
+                for ItemKey, Item in pairs(Snapshot.Items) do
+                    AddItem(ItemKey, Item)
+                end
+            end
+        end)
+    end
+
+    local result = {}
+    for _, v in pairs(ById) do table.insert(result, v) end
+    table.sort(result, function(a, b) return a.ItemId < b.ItemId end)
+    _CachedBondCatalog = result
+    return result
+end
+
 -- Dapatkan ScrollingFrame Season Shop
 -- Path: PlayerGui.MainGuiIgnoreGuiInset.ScreenSeasonPass.StoreStatistics.NormalFrame.ScrollingFrame
 local function FindSeasonShopScrollingFrame()
@@ -1120,6 +1218,41 @@ task.spawn(function()
                         SeasonUtilRE:FireServer("BuySeasonShopItem", itemName)
                     end)
                     task.wait(0.3)
+                end
+            end
+        end
+    end
+end)
+
+-- Loop: Auto Buy BondV2 — via GetShopSnapshot → FireServer("BuyShopItem","Bond",ItemKey)
+-- Tidak butuh GUI terbuka. Mirror dari loop GoldV2.
+local AutoBuyBondDelay = 0.55
+task.spawn(function()
+    while true do
+        task.wait(AutoBuyBondDelay)
+        if EngineConfig.AutoBuyActive then
+            local hasV2 = false
+            for k in pairs(EngineConfig.AutoBuyTargetList) do
+                if k:find("^BondV2_") then hasV2 = true; break end
+            end
+            if hasV2 then
+                local ShopUtil = GetShopUtil()
+                local RE       = GetShopUtilRE()
+                if ShopUtil and RE then
+                    pcall(function()
+                        local Snapshot = ShopUtil:GetShopSnapshot(LocalPlayer, "Bond")
+                        local Items    = Snapshot and Snapshot.Items
+                        if type(Items) ~= "table" then return end
+                        for ItemKey, Item in pairs(Items) do
+                            if type(Item) == "table" and Item.State == "normal" then
+                                local wantKey = "BondV2_" .. tostring(Item.ItemId)
+                                if EngineConfig.AutoBuyTargetList[wantKey] then
+                                    RE:FireServer("BuyShopItem", "Bond", ItemKey)
+                                    task.wait(AutoBuyBondDelay)
+                                end
+                            end
+                        end
+                    end)
                 end
             end
         end
@@ -1324,5 +1457,7 @@ H.startFarmLoop              = startFarmLoop
 H.FindGoldShopScrollingFrame  = FindGoldShopScrollingFrame    -- digunakan tab_autobuy
 H.FindSeasonShopScrollingFrame = FindSeasonShopScrollingFrame -- digunakan tab_autobuy
 H.GetGoldShopCatalog          = GetGoldShopCatalog            -- digunakan tab_autobuy (GoldV2)
-H.GetShopUtilRE               = GetShopUtilRE                 -- digunakan tab_autobuy (GoldV2)
-H.GetItemDisplayName          = GetItemDisplayName            -- digunakan tab_autobuy (GoldV2 visual name)
+H.GetBondShopCatalog          = GetBondShopCatalog            -- digunakan tab_autobuy (BondV2)
+H.GetSeasonShopCatalog        = GetSeasonShopCatalog          -- digunakan tab_autobuy (SeasonV2)
+H.GetShopUtilRE               = GetShopUtilRE                 -- digunakan tab_autobuy (GoldV2/BondV2)
+H.GetItemDisplayName          = GetItemDisplayName            -- digunakan tab_autobuy (visual name)

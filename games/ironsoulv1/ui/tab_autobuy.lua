@@ -9,8 +9,10 @@ local CustomNotify = H.CustomNotify
 local RegisterTranslation          = H.RegisterTranslation
 local FindGoldShopScrollingFrame   = H.FindGoldShopScrollingFrame
 local FindSeasonShopScrollingFrame = H.FindSeasonShopScrollingFrame
-local GetGoldShopCatalog           = H.GetGoldShopCatalog   -- [GoldV2] catalog via module
-local GetItemDisplayName           = H.GetItemDisplayName   -- [GoldV2] nama visual dari ItemId
+local GetGoldShopCatalog           = H.GetGoldShopCatalog    -- catalog Gold via module
+local GetBondShopCatalog           = H.GetBondShopCatalog    -- catalog Bond via module
+local GetSeasonShopCatalog         = H.GetSeasonShopCatalog  -- catalog Season via config module
+local GetItemDisplayName           = H.GetItemDisplayName    -- nama visual dari ItemId
 local HttpService  = H.HttpService
 local FOLDER_NAME  = H.FOLDER_NAME or "XiFilHub_Configs"
 local SCAN_CACHE_PATH = FOLDER_NAME .. "/autobuy_scan_cache.json"
@@ -96,11 +98,14 @@ local function AddBuyButton(key, labelText, meta)
     return btn
 end
 
--- Simpan metadata semua item (bukan GoldV2) ke file JSON
+-- Catalog sources — dimuat ulang dari module saat startup, tidak perlu di-cache
+local CATALOG_SOURCES = { GoldV2 = true, BondV2 = true, SeasonV2 = true }
+
+-- Simpan metadata item non-catalog ke file JSON (hanya legacy GoldBond/Season dari GUI)
 local function SaveScanCache()
     local data = {}
     for k, v in pairs(BuyButtonsRef) do
-        if v.Source ~= "GoldV2" then
+        if not CATALOG_SOURCES[v.Source] then
             data[k] = {
                 Name        = v.Name,
                 Badge       = v.Badge,
@@ -158,10 +163,14 @@ end
 _G.AutoBuyToggle = CreateToggleUI(BuyPage, "🛒 Enable Multi Auto-Buy", EngineConfig.AutoBuyActive, function(v)
     local cnt = 0; for _ in pairs(EngineConfig.AutoBuyTargetList) do cnt = cnt+1 end
     if v and cnt == 0 then CustomNotify("AUTO BUY WARN","Pilih item dulu!",3); EngineConfig.AutoBuyActive = false; _G.AutoBuyToggle:SetValue(false); return end
-    -- Season & GoldV2 beli via FireServer (tidak butuh GUI terbuka); cek shop hanya kalau ada target Gold/Bond
+    -- Semua kategori kini via FireServer (tidak butuh GUI terbuka)
+    -- needsShop = true hanya untuk legacy item cached dari GUI lama (tanpa prefix catalog)
     local needsShop = false
     for k in pairs(EngineConfig.AutoBuyTargetList) do
-        if not k:find("^SeasonShop_") and not k:find("^GoldV2_") then needsShop = true; break end
+        if not k:find("^SeasonShop_") and not k:find("^GoldV2_")
+           and not k:find("^BondV2_") and not k:find("^SeasonV2_") then
+            needsShop = true; break
+        end
     end
     if v and needsShop and not FindGoldShopScrollingFrame() then CustomNotify("AUTO BUY WARN","Buka toko Consumable dulu!",3); EngineConfig.AutoBuyActive = false; _G.AutoBuyToggle:SetValue(false); return end
     EngineConfig.AutoBuyActive = v; CustomNotify("AUTO BUY", v and ("Berjalan! ("..cnt.." item)") or "Dimatikan.",2)
@@ -264,86 +273,52 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
         end
     end
 
-    -- Bond Shop — scan GUI ScrollingFrame (membutuhkan toko Consumable terbuka)
+    -- Bond — via module catalog, tidak butuh GUI terbuka
     if BuyCategory == "Bond" or BuyCategory == "Both" then
-        local sf = FindGoldShopScrollingFrame()
-        if sf then
-            scanSF(sf, {"Bond_BondShop"}, "GoldBond")
+        local catalog = GetBondShopCatalog and GetBondShopCatalog(true) or {}
+        if #catalog == 0 then
+            CustomNotify("ERROR","Bond: Gagal ambil catalog. Pastikan sudah masuk game!",5)
+            if BuyCategory ~= "Both" then return end
         else
-            if BuyCategory ~= "Both" then
-                CustomNotify("ERROR","Consumable Shop tidak ditemukan! Buka toko dulu.",5); return
+            for _, item in ipairs(catalog) do
+                local itemId     = item.ItemId
+                local key        = "BondV2_" .. itemId
+                local visualName = GetItemDisplayName(itemId)
+                local priceStr   = item.Price and ("  💎"..tostring(item.Price)) or ""
+                total = total + 1
+                AddBuyButton(key, "  💎 "..visualName..priceStr, {
+                    Name   = visualName,
+                    Badge  = "💎",
+                    Source = "BondV2",
+                    ItemId = itemId,
+                    Price  = priceStr,
+                })
             end
         end
     end
 
-    -- Season Shop — scan NormalFrame + SpecialFrame
-    -- Nama visual di-hardcode karena MouseButton1Click:Fire() tidak trigger handler GUI
-    local SEASON_NAMES = {
-        SeasonShop_01 = "Storm Eagle",
-        SeasonShop_02 = "Wyvern Bloom",
-        SeasonShop_03 = "Horn Spire",
-        SeasonShop_04 = "Crown Claw",
-        SeasonShop_05 = "Race Reroll",
-        SeasonShop_06 = "Season Ticket",
-        SeasonShop_07 = "Rotten Lotus",
-        SeasonShop_08 = "Crystal Gem x3",
-        SeasonShop_09 = "Crystal Prism x3",
-        SeasonShop_10 = "Dragon Tear x3",
-        SeasonShop_11 = "?",
-        SeasonShop_12 = "?",
-        SeasonShop_13 = "Cave Ticket",
-        SeasonShop_14 = "Rune Crack",
-        SeasonShop_15 = "Gold Coin x1500",
-        SeasonShop_16 = "Gold Potion",
-        SeasonShop_17 = "Exp Potion",
-        SeasonShop_18 = "Fate Potion",
-        SeasonShop_19 = "Harvest Potion",
-        SeasonShop_20 = "Attack Potion",
-        SeasonShop_21 = "Life Potion",
-        SeasonShop_22 = "Berserker Potion",
-    }
-
+    -- Season — via ResSeasonShop config module, tidak butuh GUI terbuka
+    -- Key = ShopId (e.g. SeasonShop_01) agar kompatibel dengan buy loop FireServer
     if BuyCategory == "Season" or BuyCategory == "Both" then
-        local pgui       = LocalPlayer:FindFirstChildOfClass("PlayerGui")
-        local ignoreGui  = pgui and pgui:FindFirstChild("MainGuiIgnoreGuiInset")
-        local seasonScr  = ignoreGui and ignoreGui:FindFirstChild("ScreenSeasonPass")
-        local stats      = seasonScr and seasonScr:FindFirstChild("StoreStatistics")
-
-        if not stats then
-            print("[XIFIL BUY] Season Shop tidak ditemukan — buka toko Season dulu")
-            if BuyCategory ~= "Both" then CustomNotify("ERROR","Season Shop tidak ditemukan! Buka toko Season dulu.",5); return end
+        local catalog = GetSeasonShopCatalog and GetSeasonShopCatalog(true) or {}
+        if #catalog == 0 then
+            CustomNotify("ERROR","Season: Gagal ambil catalog. Pastikan sudah masuk game!",5)
+            if BuyCategory ~= "Both" then return end
         else
-            for _, frameName in ipairs({"NormalFrame", "SpecialFrame"}) do
-                local frame = stats:FindFirstChild(frameName)
-                local sf    = frame and frame:FindFirstChild("ScrollingFrame")
-                if not sf then continue end
-
-                for _, item in ipairs(sf:GetChildren()) do
-                    if not item.Name:find("^SeasonShop_") then continue end
-
-                    local displayName = SEASON_NAMES[item.Name] or item.Name
-
-                    -- Baca harga: child bernama "Count" dengan teks angka murni
-                    local price = ""
-                    for _, desc in ipairs(item:GetDescendants()) do
-                        if desc.Name == "Count"
-                            and (desc:IsA("TextLabel") or desc:IsA("TextButton"))
-                            and desc.Text:match("^%d+$")
-                        then
-                            price = desc.Text; break
-                        end
-                    end
-
-                    total = total + 1
-                    local priceTag = price ~= "" and ("  🎫" .. price) or ""
-                    AddBuyButton(item.Name, "  🌸 " .. displayName .. priceTag, {
-                        Name        = displayName,
-                        Price       = price,
-                        Badge       = "🌸",
-                        Source      = "Season",
-                        SeasonFrame = frameName,
-                    })
-                end
+            for _, item in ipairs(catalog) do
+                local shopId     = item.ShopId
+                local visualName = GetItemDisplayName(item.ItemId)
+                local priceTag   = item.Price and ("  🎫"..tostring(item.Price)) or ""
+                local limitTag   = item.LimitTimes and ("  [L:"..tostring(item.LimitTimes).."]") or ""
+                total = total + 1
+                AddBuyButton(shopId, "  🌸 "..visualName..priceTag..limitTag, {
+                    Name       = visualName,
+                    Badge      = "🌸",
+                    Source     = "SeasonV2",
+                    ItemId     = item.ItemId,
+                    Price      = tostring(item.Price or ""),
+                    LimitTimes = item.LimitTimes,
+                })
             end
         end
     end
@@ -356,19 +331,9 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
     end
 end, "btnScanGoldShop")
 
--- Helper: dapatkan SF Season berdasarkan nama frame yang tersimpan di BuyButtonsRef
-local function getSeasonSF(frameName)
-    local pgui      = LocalPlayer:FindFirstChildOfClass("PlayerGui")
-    local ignoreGui = pgui and pgui:FindFirstChild("MainGuiIgnoreGuiInset")
-    local stats     = ignoreGui
-        and ignoreGui:FindFirstChild("ScreenSeasonPass")
-        and ignoreGui.ScreenSeasonPass:FindFirstChild("StoreStatistics")
-    if not stats then return nil end
-    local frame = stats:FindFirstChild(frameName or "SpecialFrame")
-    return frame and frame:FindFirstChild("ScrollingFrame")
-end
-
 -- Background Loop untuk Update Stok Real-time (Anti Geser & Warna Aman)
+-- Catalog sources (GoldV2/BondV2/SeasonV2): tampil badge+nama+harga, overlay stok dari GUI jika ada
+-- Legacy sources (GoldBond/Season): GUI lookup seperti sebelumnya
 task.spawn(function()
     while true do
         task.wait(2)
@@ -379,10 +344,10 @@ task.spawn(function()
                 local btn = data.Button
                 if btn and btn.Parent then
 
-                    if data.Source == "GoldV2" then
-                        -- Grocery/Gold: tampilkan nama + harga; overlay stok jika GUI terbuka
+                    if CATALOG_SOURCES[data.Source] then
+                        -- Catalog item: badge+nama+harga, overlay stok GUI jika relevan
                         local stockOverlay = ""
-                        if sf and data.ItemId then
+                        if sf and data.ItemId and (data.Source == "GoldV2" or data.Source == "BondV2") then
                             for _, guiItem in ipairs(sf:GetChildren()) do
                                 if guiItem.Name:find(data.ItemId, 1, true) then
                                     local stockTXT = guiItem:FindFirstChild("StockTXT", true)
@@ -397,29 +362,17 @@ task.spawn(function()
                         btn.Text = "  "..(data.Badge or "💰").." "..data.Name..(data.Price or "")..stockOverlay
                         btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[itemName] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
                     else
-                        -- Pilih SF yang tepat berdasarkan asal item
-                        local parentSF = (data.Source == "Season")
-                            and getSeasonSF(data.SeasonFrame)
-                            or sf
-                        if parentSF then
-                            local item = parentSF:FindFirstChild(itemName)
+                        -- Legacy: lookup langsung di GUI SF
+                        if sf then
+                            local item = sf:FindFirstChild(itemName)
                             if item then
-                                if data.Source == "Season" then
-                                    -- Season: hanya tampil nama + harga, tanpa stok
-                                    local priceTag = (data.Price and data.Price ~= "") and ("  🎫" .. data.Price) or ""
-                                    btn.Text = "  🌸 " .. data.Name .. priceTag
+                                local stockTXT = item:FindFirstChild("StockTXT", true)
+                                local stok     = tonumber(stockTXT and stockTXT.Text:match("%d+"))
+                                if not stockTXT or stok == 0 or stok == 10 then
+                                    btn.Text = "  "..(data.Badge or "💰").." "..data.Name
                                 else
-                                    -- Gold/Bond: tampil stok real-time
-                                    local stockTXT = item:FindFirstChild("StockTXT", true)
-                                    local stok     = tonumber(stockTXT and stockTXT.Text:match("%d+"))
-                                    if not stockTXT or stok == 0 or stok == 10 then
-                                        btn.Text = "  " .. data.Badge .. " " .. data.Name
-                                    else
-                                        btn.Text = "  " .. data.Badge .. " " .. data.Name .. "  [" .. stok .. "]"
-                                    end
+                                    btn.Text = "  "..(data.Badge or "💰").." "..data.Name.."  ["..stok.."]"
                                 end
-
-                                -- Warna dikunci ketat ke status TargetList
                                 btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[itemName] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
                             end
                         end
@@ -430,36 +383,48 @@ task.spawn(function()
     end
 end)
 
--- [STARTUP] Auto-load saat script pertama jalan:
---   1. Gold (Grocery) — langsung dari module catalog (tidak perlu GUI, tidak perlu cache)
---   2. Bond/Season    — dari cache file jika ada
+-- [STARTUP] Auto-load semua catalog saat script pertama jalan — tidak perlu Scan manual
 task.defer(function()
-    -- Load Gold dari catalog
-    local catalog = GetGoldShopCatalog and GetGoldShopCatalog(false) or {}
-    local goldCount = 0
-    for _, item in ipairs(catalog) do
-        local itemId     = item.ItemId
-        local key        = "GoldV2_" .. itemId
+    local counts = { gold = 0, bond = 0, season = 0 }
+
+    -- Gold
+    for _, item in ipairs(GetGoldShopCatalog and GetGoldShopCatalog(false) or {}) do
+        local key = "GoldV2_" .. item.ItemId
         if not BuyButtonsRef[key] then
-            local visualName = GetItemDisplayName(itemId)
-            local priceStr   = item.Price and ("  💰"..tostring(item.Price)) or ""
-            AddBuyButton(key, "  💰 "..visualName..priceStr, {
-                Name   = visualName,
-                Badge  = "💰",
-                Source = "GoldV2",
-                ItemId = itemId,
-                Price  = priceStr,
-            })
-            goldCount = goldCount + 1
+            local name  = GetItemDisplayName(item.ItemId)
+            local price = item.Price and ("  💰"..tostring(item.Price)) or ""
+            AddBuyButton(key, "  💰 "..name..price, { Name=name, Badge="💰", Source="GoldV2", ItemId=item.ItemId, Price=price })
+            counts.gold = counts.gold + 1
         end
     end
 
-    -- Load Bond/Season dari cache file
-    local cacheCount = LoadScanCache()
+    -- Bond
+    for _, item in ipairs(GetBondShopCatalog and GetBondShopCatalog(false) or {}) do
+        local key = "BondV2_" .. item.ItemId
+        if not BuyButtonsRef[key] then
+            local name  = GetItemDisplayName(item.ItemId)
+            local price = item.Price and ("  💎"..tostring(item.Price)) or ""
+            AddBuyButton(key, "  💎 "..name..price, { Name=name, Badge="💎", Source="BondV2", ItemId=item.ItemId, Price=price })
+            counts.bond = counts.bond + 1
+        end
+    end
 
-    local total = goldCount + cacheCount
+    -- Season
+    for _, item in ipairs(GetSeasonShopCatalog and GetSeasonShopCatalog(false) or {}) do
+        local key = item.ShopId
+        if not BuyButtonsRef[key] then
+            local name     = GetItemDisplayName(item.ItemId)
+            local priceTag = item.Price and ("  🎫"..tostring(item.Price)) or ""
+            local limitTag = item.LimitTimes and ("  [L:"..tostring(item.LimitTimes).."]") or ""
+            AddBuyButton(key, "  🌸 "..name..priceTag..limitTag, { Name=name, Badge="🌸", Source="SeasonV2", ItemId=item.ItemId, Price=tostring(item.Price or ""), LimitTimes=item.LimitTimes })
+            counts.season = counts.season + 1
+        end
+    end
+
+    local total = counts.gold + counts.bond + counts.season
     if total > 0 then
-        CustomNotify("🛒 AUTO BUY", "📂 "..total.." item dimuat ("..goldCount.." Grocery, "..cacheCount.." cache).", 5)
+        CustomNotify("🛒 AUTO BUY",
+            "📂 "..total.." item dimuat ("..counts.gold.." Grocery · "..counts.bond.." Bond · "..counts.season.." Season).", 5)
     end
 end)
 
