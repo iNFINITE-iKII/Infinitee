@@ -32,27 +32,11 @@ ForgeUtil.QTE = function(...)
     end; return _G.OriginalQTE(...)
 end
 
--- Helper: TP ke ProximityPrompt yang cocok keyword lalu fire
-local function TPAndOpenByKeyword(keywords, notifTitle)
-    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local hrp  = char:WaitForChild("HumanoidRootPart"); local prompt = nil
-    for _, v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") then
-            local txt = string.lower(v.ObjectText..v.ActionText..(v.Parent.Name)); local matched = false
-            for _, kw in ipairs(keywords) do if txt:find(kw) then matched = true; break end end
-            if matched then prompt = v; break end
-        end
-    end
-    if prompt and prompt.Parent:IsA("BasePart") then
-        CombatEngine.ResetPhysics(hrp); hrp.CFrame = prompt.Parent.CFrame*CFrame.new(0,2,0); task.wait(0.3)
-        if fireproximityprompt then fireproximityprompt(prompt); CustomNotify(notifTitle,"UI berhasil dibuka!",3)
-        else CustomNotify("WARN","Executor tidak support fireproximityprompt",3) end
-    else CustomNotify(notifTitle.." ERROR","NPC tidak ditemukan!",4) end
-end
+--------------------------------------------------------------------------------
+-- Open Forge — tombol khusus dengan fallback CFrame & patch ForgeGui
+--------------------------------------------------------------------------------
+CreateSection(ForgePage, "Forge", "secForgeUtil")
 
-CreateSection(ForgePage, "NPC Utility Access", "secNpcUtil")
-
--- Forge: scan keyword + fallback CFrame + buka GUI
 CreateButton(ForgePage, "🔨 Open Forge", function()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local hrp  = char:WaitForChild("HumanoidRootPart"); local prompt = nil
@@ -82,12 +66,104 @@ CreateButton(ForgePage, "🔨 Open Forge", function()
     CustomNotify("FORGE","UI berhasil dibuka!",3)
 end, "btnForgeBypass")
 
-CreateButton(ForgePage, "🔮 Open Enchantment & Runes",  function() TPAndOpenByKeyword({"enchant"},"ENCHANTMENT") end, "btnOpenEnchant")
-CreateButton(ForgePage, "🛒 Open Grocery",              function() TPAndOpenByKeyword({"grocery","grocer"},"GROCERY") end, "btnOpenGrocery")
-CreateButton(ForgePage, "🐾 Open Pet Upgrade",          function() TPAndOpenByKeyword({"pet","upgrade","petupgrade"},"PET UPGRADE") end, "btnOpenPetUpgrade")
-CreateButton(ForgePage, "🏕️ Open Pet Expedition",      function() TPAndOpenByKeyword({"expedition","petexp"},"PET EXPEDITION") end, "btnOpenPetExp")
-CreateButton(ForgePage, "✨ Open Upgrade Equipment",    function() TPAndOpenByKeyword({"bless","blessing"},"BLESS EQUIPMENT") end, "btnOpenBless")
-CreateButton(ForgePage, "✨ Open The Guide",            function() TPAndOpenByKeyword({"guide","the"},"THE GUIDE") end, "btnOpenGuide")
+--------------------------------------------------------------------------------
+-- NPC Utility — scan dinamis ProximityPrompt di Workspace
+-- Label tombol diambil langsung dari teks in-game → otomatis sesuai bahasa game
+--------------------------------------------------------------------------------
+CreateSection(ForgePage, "NPC Utility Access", "secNpcUtil")
 
+local NpcButtonsRef = {}
+local RunNpcScan    -- forward declaration
+
+local NpcListContainer = Instance.new("ScrollingFrame", ForgePage)
+NpcListContainer.Name               = "NpcLC"
+NpcListContainer.Size               = UDim2.new(1,0,0,220)
+NpcListContainer.BackgroundTransparency = 1
+NpcListContainer.ScrollBarThickness = 3
+NpcListContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local NpcLL = Instance.new("UIListLayout", NpcListContainer)
+NpcLL.Padding    = UDim.new(0,4)
+NpcLL.SortOrder  = Enum.SortOrder.LayoutOrder
+
+-- Factory tombol: satu tombol = satu ProximityPrompt
+local function AddNpcButton(prompt, labelText)
+    local btn = Instance.new("TextButton", NpcListContainer)
+    btn.Size              = UDim2.new(1,-10,0,30)
+    btn.Font              = Enum.Font.GothamMedium
+    btn.TextSize          = 11
+    btn.TextXAlignment    = Enum.TextXAlignment.Left
+    btn.BorderSizePixel   = 0
+    btn.BackgroundColor3  = Color3.fromRGB(28,28,40)
+    btn.TextColor3        = Color3.fromRGB(255,255,255)
+    btn.Text              = "  🏪 " .. labelText
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+    btn.MouseButton1Click:Connect(function()
+        -- Pastikan prompt masih valid (tidak di-destroy saat server hop)
+        if not prompt or not prompt.Parent then
+            CustomNotify("NPC ERROR","NPC tidak lagi tersedia. Scan ulang.",4)
+            return
+        end
+        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local hrp  = char:WaitForChild("HumanoidRootPart")
+        CombatEngine.ResetPhysics(hrp)
+        hrp.CFrame = prompt.Parent.CFrame * CFrame.new(0,2,0)
+        task.wait(0.3)
+        if fireproximityprompt then
+            fireproximityprompt(prompt)
+            CustomNotify("NPC", labelText .. " berhasil dibuka!", 3)
+        else
+            CustomNotify("WARN","Executor tidak support fireproximityprompt",3)
+        end
+    end)
+
+    table.insert(NpcButtonsRef, { prompt = prompt, btn = btn, label = labelText })
+    return btn
+end
+
+-- Scan semua ProximityPrompt di Workspace — label diambil dari ObjectText/ActionText game
+RunNpcScan = function()
+    -- Bersihkan tombol lama
+    for _, c in ipairs(NpcListContainer:GetChildren()) do
+        if c:IsA("TextButton") then c:Destroy() end
+    end
+    table.clear(NpcButtonsRef)
+
+    local seen  = {}
+    local total = 0
+
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") and v.Parent and v.Parent:IsA("BasePart") then
+            -- Label: ObjectText utama, fallback ActionText, fallback nama Part
+            local obj = v.ObjectText ~= "" and v.ObjectText or nil
+            local act = v.ActionText ~= "" and v.ActionText or nil
+            local label = obj and (act and (obj.." — "..act) or obj)
+                       or act
+                       or v.Parent.Name
+
+            -- Deduplikasi berdasarkan nama Parent (satu NPC satu tombol)
+            local key = v.Parent:GetFullName()
+            if not seen[key] then
+                seen[key] = true
+                AddNpcButton(v, label)
+                total = total + 1
+            end
+        end
+    end
+
+    if total == 0 then
+        CustomNotify("NPC SCAN","Tidak ada NPC ditemukan di map!",4)
+    else
+        CustomNotify("🏪 NPC SCAN", total.." NPC ditemukan.",3)
+    end
+end
+
+-- Tombol scan manual (jika user ingin refresh setelah pindah area/server)
+CreateButton(ForgePage, "🔄 Scan NPC", function()
+    RunNpcScan()
+end)
+
+-- Auto-scan saat script pertama jalan
+task.defer(RunNpcScan)
 
 --------------------------------------------------------------------------------
