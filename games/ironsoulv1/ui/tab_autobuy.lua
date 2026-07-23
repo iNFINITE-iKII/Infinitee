@@ -37,6 +37,7 @@ CatLayout.FillDirection = Enum.FillDirection.Horizontal
 CatLayout.Padding = UDim.new(0,4); CatLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local catButtons = {}
+local RunScan -- forward declaration agar closure tombol bisa mengakses RunScan
 -- [UPDATE] Menambahkan dukungan 'langKey' untuk Auto-Translate
 local function makeCatBtn(label, cat, langKey)
     local b = Instance.new("TextButton", CatFrame)
@@ -118,7 +119,7 @@ _G.AutoBuyToggle = CreateToggleUI(BuyPage, "🛒 Enable Multi Auto-Buy", EngineC
     EngineConfig.AutoBuyActive = v; CustomNotify("AUTO BUY", v and ("Berjalan! ("..cnt.." item)") or "Dimatikan.",2)
 end, "lblEnableAutoBuy")
 
-local function RunScan()
+RunScan = function()
     for _, c in ipairs(ShopListContainer:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
     table.clear(BuyButtonsRef)
 
