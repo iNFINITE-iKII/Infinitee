@@ -915,6 +915,38 @@ local function GetShopUtilRE()
     return _ShopUtilRE
 end
 
+-- [GoldV2] Terjemahkan ItemId ke nama visual via TranslationUtil game
+-- Ported dari V6: GetItemDisplayName — prioritas TranslationUtil, fallback underscore→spasi
+local _FrameworkModuleCache = nil
+local function GetFrameworkSafe()
+    if not _FrameworkModuleCache then
+        pcall(function()
+            _FrameworkModuleCache = require(
+                Services.ReplicatedStorage:WaitForChild("Framework", 5)
+            )
+        end)
+    end
+    return _FrameworkModuleCache
+end
+
+local function GetItemDisplayName(ItemId)
+    local RawId  = tostring(ItemId or "Unknown")
+    local BaseId = string.split(RawId, ":")[1]
+    local Key    = "K_" .. string.upper(BaseId)
+    local DisplayName = nil
+    pcall(function()
+        local fw = GetFrameworkSafe()
+        if fw and fw.Modules and fw.Modules.TranslationUtil then
+            DisplayName = fw.Modules.TranslationUtil:TranslateByKey(Key)
+        end
+    end)
+    if type(DisplayName) == "string" and DisplayName ~= "" and DisplayName ~= Key then
+        return DisplayName
+    end
+    -- Fallback: ganti underscore dengan spasi (e.g. "Gold_HealthPotion" → "Gold HealthPotion")
+    return string.gsub(BaseId, "_", " ")
+end
+
 -- Ambil katalog lengkap Gold Shop via module (tanpa perlu GUI terbuka)
 -- Prioritas: getupvalues(ShopUtil.BuyItem) → fallback GetShopSnapshot
 local _CachedGoldV2Catalog = nil
@@ -1293,3 +1325,4 @@ H.FindGoldShopScrollingFrame  = FindGoldShopScrollingFrame    -- digunakan tab_a
 H.FindSeasonShopScrollingFrame = FindSeasonShopScrollingFrame -- digunakan tab_autobuy
 H.GetGoldShopCatalog          = GetGoldShopCatalog            -- digunakan tab_autobuy (GoldV2)
 H.GetShopUtilRE               = GetShopUtilRE                 -- digunakan tab_autobuy (GoldV2)
+H.GetItemDisplayName          = GetItemDisplayName            -- digunakan tab_autobuy (GoldV2 visual name)

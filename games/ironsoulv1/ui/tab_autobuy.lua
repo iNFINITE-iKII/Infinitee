@@ -10,6 +10,7 @@ local RegisterTranslation          = H.RegisterTranslation
 local FindGoldShopScrollingFrame   = H.FindGoldShopScrollingFrame
 local FindSeasonShopScrollingFrame = H.FindSeasonShopScrollingFrame
 local GetGoldShopCatalog           = H.GetGoldShopCatalog   -- [GoldV2] catalog via module
+local GetItemDisplayName           = H.GetItemDisplayName   -- [GoldV2] nama visual dari ItemId
 local HttpService  = H.HttpService
 local FOLDER_NAME  = H.FOLDER_NAME or "XiFilHub_Configs"
 local SCAN_CACHE_PATH = FOLDER_NAME .. "/autobuy_scan_cache.json"
@@ -331,8 +332,9 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
             CustomNotify("ERROR","GoldV2: Gagal ambil catalog. Pastikan kamu sudah masuk game!",5)
         else
             for _, item in ipairs(catalog) do
-                local itemId  = item.ItemId
-                local key     = "GoldV2_" .. itemId  -- prefix GoldV2_ untuk bedakan dari Gold biasa
+                local itemId      = item.ItemId
+                local key         = "GoldV2_" .. itemId  -- prefix GoldV2_ untuk bedakan dari Gold biasa
+                local visualName  = GetItemDisplayName(itemId)  -- [FIX] nama visual, bukan ID mentah
 
                 -- Format label harga & stok
                 local priceStr = item.Price and ("  💰"..tostring(item.Price)) or ""
@@ -346,8 +348,8 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
                 end
 
                 total = total + 1
-                AddBuyButton(key, "  🔬 " .. itemId .. priceStr .. stockStr, {
-                    Name   = itemId,
+                AddBuyButton(key, "  🔬 " .. visualName .. priceStr .. stockStr, {
+                    Name   = visualName,  -- [FIX] simpan nama visual, bukan ID
                     Badge  = "🔬",
                     Source = "GoldV2",
                     ItemId = itemId,
