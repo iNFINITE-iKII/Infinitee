@@ -105,7 +105,6 @@ local function MoveToEggGround(eggModel)
     CombatEngine.ResetPhysics(myHRP)
     myHRP.CFrame = CFrame.new(groundPos + Vector3.new(0, 3, 0), eggPos)
     myHRP.AssemblyLinearVelocity = Vector3.zero
-    task.wait(0.35)
     return true
 end
 
