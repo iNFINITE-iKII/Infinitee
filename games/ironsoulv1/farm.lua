@@ -380,7 +380,7 @@ local function startFarmLoop()
                     _G._chestApproached = _chestKey
                     -- ▶ FASE 1: CFrame ke chest + attack selama 1 detik (tanpa proximity prompt)
                     CombatEngine.ResetPhysics(myHRP)
-                    myHRP.CFrame = CFrame.new(chestRoot.Position+Vector3.new(0,3,0), chestRoot.Position)
+                    myHRP.CFrame = CFrame.new(chestRoot.Position+Vector3.new(0,-3,0), chestRoot.Position)
                     local elapsed = 0
                     while elapsed < 1 do
                         if not EngineConfig.AutoFarmActive then break end
