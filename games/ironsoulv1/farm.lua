@@ -77,6 +77,7 @@ end
 local _eggIsExtracting = false   -- true saat TriggerEggIfNeeded sedang jalan
 local _eggLastTriggered = nil    -- referensi egg terakhir yang di-trigger
 local _eggLockEnd      = 0       -- os.clock() deadline cooldown setelah trigger (12 detik)
+local _eggTriggeredAt  = -math.huge  -- os.clock() saat trigger terakhir; 2 detik pertama = fase diam bawah egg
 local _eggRayParams    = RaycastParams.new()
 _eggRayParams.FilterType = Enum.RaycastFilterType.Exclude
 
@@ -150,6 +151,7 @@ local function TriggerEggIfNeeded(eggModel)
     end
 
     _eggIsExtracting = false
+    _eggTriggeredAt  = os.clock()
     _eggLockEnd = os.clock() + 12.0
 end
 
@@ -315,6 +317,7 @@ local function startFarmLoop()
     _eggIsExtracting = false
     _eggLastTriggered = nil
     _eggLockEnd      = 0
+    _eggTriggeredAt  = -math.huge
 
     -- [ENDLESS TOWER] State per-session
     _G._endlessTowerWaitUntil    = 0     -- tick() kapan CFrame pertama boleh jalan (delay setelah target habis)
@@ -426,15 +429,23 @@ local function startFarmLoop()
                 if not _eggIsExtracting and os.clock() >= _eggLockEnd then
                     task.spawn(function() TriggerEggIfNeeded(egg) end)
                 end
-                -- Selama menunggu: orbit egg sesuai FarmPosition (terhubung ke Height & Posisi Farm)
                 local eggGroundCF = GetEggGroundCFrame(egg)
                 local eggPivot    = eggGroundCF.Position
-                local dropCF      = GetPositionCFrame(eggPivot, EngineConfig.FarmPosition)
-                if (myHRP.Position - eggPivot).Magnitude > 50 then
+                if os.clock() - _eggTriggeredAt < 2 then
+                    -- ▶ FASE 1 (2 detik pertama setelah trigger): CFrame diam di bawah egg, height +3
+                    -- Posisi ini TIDAK mengikuti dropdown — selalu ground level egg
+                    local belowEggCF = CFrame.new(eggPivot + Vector3.new(0, 3, 0), eggPivot)
                     CombatEngine.ResetPhysics(myHRP)
-                    myHRP.CFrame = dropCF
+                    myHRP.CFrame = belowEggCF
                 else
-                    ApplyMovement(myHRP, dropCF)
+                    -- ▶ FASE 2 (setelah 2 detik): orbit sesuai Posisi Farm yang dipilih di dropdown
+                    local dropCF = GetPositionCFrame(eggPivot, EngineConfig.FarmPosition)
+                    if (myHRP.Position - eggPivot).Magnitude > 50 then
+                        CombatEngine.ResetPhysics(myHRP)
+                        myHRP.CFrame = dropCF
+                    else
+                        ApplyMovement(myHRP, dropCF)
+                    end
                 end
                 task.wait(EngineConfig.CFrameDelay)
             end
@@ -814,6 +825,7 @@ local function startFarmLoop()
     -- Reset egg V6 state saat farm dimatikan
     _eggIsExtracting = false
     _eggLockEnd      = 0
+    _eggTriggeredAt  = -math.huge
     _G._chestApproached=nil  -- reset agar chest berikutnya di-approach ulang
     _farmLoopRunning=false
 end
