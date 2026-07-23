@@ -423,7 +423,7 @@ local function startFarmLoop()
             if not egg or egg:GetAttribute("Broken") then
                 Services.RunService.Heartbeat:Wait()
             else
-                if not _autoAttackPaused then myHum.PlatformStand = true end
+                myHum.PlatformStand = true
                 -- Trigger awal: approach + ProximityPrompt/HoldKey sekali (jika belum cooldown)
                 if not _eggIsExtracting and os.clock() >= _eggLockEnd then
                     task.spawn(function() TriggerEggIfNeeded(egg) end)
