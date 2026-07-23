@@ -15,7 +15,6 @@ local GetSeasonShopCatalog         = H.GetSeasonShopCatalog  -- catalog Season v
 local GetItemDisplayName           = H.GetItemDisplayName    -- nama visual dari ItemId
 local HttpService  = H.HttpService
 local FOLDER_NAME  = H.FOLDER_NAME or "XiFilHub_Configs"
-local SCAN_CACHE_PATH = FOLDER_NAME .. "/autobuy_scan_cache.json"
 local CreateTab      = H.CreateTab
 local CreateSection  = H.CreateSection
 local CreateToggleUI = H.CreateToggleUI
@@ -57,6 +56,7 @@ local function makeCatBtn(label, cat, langKey)
         for k, cb in pairs(catButtons) do
             cb.BackgroundColor3 = k == cat and Color3.fromRGB(40,100,180) or Color3.fromRGB(35,35,55)
         end
+        task.spawn(RunScan)
     end)
 end
 
@@ -101,64 +101,6 @@ end
 -- Catalog sources — dimuat ulang dari module saat startup, tidak perlu di-cache
 local CATALOG_SOURCES = { GoldV2 = true, BondV2 = true, SeasonV2 = true }
 
--- Simpan metadata item non-catalog ke file JSON (hanya legacy GoldBond/Season dari GUI)
-local function SaveScanCache()
-    local data = {}
-    for k, v in pairs(BuyButtonsRef) do
-        if not CATALOG_SOURCES[v.Source] then
-            data[k] = {
-                Name        = v.Name,
-                Badge       = v.Badge,
-                Source      = v.Source,
-                Price       = v.Price,
-                SeasonFrame = v.SeasonFrame,
-            }
-        end
-    end
-    pcall(function()
-        if not isfolder(FOLDER_NAME) then makefolder(FOLDER_NAME) end
-        writefile(SCAN_CACHE_PATH, HttpService:JSONEncode(data))
-    end)
-end
-
--- Rebuild button list dari cache file — tidak butuh toko terbuka
-local function LoadScanCache()
-    if not (isfile and isfile(SCAN_CACHE_PATH)) then return 0 end
-    local ok, raw = pcall(readfile, SCAN_CACHE_PATH)
-    if not ok or not raw or raw == "" then return 0 end
-    local dok, data = pcall(HttpService.JSONDecode, HttpService, raw)
-    if not dok or type(data) ~= "table" then return 0 end
-
-    -- Hapus tombol lama sebelum rebuild
-    for _, c in ipairs(ShopListContainer:GetChildren()) do
-        if c:IsA("TextButton") then c:Destroy() end
-    end
-    table.clear(BuyButtonsRef)
-
-    local count = 0
-    for key, meta in pairs(data) do
-        if type(meta) == "table" and meta.Source and meta.Source ~= "GoldV2" then
-            local labelText
-            if meta.Source == "Season" then
-                local priceTag = (meta.Price and meta.Price ~= "") and ("  🎫"..meta.Price) or ""
-                labelText = "  🌸 " .. (meta.Name or key) .. priceTag
-            else
-                -- GoldBond
-                labelText = "  " .. (meta.Badge or "💰") .. " " .. (meta.Name or key)
-            end
-            AddBuyButton(key, labelText, {
-                Name        = meta.Name or key,
-                Badge       = meta.Badge or "💰",
-                Source      = meta.Source,
-                Price       = meta.Price,
-                SeasonFrame = meta.SeasonFrame,
-            })
-            count = count + 1
-        end
-    end
-    return count
-end
-
 -- [UPDATE] Menyisipkan "lblEnableAutoBuy" di akhir parameter untuk auto translate
 _G.AutoBuyToggle = CreateToggleUI(BuyPage, "🛒 Enable Multi Auto-Buy", EngineConfig.AutoBuyActive, function(v)
     local cnt = 0; for _ in pairs(EngineConfig.AutoBuyTargetList) do cnt = cnt+1 end
@@ -176,7 +118,7 @@ _G.AutoBuyToggle = CreateToggleUI(BuyPage, "🛒 Enable Multi Auto-Buy", EngineC
     EngineConfig.AutoBuyActive = v; CustomNotify("AUTO BUY", v and ("Berjalan! ("..cnt.." item)") or "Dimatikan.",2)
 end, "lblEnableAutoBuy")
 
-CreateButton(BuyPage, "🔄 Scan Shop", function()
+local function RunScan()
     for _, c in ipairs(ShopListContainer:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
     table.clear(BuyButtonsRef)
 
@@ -327,9 +269,8 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
         CustomNotify("SCAN","0 item cocok. Cek nama di Output!",5)
     else
         CustomNotify("SHOP","Memuat "..total.." item ("..BuyCategory..").",3)
-        SaveScanCache()
     end
-end, "btnScanGoldShop")
+end
 
 -- Background Loop untuk Update Stok Real-time (Anti Geser & Warna Aman)
 -- Catalog sources (GoldV2/BondV2/SeasonV2): tampil badge+nama+harga, overlay stok dari GUI jika ada
@@ -383,49 +324,7 @@ task.spawn(function()
     end
 end)
 
--- [STARTUP] Auto-load semua catalog saat script pertama jalan — tidak perlu Scan manual
-task.defer(function()
-    local counts = { gold = 0, bond = 0, season = 0 }
-
-    -- Gold
-    for _, item in ipairs(GetGoldShopCatalog and GetGoldShopCatalog(false) or {}) do
-        local key = "GoldV2_" .. item.ItemId
-        if not BuyButtonsRef[key] then
-            local name  = GetItemDisplayName(item.ItemId)
-            local price = item.Price and ("  💰"..tostring(item.Price)) or ""
-            AddBuyButton(key, "  💰 "..name..price, { Name=name, Badge="💰", Source="GoldV2", ItemId=item.ItemId, Price=price })
-            counts.gold = counts.gold + 1
-        end
-    end
-
-    -- Bond
-    for _, item in ipairs(GetBondShopCatalog and GetBondShopCatalog(false) or {}) do
-        local key = "BondV2_" .. item.ItemId
-        if not BuyButtonsRef[key] then
-            local name  = GetItemDisplayName(item.ItemId)
-            local price = item.Price and ("  💎"..tostring(item.Price)) or ""
-            AddBuyButton(key, "  💎 "..name..price, { Name=name, Badge="💎", Source="BondV2", ItemId=item.ItemId, Price=price })
-            counts.bond = counts.bond + 1
-        end
-    end
-
-    -- Season
-    for _, item in ipairs(GetSeasonShopCatalog and GetSeasonShopCatalog(false) or {}) do
-        local key = item.ShopId
-        if not BuyButtonsRef[key] then
-            local name     = GetItemDisplayName(item.ItemId)
-            local priceTag = item.Price and ("  🎫"..tostring(item.Price)) or ""
-            local limitTag = item.LimitTimes and ("  [L:"..tostring(item.LimitTimes).."]") or ""
-            AddBuyButton(key, "  🌸 "..name..priceTag..limitTag, { Name=name, Badge="🌸", Source="SeasonV2", ItemId=item.ItemId, Price=tostring(item.Price or ""), LimitTimes=item.LimitTimes })
-            counts.season = counts.season + 1
-        end
-    end
-
-    local total = counts.gold + counts.bond + counts.season
-    if total > 0 then
-        CustomNotify("🛒 AUTO BUY",
-            "📂 "..total.." item dimuat ("..counts.gold.." Grocery · "..counts.bond.." Bond · "..counts.season.." Season).", 5)
-    end
-end)
+-- [STARTUP] Auto-scan kategori aktif saat script pertama jalan
+task.defer(RunScan)
 
 --------------------------------------------------------------------------------
