@@ -11,7 +11,7 @@ local LANGUAGES = { "Indonesia", "English" }
 local LANG_STRINGS = {
     Indonesia = {
         tabFarm="🏠 Farm", tabVector="⚙️ Vector", tabProfile="💾 Profil",
-        tabSell="💰 Jual", tabRoom="🚪 Room", tabForge="🔨 Forge",
+        tabSell="💰 Jual", tabRoom="🚪 Room", tabForge="🏪 NPC",
         tabAppear="🎨 Tampilan", tabFont="🔤 Font", tabFx="✨ Efek",
         secTheme="Tema Warna GUI", secTrans="Transparansi",
         secGesture="Gesture & Open Button", secTabMode="Mode Tab",
@@ -27,7 +27,7 @@ local LANG_STRINGS = {
         btnCatSeason="🌸 Toko Season",
         btnCatAll="🌐 Semua",
 
-        tabSell="🏪 Jual",       tabRoom="🗺️ Room",       tabForge="⚒️ Tempa",
+        tabSell="🏪 Jual",       tabRoom="🗺️ Room",       tabForge="🏪 NPC",
         tabAppear="🖌️ Tampilan", tabFont="🔡 Font",       tabFx="🌟 Efek",
         -- Header Seksi (Game)
         secWorld="Dunia",
@@ -171,7 +171,7 @@ local LANG_STRINGS = {
         lblUtilRaceSelect="Target Race",
         lblUtilAutoReroll="🎲 Auto Reroll Race",
         btnScanGoldShop="🔄 Scan Toko ",
-        btnForgeBypass="🚀 Bypass FORGE",
+        btnForgeBypass="🔨 Buka Forge",
         btnOpenEnchant="🔮 Buka Enchantment & Rune",
         btnOpenGrocery="🛒 Buka Toko Bahan",
         btnOpenPetUpgrade="🐾 Buka Upgrade Pet",
@@ -191,7 +191,7 @@ local LANG_STRINGS = {
     },
     English = {
         tabFarm="🏠 Farm", tabVector="⚙️ Vector", tabProfile="💾 Profile",
-        tabSell="💰 Sell", tabRoom="🚪 Room", tabForge="🔨 Forge",
+        tabSell="💰 Sell", tabRoom="🚪 Room", tabForge="🏪 NPC",
         tabAppear="🎨 Appearance", tabFont="🔤 Font", tabFx="✨ Effects",
         secTheme="GUI Color Theme", secTrans="Transparency",
         secGesture="Gesture & Open Button", secTabMode="Tab Mode",
@@ -207,7 +207,7 @@ local LANG_STRINGS = {
         btnCatSeason="🌸 Season Shop",
         btnCatAll="🌐 All",
 
-      tabRoom="🗺️ Room",         tabForge="⚒️ Forge",
+      tabRoom="🗺️ Room",         tabForge="🏪 NPC",
         tabAppear="🖌️ Appearance", tabFont="🔡 Font",         tabFx="🌟 Effects",
         -- Section headers (Game)
         secWorld="World",
@@ -350,7 +350,7 @@ local LANG_STRINGS = {
         lblUtilRaceSelect="Target Race",
         lblUtilAutoReroll="🎲 Auto Reroll Race",
         btnScanGoldShop="🔄 Scan Gold Shop",
-        btnForgeBypass="🚀 Bypass FORGE",
+        btnForgeBypass="🔨 Open Forge",
         btnOpenEnchant="🔮 Open Enchantment & Runes",
         btnOpenGrocery="🛒 Open Grocery",
         btnOpenPetUpgrade="🐾 Open Pet Upgrade",

@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
---// ui/tab_forge.lua — S23 Tab 7: Forge & Utilities
+--// ui/tab_forge.lua — S23 Tab 7: NPC Utilities
 --------------------------------------------------------------------------------
 local H            = getgenv().Hub
 local EngineConfig = H.EngineConfig
@@ -13,10 +13,11 @@ local CreateTab     = H.CreateTab
 local CreateSection = H.CreateSection
 local CreateButton  = H.CreateButton
 
--- [S23] TAB 7 — FORGE & UTILITIES
+-- [S23] TAB 7 — NPC UTILITIES
 --------------------------------------------------------------------------------
-local ForgePage = CreateTab("🔨 Forge", "tabForge")
+local ForgePage = CreateTab("🏪 NPC", "tabForge")
 
+-- Patch QTE Forge agar auto-complete (tidak berubah)
 local ForgeUtil = require(Services.ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("ForgeSystem"):WaitForChild("ForgeUtil"))
 if not _G.OriginalQTE then _G.OriginalQTE = ForgeUtil.QTE end
 ForgeUtil.QTE = function(...)
@@ -31,32 +32,7 @@ ForgeUtil.QTE = function(...)
     end; return _G.OriginalQTE(...)
 end
 
-CreateSection(ForgePage, "Forge Utilities", "secForgeUtil")
-CreateButton(ForgePage, "🚀 Bypass FORGE", function()
-    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local hrp  = char:WaitForChild("HumanoidRootPart"); local prompt = nil
-    for _, v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") then
-            local txt = (v.ObjectText..v.ActionText):lower()
-            if v.Parent.Name:lower():match("forge") or txt:match("forge") or v.Parent.Name:lower():match("craft") or txt:match("craft") then
-                prompt = v; break end
-        end
-    end
-    if prompt and prompt.Parent:IsA("BasePart") then
-        CombatEngine.ResetPhysics(hrp); hrp.CFrame = prompt.Parent.CFrame*CFrame.new(0,2,0); task.wait(0.3)
-        if fireproximityprompt then fireproximityprompt(prompt) end
-    else CombatEngine.ResetPhysics(hrp); hrp.CFrame = CFrame.new(122.5,12,-45.8); task.wait(0.3) end
-    pcall(function()
-        local TaskRE = Services.ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("TaskSystem"):WaitForChild("TaskRE")
-        TaskRE:FireServer("UpdateTaskProgress","OpenGUIWindow","ScreenForging")
-    end, "btnForgeBypass")
-    pcall(function()
-        local FUI = LocalPlayer.PlayerGui:FindFirstChild("ScreenForging") or LocalPlayer.PlayerGui:FindFirstChild("ForgeGui")
-        if FUI then for _, obj in pairs(FUI:GetChildren()) do if obj:IsA("Frame") then obj.Visible = true end end end
-    end, "btnForgeBypass")
-    CustomNotify("FORGE","TP & Bypass Berhasil.",3)
-end)
-
+-- Helper: TP ke ProximityPrompt yang cocok keyword lalu fire
 local function TPAndOpenByKeyword(keywords, notifTitle)
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local hrp  = char:WaitForChild("HumanoidRootPart"); local prompt = nil
@@ -75,6 +51,37 @@ local function TPAndOpenByKeyword(keywords, notifTitle)
 end
 
 CreateSection(ForgePage, "NPC Utility Access", "secNpcUtil")
+
+-- Forge: scan keyword + fallback CFrame + buka GUI
+CreateButton(ForgePage, "🔨 Open Forge", function()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hrp  = char:WaitForChild("HumanoidRootPart"); local prompt = nil
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            local txt = (v.ObjectText..v.ActionText):lower()
+            if v.Parent.Name:lower():match("forge") or txt:match("forge")
+            or v.Parent.Name:lower():match("craft") or txt:match("craft") then
+                prompt = v; break
+            end
+        end
+    end
+    if prompt and prompt.Parent:IsA("BasePart") then
+        CombatEngine.ResetPhysics(hrp); hrp.CFrame = prompt.Parent.CFrame*CFrame.new(0,2,0); task.wait(0.3)
+        if fireproximityprompt then fireproximityprompt(prompt) end
+    else
+        CombatEngine.ResetPhysics(hrp); hrp.CFrame = CFrame.new(122.5,12,-45.8); task.wait(0.3)
+    end
+    pcall(function()
+        local TaskRE = Services.ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("TaskSystem"):WaitForChild("TaskRE")
+        TaskRE:FireServer("UpdateTaskProgress","OpenGUIWindow","ScreenForging")
+    end)
+    pcall(function()
+        local FUI = LocalPlayer.PlayerGui:FindFirstChild("ScreenForging") or LocalPlayer.PlayerGui:FindFirstChild("ForgeGui")
+        if FUI then for _, obj in pairs(FUI:GetChildren()) do if obj:IsA("Frame") then obj.Visible = true end end end
+    end)
+    CustomNotify("FORGE","UI berhasil dibuka!",3)
+end, "btnForgeBypass")
+
 CreateButton(ForgePage, "🔮 Open Enchantment & Runes",  function() TPAndOpenByKeyword({"enchant"},"ENCHANTMENT") end, "btnOpenEnchant")
 CreateButton(ForgePage, "🛒 Open Grocery",              function() TPAndOpenByKeyword({"grocery","grocer"},"GROCERY") end, "btnOpenGrocery")
 CreateButton(ForgePage, "🐾 Open Pet Upgrade",          function() TPAndOpenByKeyword({"pet","upgrade","petupgrade"},"PET UPGRADE") end, "btnOpenPetUpgrade")
