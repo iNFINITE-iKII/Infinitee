@@ -67,6 +67,92 @@ local function GetEggGroundCFrame(egg)
     return lowestCF or egg:GetPivot()
 end
 
+-- ============================================================================
+-- [EGG V6] Sistem Trigger Egg — ported dari V6 (ProximityPrompt + HoldKey F)
+-- On/Off: EngineConfig.FarmTargetEgg (toggle 🥚 Egg di UI)
+-- Terhubung ke: FarmPosition, FarmHeight via GetPositionCFrame + ApplyMovement
+-- ============================================================================
+
+-- State variables
+local _eggIsExtracting = false   -- true saat TriggerEggIfNeeded sedang jalan
+local _eggLastTriggered = nil    -- referensi egg terakhir yang di-trigger
+local _eggLockEnd      = 0       -- os.clock() deadline cooldown setelah trigger (12 detik)
+local _eggRayParams    = RaycastParams.new()
+_eggRayParams.FilterType = Enum.RaycastFilterType.Exclude
+
+-- Cari ProximityPrompt di dalam model DragonEgg (rekursif)
+local function GetEggPrompt(eggModel)
+    return eggModel and eggModel:FindFirstChildWhichIsA("ProximityPrompt", true) or nil
+end
+
+-- Teleport karakter ke posisi ground di bawah egg via CFrame + Raycast
+-- Mengembalikan true jika berhasil
+local function MoveToEggGround(eggModel)
+    local char  = LocalPlayer.Character
+    local myHRP = char and char:FindFirstChild("HumanoidRootPart")
+    local myHum = char and char:FindFirstChildOfClass("Humanoid")
+    if not myHRP or not myHum then return false end
+
+    local eggCF  = GetEggGroundCFrame(eggModel)
+    local eggPos = eggCF.Position
+
+    _eggRayParams.FilterDescendantsInstances = { eggModel, char }
+    local ray     = Workspace:Raycast(eggPos + Vector3.new(0, 8, 0), Vector3.new(0, -35, 0), _eggRayParams)
+    local groundPos = ray and ray.Position or eggPos
+
+    CombatEngine.ResetPhysics(myHRP)
+    myHRP.CFrame = CFrame.new(groundPos + Vector3.new(0, 3, 0), eggPos)
+    myHRP.AssemblyLinearVelocity = Vector3.zero
+    myHum:ChangeState(Enum.HumanoidStateType.Running)
+    task.wait(0.35)
+    return true
+end
+
+-- Trigger egg: ProximityPrompt (utama) atau HoldKey F 3 detik (fallback).
+-- Lock 12 detik setelah trigger agar tidak spam.
+local function TriggerEggIfNeeded(eggModel)
+    if _eggIsExtracting then return end
+    if _eggLastTriggered == eggModel and os.clock() < _eggLockEnd then return end
+
+    _eggIsExtracting = true
+
+    if not MoveToEggGround(eggModel) then
+        _eggIsExtracting = false
+        return
+    end
+
+    local char  = LocalPlayer.Character
+    local myHRP = char and char:FindFirstChild("HumanoidRootPart")
+    local eggCF = GetEggGroundCFrame(eggModel)
+    if not myHRP or (myHRP.Position - eggCF.Position).Magnitude > 24 then
+        _eggIsExtracting = false
+        return
+    end
+
+    _eggLastTriggered = eggModel
+    local prompt = GetEggPrompt(eggModel)
+    if prompt then
+        print("[Egg V6] Triggering ProximityPrompt...")
+        pcall(function()
+            if fireproximityprompt then
+                fireproximityprompt(prompt)
+            else
+                prompt:InputHoldBegin()
+                task.wait((prompt.HoldDuration or 3) + 0.1)
+                prompt:InputHoldEnd()
+            end
+        end)
+    else
+        print("[Egg V6] Prompt not found — HoldKey F 3s fallback...")
+        pcall(function() Services.VirtualInputManager:SendKeyEvent(true,  Enum.KeyCode.F, false, game) end)
+        task.wait(3.0)
+        pcall(function() Services.VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game) end)
+    end
+
+    _eggIsExtracting = false
+    _eggLockEnd = os.clock() + 12.0
+end
+
 -- [S08] FARM LOOP
 -- Satu loop terpadu menangani semua prioritas: Chest > Egg > Enemy.
 -- Guard _farmLoopRunning mencegah instance ganda saat toggle dinyalakan ulang.
@@ -222,15 +308,13 @@ local function startFarmLoop()
     _G._tartarusYLockSetAt  = nil  -- tick() saat Y lock terakhir dibuat; reset setiap 2 detik
     if _G._tartarusYLockConn then pcall(function() _G._tartarusYLockConn:Disconnect() end) end
     _G._tartarusYLockConn = nil -- Heartbeat koreksi Y drift Tartarus
-    -- [CHEST/EGG GUARD]
-    -- _worldHasMonster : true setelah GetValidMonsters() mengembalikan hasil non-empty (monster terdeteksi).
-    -- _eggSessionDone  : true setelah 1 egg dihancurkan; reset setelah karakter berhasil hit monster.
-    -- _eggWindowStart  : tick() saat monster terakhir di-hit; egg hanya boleh ditarget selama 7 detik sejak ini.
+    -- [CHEST GUARD]
     _G._worldHasFind    = false
     _G._worldHasMonster = false
-    _G._eggSessionDone  = false
-    _G._eggWindowStart  = 0     -- 0 = belum pernah hit monster; egg terkunci sampai monster pertama di-hit
-    _G._eggLastFase1    = 0     -- tick() saat Fase 1 terakhir dijalankan; ulangi Fase 1 tiap 3 detik
+    -- [EGG V6] Reset state per sesi farm baru
+    _eggIsExtracting = false
+    _eggLastTriggered = nil
+    _eggLockEnd      = 0
 
     -- [ENDLESS TOWER] State per-session
     _G._endlessTowerWaitUntil    = 0     -- tick() kapan CFrame pertama boleh jalan (delay setelah target habis)
@@ -323,99 +407,43 @@ local function startFarmLoop()
                 end
             else Services.RunService.Heartbeat:Wait() end
 
-        -- ──────────────── PRIORITAS 2: EGG ────────────────
-        -- [GUARD] Hanya 1 egg per sesi; setelah egg hancur (_eggSessionDone=true),
-        -- karakter harus hit monster dulu sebelum bisa menargetkan egg berikutnya.
-        -- [WINDOW 7 DETIK] Egg hanya boleh ditarget dalam 7 detik sejak monster terakhir di-hit.
-        -- Jika window habis (atau belum pernah hit monster), egg di-skip sampai fase monster berikutnya.
-        elseif EngineConfig.FarmTargetEgg and not _G._eggSessionDone
-            and _G._eggWindowStart > 0
-            and (tick() - _G._eggWindowStart) <= 7
-            and (function()
-            local egg = GetActiveDragonEgg()
-            return egg and not egg:GetAttribute("Broken")
+        -- ──────────────── PRIORITAS 2: EGG (V6 Method) ────────────────
+        -- On/Off : toggle 🥚 Egg di UI (EngineConfig.FarmTargetEgg)
+        -- Deteksi: GetActiveDragonEgg() — scan workspace, cek Broken attribute
+        -- Trigger: ProximityPrompt (utama) atau HoldKey F 3s (fallback) — sekali per 12 detik
+        -- Orbit  : selama menunggu cooldown, karakter orbit egg sesuai FarmPosition & FarmHeight
+        elseif EngineConfig.FarmTargetEgg and (function()
+            local e = GetActiveDragonEgg()
+            return e and not e:GetAttribute("Broken")
         end)() then
             noTargetTimer=0; EngineConfig.IsLockDelay=false
             local egg = GetActiveDragonEgg()
-            -- Reset jika egg hilang atau sudah pecah; tandai sesi egg selesai
             if not egg or egg:GetAttribute("Broken") then
-                if _G._eggApproached then _G._eggSessionDone = true end
-                _G._eggApproached = nil
-            end
-            if egg and not egg:GetAttribute("Broken") then
-                if not _autoAttackPaused then myHum.PlatformStand=true end
-
-                -- Cek per-referensi: egg BERBEDA = pendekatan baru,
-                -- atau 3 detik sejak Fase 1 terakhir → ulangi Fase 1
-                if _G._eggApproached ~= egg or (tick() - (_G._eggLastFase1 or 0)) >= 3 then
-                    _G._eggApproached = egg
-                    _G._eggLastFase1  = tick()
-                    -- ▶ FASE 1: CFrame ke posisi TERENDAH egg (anti-model tinggi palsu)
-                    local eggCF = GetEggGroundCFrame(egg)
-                    CombatEngine.ResetPhysics(myHRP)
-                    myHRP.CFrame = eggCF + Vector3.new(0, 3, 0)
-                    -- [ROOT SNAP] Jika DragonEgg punya child "Root" (BasePart),
-                    -- CFrame ke posisi Root setelah snap ke model egg.
-                    local eggRoot = egg:FindFirstChild("Root")
-                    if eggRoot and eggRoot:IsA("BasePart") then
-                        myHRP.CFrame = eggRoot.CFrame
-                    end
-                    local elapsed = 0
-                    while elapsed < 1 do
-                        if not EngineConfig.AutoFarmActive then break end
-                        if egg:GetAttribute("Broken") then break end
-                        -- Guard window: jika 7 detik habis di tengah Fase 1, hentikan segera
-                        if (tick() - _G._eggWindowStart) > 7 then
-                            _G._eggSessionDone = true
-                            _G._eggApproached  = nil
-                            break
-                        end
-                        pcall(function()
-                            for _, obj in ipairs(egg:GetDescendants()) do
-                                if obj:IsA("ProximityPrompt") then fireproximityprompt(obj) end
-                            end
-                        end)
-                        -- Refresh posisi terendah tiap iterasi (antisipasi model berubah ukuran)
-                        eggCF = GetEggGroundCFrame(egg)
-                        FireWeaponAttack(egg, eggCF)
-                        task.wait(0.1)
-                        elapsed = elapsed + 0.1
-                    end
+                Services.RunService.Heartbeat:Wait()
+            else
+                if not _autoAttackPaused then myHum.PlatformStand = true end
+                -- Fire trigger sekali jika belum dalam cooldown (spawn agar loop tidak block)
+                if not _eggIsExtracting and os.clock() >= _eggLockEnd then
+                    task.spawn(function() TriggerEggIfNeeded(egg) end)
                 end
-
-                -- ▶ FASE 2: Orbit di sekitar DragonEgg + full auto attack setiap frame
-                -- Guard: jika window 7 detik habis di tengah Fase 2, skip egg
-                if (tick() - _G._eggWindowStart) > 7 then
-                    _G._eggSessionDone = true
-                    _G._eggApproached  = nil
-                else
-                -- Pakai posisi terendah egg (bukan pivot/PrimaryPart yang bisa dipalsukan)
+                -- Selama menunggu: orbit egg sesuai FarmPosition (terhubung ke Height & Posisi Farm)
                 local eggGroundCF = GetEggGroundCFrame(egg)
                 local eggPivot    = eggGroundCF.Position
-                local dropCF = GetPositionCFrame(eggPivot, EngineConfig.FarmPosition)
-                -- Jika karakter terlalu jauh dari egg (>50 stud), paksa CFrame langsung
-                -- supaya tidak mematung saat Lerp mode aktif
+                local dropCF      = GetPositionCFrame(eggPivot, EngineConfig.FarmPosition)
                 if (myHRP.Position - eggPivot).Magnitude > 50 then
                     CombatEngine.ResetPhysics(myHRP)
                     myHRP.CFrame = dropCF
                 else
                     ApplyMovement(myHRP, dropCF)
                 end
-                -- Full auto attack ke posisi terendah egg
-                if not _autoAttackPaused then
-                    task.defer(function() FireWeaponAttack(egg, eggGroundCF) end)
-                end
                 task.wait(EngineConfig.CFrameDelay)
-                end -- end window guard FASE 2
-            else Services.RunService.Heartbeat:Wait() end
+            end
 
         -- ──────────────── PRIORITAS 3: MONSTER ────────────────
         elseif EngineConfig.FarmTargetMonster and #CombatEngine.GetValidMonsters()>0 then
             noTargetTimer=0; EngineConfig.IsLockDelay=false
             -- Tandai: monster terdeteksi → chest & egg boleh diproses
             _G._worldHasMonster = true
-            _G._eggSessionDone  = false  -- karakter sudah hit monster → egg boleh ditarget lagi
-            _G._eggWindowStart  = tick() -- reset window 7 detik: egg boleh ditarget mulai sekarang
             -- Tandai: ada monster di World3 → orbit akan dipicu saat monster habis
             if worldIdx==3 then _G._world3OrbitDone=false end
             if not _autoAttackPaused then myHum.PlatformStand=true end
@@ -783,7 +811,9 @@ local function startFarmLoop()
         if myHum and not EngineConfig.FlyActive then myHum.PlatformStand=false end
         EngineConfig.IsLockDelay=false
     end)
-    _G._eggApproached=nil    -- reset agar egg berikutnya di-approach ulang
+    -- Reset egg V6 state saat farm dimatikan
+    _eggIsExtracting = false
+    _eggLockEnd      = 0
     _G._chestApproached=nil  -- reset agar chest berikutnya di-approach ulang
     _farmLoopRunning=false
 end
