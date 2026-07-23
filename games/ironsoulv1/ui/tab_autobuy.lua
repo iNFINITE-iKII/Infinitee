@@ -10,6 +10,9 @@ local RegisterTranslation          = H.RegisterTranslation
 local FindGoldShopScrollingFrame   = H.FindGoldShopScrollingFrame
 local FindSeasonShopScrollingFrame = H.FindSeasonShopScrollingFrame
 local GetGoldShopCatalog           = H.GetGoldShopCatalog   -- [GoldV2] catalog via module
+local HttpService  = H.HttpService
+local FOLDER_NAME  = H.FOLDER_NAME or "XiFilHub_Configs"
+local SCAN_CACHE_PATH = FOLDER_NAME .. "/autobuy_scan_cache.json"
 local CreateTab      = H.CreateTab
 local CreateSection  = H.CreateSection
 local CreateToggleUI = H.CreateToggleUI
@@ -67,6 +70,90 @@ ShopListContainer.Name = "SLC"; ShopListContainer.Size = UDim2.new(1,0,0,200); S
 ShopListContainer.ScrollBarThickness = 3; ShopListContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
 local SLL = Instance.new("UIListLayout",ShopListContainer); SLL.Padding = UDim.new(0,4); SLL.SortOrder = Enum.SortOrder.LayoutOrder
 
+--------------------------------------------------------------------------------
+-- [CACHE] Shared button factory — dipakai scan maupun load-from-cache
+--------------------------------------------------------------------------------
+local function AddBuyButton(key, labelText, meta)
+    local btn = Instance.new("TextButton", ShopListContainer)
+    btn.Size = UDim2.new(1,-10,0,30)
+    btn.Font = Enum.Font.GothamMedium; btn.TextSize = 11
+    btn.TextXAlignment = Enum.TextXAlignment.Left; btn.BorderSizePixel = 0
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+    btn.Text            = labelText
+    btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[key] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
+    btn.TextColor3      = Color3.fromRGB(255,255,255)
+    btn.MouseButton1Click:Connect(function()
+        if EngineConfig.AutoBuyTargetList[key] then
+            EngineConfig.AutoBuyTargetList[key] = nil
+            btn.BackgroundColor3 = Color3.fromRGB(28,28,40)
+        else
+            EngineConfig.AutoBuyTargetList[key] = true
+            btn.BackgroundColor3 = Color3.fromRGB(30,100,50)
+        end
+    end)
+    meta.Button = btn
+    BuyButtonsRef[key] = meta
+    return btn
+end
+
+-- Simpan metadata semua item (bukan GoldV2) ke file JSON
+local function SaveScanCache()
+    local data = {}
+    for k, v in pairs(BuyButtonsRef) do
+        if v.Source ~= "GoldV2" then
+            data[k] = {
+                Name        = v.Name,
+                Badge       = v.Badge,
+                Source      = v.Source,
+                Price       = v.Price,
+                SeasonFrame = v.SeasonFrame,
+            }
+        end
+    end
+    pcall(function()
+        if not isfolder(FOLDER_NAME) then makefolder(FOLDER_NAME) end
+        writefile(SCAN_CACHE_PATH, HttpService:JSONEncode(data))
+    end)
+end
+
+-- Rebuild button list dari cache file — tidak butuh toko terbuka
+local function LoadScanCache()
+    if not (isfile and isfile(SCAN_CACHE_PATH)) then return 0 end
+    local ok, raw = pcall(readfile, SCAN_CACHE_PATH)
+    if not ok or not raw or raw == "" then return 0 end
+    local dok, data = pcall(HttpService.JSONDecode, HttpService, raw)
+    if not dok or type(data) ~= "table" then return 0 end
+
+    -- Hapus tombol lama sebelum rebuild
+    for _, c in ipairs(ShopListContainer:GetChildren()) do
+        if c:IsA("TextButton") then c:Destroy() end
+    end
+    table.clear(BuyButtonsRef)
+
+    local count = 0
+    for key, meta in pairs(data) do
+        if type(meta) == "table" and meta.Source and meta.Source ~= "GoldV2" then
+            local labelText
+            if meta.Source == "Season" then
+                local priceTag = (meta.Price and meta.Price ~= "") and ("  🎫"..meta.Price) or ""
+                labelText = "  🌸 " .. (meta.Name or key) .. priceTag
+            else
+                -- GoldBond
+                labelText = "  " .. (meta.Badge or "💰") .. " " .. (meta.Name or key)
+            end
+            AddBuyButton(key, labelText, {
+                Name        = meta.Name or key,
+                Badge       = meta.Badge or "💰",
+                Source      = meta.Source,
+                Price       = meta.Price,
+                SeasonFrame = meta.SeasonFrame,
+            })
+            count = count + 1
+        end
+    end
+    return count
+end
+
 -- [UPDATE] Menyisipkan "lblEnableAutoBuy" di akhir parameter untuk auto translate
 _G.AutoBuyToggle = CreateToggleUI(BuyPage, "🛒 Enable Multi Auto-Buy", EngineConfig.AutoBuyActive, function(v)
     local cnt = 0; for _ in pairs(EngineConfig.AutoBuyTargetList) do cnt = cnt+1 end
@@ -108,7 +195,7 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
         return search(item) or fallback
     end
 
-    -- Helper: scan satu ScrollingFrame, buat tombol item
+    -- Helper: scan satu ScrollingFrame, buat tombol item via AddBuyButton
     local function scanSF(sf, prefixes, source)
         for _, item in ipairs(sf:GetChildren()) do
             local match = false
@@ -119,44 +206,18 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
                 local stockTXT    = item:FindFirstChild("StockTXT", true)
                 local stok        = tonumber(stockTXT and stockTXT.Text:match("%d+"))
                 local displayName = getVisualName(item, item.Name)
-                -- Badge berdasarkan currency: Gold_ = 💰, Bond_ = 💎
                 local badge = item.Name:sub(1,5) == "Gold_" and "💰"
                            or item.Name:find("SeasonShop_", 1, true) and "🌸"
                            or "💎"
                 total = total + 1
-
-                local btn = Instance.new("TextButton", ShopListContainer)
-                btn.Size = UDim2.new(1,-10,0,30)
-                btn.Font = Enum.Font.GothamMedium; btn.TextSize = 11
-                btn.TextXAlignment = Enum.TextXAlignment.Left; btn.BorderSizePixel = 0
-                Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
-
-                if not stockTXT or stok == 0 or stok == 10 then
-                    -- Stok 0/10 atau tidak ada StockTXT: tampilkan item tanpa angka stok
-                    btn.Text = "  " .. badge .. " " .. displayName
-                else
-                    btn.Text = "  " .. badge .. " " .. displayName .. "  [" .. stok .. "]"
-                end
-
-                btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[item.Name] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
-                btn.TextColor3 = Color3.fromRGB(255,255,255)
-
-                btn.MouseButton1Click:Connect(function()
-                    if EngineConfig.AutoBuyTargetList[item.Name] then
-                        EngineConfig.AutoBuyTargetList[item.Name] = nil
-                        btn.BackgroundColor3 = Color3.fromRGB(28,28,40)
-                    else
-                        EngineConfig.AutoBuyTargetList[item.Name] = true
-                        btn.BackgroundColor3 = Color3.fromRGB(30,100,50)
-                    end
-                end)
-
-                BuyButtonsRef[item.Name] = {
-                    Button = btn,
+                local labelText = (not stockTXT or stok == 0 or stok == 10)
+                    and ("  " .. badge .. " " .. displayName)
+                    or  ("  " .. badge .. " " .. displayName .. "  [" .. stok .. "]")
+                AddBuyButton(item.Name, labelText, {
                     Name   = displayName,
                     Badge  = badge,
-                    Source = source,  -- "GoldBond" atau "Season"
-                }
+                    Source = source,
+                })
             end
         end
     end
@@ -250,39 +311,14 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
                     end
 
                     total = total + 1
-
                     local priceTag = price ~= "" and ("  🎫" .. price) or ""
-
-                    local btn = Instance.new("TextButton", ShopListContainer)
-                    btn.Size = UDim2.new(1,-10,0,30)
-                    btn.Font = Enum.Font.GothamMedium; btn.TextSize = 11
-                    btn.TextXAlignment = Enum.TextXAlignment.Left; btn.BorderSizePixel = 0
-                    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
-
-                    -- Season tidak tampilkan stok
-                    btn.Text = "  🌸 " .. displayName .. priceTag
-
-                    btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[item.Name] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
-                    btn.TextColor3 = Color3.fromRGB(255,255,255)
-
-                    btn.MouseButton1Click:Connect(function()
-                        if EngineConfig.AutoBuyTargetList[item.Name] then
-                            EngineConfig.AutoBuyTargetList[item.Name] = nil
-                            btn.BackgroundColor3 = Color3.fromRGB(28,28,40)
-                        else
-                            EngineConfig.AutoBuyTargetList[item.Name] = true
-                            btn.BackgroundColor3 = Color3.fromRGB(30,100,50)
-                        end
-                    end)
-
-                    BuyButtonsRef[item.Name] = {
-                        Button      = btn,
+                    AddBuyButton(item.Name, "  🌸 " .. displayName .. priceTag, {
                         Name        = displayName,
                         Price       = price,
                         Badge       = "🌸",
                         Source      = "Season",
                         SeasonFrame = frameName,
-                    }
+                    })
                 end
             end
         end
@@ -310,34 +346,13 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
                 end
 
                 total = total + 1
-
-                local btn = Instance.new("TextButton", ShopListContainer)
-                btn.Size = UDim2.new(1,-10,0,30)
-                btn.Font = Enum.Font.GothamMedium; btn.TextSize = 11
-                btn.TextXAlignment = Enum.TextXAlignment.Left; btn.BorderSizePixel = 0
-                Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
-                btn.Text            = "  🔬 " .. itemId .. priceStr .. stockStr
-                btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[key] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
-                btn.TextColor3      = Color3.fromRGB(255,255,255)
-
-                btn.MouseButton1Click:Connect(function()
-                    if EngineConfig.AutoBuyTargetList[key] then
-                        EngineConfig.AutoBuyTargetList[key] = nil
-                        btn.BackgroundColor3 = Color3.fromRGB(28,28,40)
-                    else
-                        EngineConfig.AutoBuyTargetList[key] = true
-                        btn.BackgroundColor3 = Color3.fromRGB(30,100,50)
-                    end
-                end)
-
-                BuyButtonsRef[key] = {
-                    Button  = btn,
-                    Name    = itemId,
-                    Badge   = "🔬",
-                    Source  = "GoldV2",
-                    ItemId  = itemId,
-                    Price   = priceStr,
-                }
+                AddBuyButton(key, "  🔬 " .. itemId .. priceStr .. stockStr, {
+                    Name   = itemId,
+                    Badge  = "🔬",
+                    Source = "GoldV2",
+                    ItemId = itemId,
+                    Price  = priceStr,
+                })
             end
         end
     end
@@ -346,6 +361,10 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
         CustomNotify("SCAN","0 item cocok. Cek nama di Output!",5)
     else
         CustomNotify("SHOP","Memuat "..total.." item ("..BuyCategory..").",3)
+        -- Simpan hasil scan ke cache (GoldV2 tidak disimpan — pakai module catalog sendiri)
+        if BuyCategory ~= "GoldV2" then
+            SaveScanCache()
+        end
     end
 end, "btnScanGoldShop")
 
@@ -410,6 +429,12 @@ task.spawn(function()
     end
 end)
 
-
+-- [CACHE] Auto-load scan cache saat script pertama jalan — tidak perlu Scan ulang
+task.defer(function()
+    local n = LoadScanCache()
+    if n > 0 then
+        CustomNotify("🛒 AUTO BUY", "📂 " .. n .. " item dimuat dari cache. Tidak perlu Scan lagi!", 4)
+    end
+end)
 
 --------------------------------------------------------------------------------
