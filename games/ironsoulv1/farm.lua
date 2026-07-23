@@ -432,10 +432,14 @@ local function startFarmLoop()
                 local eggPivot    = eggGroundCF.Position
                 if os.clock() - _eggTriggeredAt < 2 then
                     -- ▶ FASE 1 (2 detik pertama setelah trigger):
-                    -- CFrame diam di bawah egg (height +3) + trigger terus-menerus setiap frame
-                    local belowEggCF = CFrame.new(eggPivot + Vector3.new(0, 3, 0), eggPivot)
+                    -- 1 detik pertama : 2 stud di ATAS egg
+                    -- 1 detik kedua   : 2 stud di BAWAH egg
+                    -- Sambil terus-menerus fire proximity prompt setiap frame
+                    local elapsed = os.clock() - _eggTriggeredAt
+                    local offsetY  = elapsed < 1 and 2 or -2
+                    local targetCF = CFrame.new(eggPivot + Vector3.new(0, offsetY, 0), eggPivot)
                     CombatEngine.ResetPhysics(myHRP)
-                    myHRP.CFrame = belowEggCF
+                    myHRP.CFrame = targetCF
                     pcall(function()
                         local prompt = GetEggPrompt(egg)
                         if prompt then
