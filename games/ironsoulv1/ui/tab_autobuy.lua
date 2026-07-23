@@ -6,9 +6,10 @@ local EngineConfig = H.EngineConfig
 local Services     = H.Services
 local LocalPlayer  = H.LocalPlayer
 local CustomNotify = H.CustomNotify
-local RegisterTranslation         = H.RegisterTranslation
-local FindGoldShopScrollingFrame  = H.FindGoldShopScrollingFrame
+local RegisterTranslation          = H.RegisterTranslation
+local FindGoldShopScrollingFrame   = H.FindGoldShopScrollingFrame
 local FindSeasonShopScrollingFrame = H.FindSeasonShopScrollingFrame
+local GetGoldShopCatalog           = H.GetGoldShopCatalog   -- [GoldV2] catalog via module
 local CreateTab      = H.CreateTab
 local CreateSection  = H.CreateSection
 local CreateToggleUI = H.CreateToggleUI
@@ -54,10 +55,11 @@ local function makeCatBtn(label, cat, langKey)
 end
 
 -- Menyisipkan langKey ke masing-masing tombol
-makeCatBtn("💰 Grocery",  "Gold",   "btnCatGrocery")
-makeCatBtn("💎 Bond Shop", "Bond",  "btnCatBond")
-makeCatBtn("🌸 Season",   "Season","btnCatSeason")
-makeCatBtn("🌐 All",      "Both",  "btnCatAll")
+makeCatBtn("💰 Grocery",  "Gold",    "btnCatGrocery")
+makeCatBtn("💎 Bond Shop", "Bond",   "btnCatBond")
+makeCatBtn("🌸 Season",   "Season", "btnCatSeason")
+makeCatBtn("🌐 All",      "Both",   "btnCatAll")
+makeCatBtn("🔬 GoldV2",   "GoldV2", "btnCatGoldV2")   -- [GoldV2] via module snapshot, tanpa GUI
 
 local BuyButtonsRef = {}
 local ShopListContainer = Instance.new("ScrollingFrame", BuyPage)
@@ -69,10 +71,10 @@ local SLL = Instance.new("UIListLayout",ShopListContainer); SLL.Padding = UDim.n
 _G.AutoBuyToggle = CreateToggleUI(BuyPage, "🛒 Enable Multi Auto-Buy", EngineConfig.AutoBuyActive, function(v)
     local cnt = 0; for _ in pairs(EngineConfig.AutoBuyTargetList) do cnt = cnt+1 end
     if v and cnt == 0 then CustomNotify("AUTO BUY WARN","Pilih item dulu!",3); EngineConfig.AutoBuyActive = false; _G.AutoBuyToggle:SetValue(false); return end
-    -- Season beli via FireServer (tidak butuh GUI terbuka); cek shop hanya kalau ada target Gold/Bond
+    -- Season & GoldV2 beli via FireServer (tidak butuh GUI terbuka); cek shop hanya kalau ada target Gold/Bond
     local needsShop = false
     for k in pairs(EngineConfig.AutoBuyTargetList) do
-        if not k:find("^SeasonShop_") then needsShop = true; break end
+        if not k:find("^SeasonShop_") and not k:find("^GoldV2_") then needsShop = true; break end
     end
     if v and needsShop and not FindGoldShopScrollingFrame() then CustomNotify("AUTO BUY WARN","Buka toko Consumable dulu!",3); EngineConfig.AutoBuyActive = false; _G.AutoBuyToggle:SetValue(false); return end
     EngineConfig.AutoBuyActive = v; CustomNotify("AUTO BUY", v and ("Berjalan! ("..cnt.." item)") or "Dimatikan.",2)
@@ -286,6 +288,60 @@ CreateButton(BuyPage, "🔄 Scan Shop", function()
         end
     end
 
+    -- [GoldV2] Scan via ConsumableShopUtil module — tidak butuh GUI terbuka
+    if BuyCategory == "GoldV2" then
+        local catalog = GetGoldShopCatalog and GetGoldShopCatalog(true) or {}
+        if #catalog == 0 then
+            CustomNotify("ERROR","GoldV2: Gagal ambil catalog. Pastikan kamu sudah masuk game!",5)
+        else
+            for _, item in ipairs(catalog) do
+                local itemId  = item.ItemId
+                local key     = "GoldV2_" .. itemId  -- prefix GoldV2_ untuk bedakan dari Gold biasa
+
+                -- Format label harga & stok
+                local priceStr = item.Price and ("  💰"..tostring(item.Price)) or ""
+                local stockStr = ""
+                if item.StockMin and item.StockMax then
+                    if item.StockMin == item.StockMax and item.StockMin and item.StockMin > 0 then
+                        stockStr = "  [×"..item.StockMin.."]"
+                    elseif item.StockMin and item.StockMax and item.StockMin ~= item.StockMax then
+                        stockStr = "  ["..item.StockMin.."-"..item.StockMax.."]"
+                    end
+                end
+
+                total = total + 1
+
+                local btn = Instance.new("TextButton", ShopListContainer)
+                btn.Size = UDim2.new(1,-10,0,30)
+                btn.Font = Enum.Font.GothamMedium; btn.TextSize = 11
+                btn.TextXAlignment = Enum.TextXAlignment.Left; btn.BorderSizePixel = 0
+                Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+                btn.Text            = "  🔬 " .. itemId .. priceStr .. stockStr
+                btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[key] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
+                btn.TextColor3      = Color3.fromRGB(255,255,255)
+
+                btn.MouseButton1Click:Connect(function()
+                    if EngineConfig.AutoBuyTargetList[key] then
+                        EngineConfig.AutoBuyTargetList[key] = nil
+                        btn.BackgroundColor3 = Color3.fromRGB(28,28,40)
+                    else
+                        EngineConfig.AutoBuyTargetList[key] = true
+                        btn.BackgroundColor3 = Color3.fromRGB(30,100,50)
+                    end
+                end)
+
+                BuyButtonsRef[key] = {
+                    Button  = btn,
+                    Name    = itemId,
+                    Badge   = "🔬",
+                    Source  = "GoldV2",
+                    ItemId  = itemId,
+                    Price   = priceStr,
+                }
+            end
+        end
+    end
+
     if total == 0 then
         CustomNotify("SCAN","0 item cocok. Cek nama di Output!",5)
     else
@@ -315,30 +371,37 @@ task.spawn(function()
             for itemName, data in pairs(BuyButtonsRef) do
                 local btn = data.Button
                 if btn and btn.Parent then
-                    -- Pilih SF yang tepat berdasarkan asal item
-                    local parentSF = (data.Source == "Season")
-                        and getSeasonSF(data.SeasonFrame)
-                        or sf
-                    if parentSF then
-                        local item = parentSF:FindFirstChild(itemName)
-                        if item then
-                            if data.Source == "Season" then
-                                -- Season: hanya tampil nama + harga, tanpa stok
-                                local priceTag = (data.Price and data.Price ~= "") and ("  🎫" .. data.Price) or ""
-                                btn.Text = "  🌸 " .. data.Name .. priceTag
-                            else
-                                -- Gold/Bond: tampil stok real-time
-                                local stockTXT = item:FindFirstChild("StockTXT", true)
-                                local stok     = tonumber(stockTXT and stockTXT.Text:match("%d+"))
-                                if not stockTXT or stok == 0 or stok == 10 then
-                                    btn.Text = "  " .. data.Badge .. " " .. data.Name
-                                else
-                                    btn.Text = "  " .. data.Badge .. " " .. data.Name .. "  [" .. stok .. "]"
-                                end
-                            end
 
-                            -- Warna dikunci ketat ke status TargetList
-                            btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[itemName] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
+                    if data.Source == "GoldV2" then
+                        -- [GoldV2] Tidak ada stok dari GUI; tampilkan nama + harga saja
+                        btn.Text = "  🔬 " .. data.Name .. (data.Price or "")
+                        btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[itemName] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
+                    else
+                        -- Pilih SF yang tepat berdasarkan asal item
+                        local parentSF = (data.Source == "Season")
+                            and getSeasonSF(data.SeasonFrame)
+                            or sf
+                        if parentSF then
+                            local item = parentSF:FindFirstChild(itemName)
+                            if item then
+                                if data.Source == "Season" then
+                                    -- Season: hanya tampil nama + harga, tanpa stok
+                                    local priceTag = (data.Price and data.Price ~= "") and ("  🎫" .. data.Price) or ""
+                                    btn.Text = "  🌸 " .. data.Name .. priceTag
+                                else
+                                    -- Gold/Bond: tampil stok real-time
+                                    local stockTXT = item:FindFirstChild("StockTXT", true)
+                                    local stok     = tonumber(stockTXT and stockTXT.Text:match("%d+"))
+                                    if not stockTXT or stok == 0 or stok == 10 then
+                                        btn.Text = "  " .. data.Badge .. " " .. data.Name
+                                    else
+                                        btn.Text = "  " .. data.Badge .. " " .. data.Name .. "  [" .. stok .. "]"
+                                    end
+                                end
+
+                                -- Warna dikunci ketat ke status TargetList
+                                btn.BackgroundColor3 = EngineConfig.AutoBuyTargetList[itemName] and Color3.fromRGB(30,100,50) or Color3.fromRGB(28,28,40)
+                            end
                         end
                     end
                 end

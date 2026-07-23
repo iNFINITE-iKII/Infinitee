@@ -883,6 +883,99 @@ local function FindGoldShopRemote()
     return nil
 end
 
+--------------------------------------------------------------------------------
+-- [GoldV2] Sistem Auto Buy V2 — via module snapshot, tidak butuh GUI terbuka
+-- Metode ported dari V6: GetShopSnapshot → FireServer("BuyShopItem","Gold",ItemKey)
+--------------------------------------------------------------------------------
+local _ShopUtilModule = nil
+local _ShopUtilRE     = nil
+
+local function GetShopUtilModule()
+    if not _ShopUtilModule then
+        local ok, m = pcall(function()
+            return Services.ReplicatedStorage
+                :WaitForChild("Framework", 3):WaitForChild("Features", 3)
+                :WaitForChild("ConsumableShopSystem", 3):WaitForChild("ConsumableShopUtil", 3)
+        end)
+        _ShopUtilModule = (ok and m) or nil
+    end
+    return _ShopUtilModule
+end
+
+local function GetShopUtil()
+    local m = GetShopUtilModule()
+    return m and require(m) or nil
+end
+
+local function GetShopUtilRE()
+    if not _ShopUtilRE then
+        local m = GetShopUtilModule()
+        _ShopUtilRE = m and m:FindFirstChild("RemoteEvent") or nil
+    end
+    return _ShopUtilRE
+end
+
+-- Ambil katalog lengkap Gold Shop via module (tanpa perlu GUI terbuka)
+-- Prioritas: getupvalues(ShopUtil.BuyItem) → fallback GetShopSnapshot
+local _CachedGoldV2Catalog = nil
+local function GetGoldShopCatalog(ForceRefresh)
+    if _CachedGoldV2Catalog and not ForceRefresh then
+        return _CachedGoldV2Catalog
+    end
+    local ShopUtil = GetShopUtil()
+    if not ShopUtil then return {} end
+
+    local ById = {}
+    local function AddItem(ItemKey, Item)
+        if type(Item) ~= "table" or type(Item.ItemId) ~= "string" then return end
+        if not ById[Item.ItemId] then
+            ById[Item.ItemId] = {
+                ItemId   = Item.ItemId,
+                ItemType = Item.ItemType,
+                Price    = Item.Price,
+                StockMin = Item.StockMin or Item.Stock,
+                StockMax = Item.StockMax or Item.Stock,
+                ItemKey  = ItemKey,
+            }
+        end
+    end
+
+    -- Coba getupvalues terlebih dahulu (lebih lengkap, tanpa butuh login snapshot)
+    local FullPool = nil
+    if getupvalues and type(ShopUtil.BuyItem) == "function" then
+        pcall(function()
+            local Upvalues = getupvalues(ShopUtil.BuyItem)
+            local ShopItems = type(Upvalues) == "table" and Upvalues[2]
+            FullPool = type(ShopItems) == "table" and ShopItems.Gold or nil
+        end)
+    end
+
+    if type(FullPool) == "table" then
+        for _, ItemKey in ipairs(FullPool.__index or {}) do
+            AddItem(ItemKey, FullPool[ItemKey])
+        end
+        for ItemKey, Item in pairs(FullPool) do
+            if ItemKey ~= "__index" then AddItem(ItemKey, Item) end
+        end
+    else
+        -- Fallback: ambil dari snapshot live
+        pcall(function()
+            local Snapshot = ShopUtil:GetShopSnapshot(LocalPlayer, "Gold")
+            if Snapshot and type(Snapshot.Items) == "table" then
+                for ItemKey, Item in pairs(Snapshot.Items) do
+                    AddItem(ItemKey, Item)
+                end
+            end
+        end)
+    end
+
+    local result = {}
+    for _, v in pairs(ById) do table.insert(result, v) end
+    table.sort(result, function(a, b) return a.ItemId < b.ItemId end)
+    _CachedGoldV2Catalog = result
+    return result
+end
+
 -- Dapatkan ScrollingFrame Season Shop
 -- Path: PlayerGui.MainGuiIgnoreGuiInset.ScreenSeasonPass.StoreStatistics.NormalFrame.ScrollingFrame
 local function FindSeasonShopScrollingFrame()
@@ -995,6 +1088,42 @@ task.spawn(function()
                         SeasonUtilRE:FireServer("BuySeasonShopItem", itemName)
                     end)
                     task.wait(0.3)
+                end
+            end
+        end
+    end
+end)
+
+-- Loop: Auto Buy GoldV2 — via GetShopSnapshot → FireServer("BuyShopItem","Gold",ItemKey)
+-- Tidak butuh GUI terbuka. Metode ported dari V6.
+local AutoBuyV2Delay = 0.55
+task.spawn(function()
+    while true do
+        task.wait(AutoBuyV2Delay)
+        if EngineConfig.AutoBuyActive then
+            -- Cek cepat: ada item GoldV2_ yang dipilih?
+            local hasV2 = false
+            for k in pairs(EngineConfig.AutoBuyTargetList) do
+                if k:find("^GoldV2_") then hasV2 = true; break end
+            end
+            if hasV2 then
+                local ShopUtil = GetShopUtil()
+                local RE       = GetShopUtilRE()
+                if ShopUtil and RE then
+                    pcall(function()
+                        local Snapshot = ShopUtil:GetShopSnapshot(LocalPlayer, "Gold")
+                        local Items    = Snapshot and Snapshot.Items
+                        if type(Items) ~= "table" then return end
+                        for ItemKey, Item in pairs(Items) do
+                            if type(Item) == "table" and Item.State == "normal" then
+                                local wantKey = "GoldV2_" .. tostring(Item.ItemId)
+                                if EngineConfig.AutoBuyTargetList[wantKey] then
+                                    RE:FireServer("BuyShopItem", "Gold", ItemKey)
+                                    task.wait(AutoBuyV2Delay)
+                                end
+                            end
+                        end
+                    end)
                 end
             end
         end
@@ -1159,6 +1288,8 @@ end)
 --------------------------------------------------------------------------------
 -- Export ke Hub
 --------------------------------------------------------------------------------
-H.startFarmLoop             = startFarmLoop
-H.FindGoldShopScrollingFrame  = FindGoldShopScrollingFrame   -- digunakan tab_autobuy
+H.startFarmLoop              = startFarmLoop
+H.FindGoldShopScrollingFrame  = FindGoldShopScrollingFrame    -- digunakan tab_autobuy
 H.FindSeasonShopScrollingFrame = FindSeasonShopScrollingFrame -- digunakan tab_autobuy
+H.GetGoldShopCatalog          = GetGoldShopCatalog            -- digunakan tab_autobuy (GoldV2)
+H.GetShopUtilRE               = GetShopUtilRE                 -- digunakan tab_autobuy (GoldV2)
