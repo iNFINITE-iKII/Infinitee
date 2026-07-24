@@ -701,6 +701,7 @@ startWithDRM(function(key, hwid)
     load("farm.lua")             -- Farm loop + background loops
     load("buff_card.lua")        -- Auto Buff Card selector
     load("auto_potion.lua")      -- Auto Potion engine
+    load("auto_forge.lua")       -- Auto Forge V6 engine
     load("translate.lua")        -- Sistem translate multi-bahasa
 
     -- UI — core dulu, lalu tiap tab
@@ -708,12 +709,12 @@ startWithDRM(function(key, hwid)
     load("ui/tab_farm.lua")       -- Tab 1: Farm
     load("ui/tab_vector.lua")    -- Tab 2: Vector Config
     load("ui/tab_autopotion.lua") -- Tab 3: Auto Potion
-    load("ui/tab_profile.lua")   -- Tab 4: Profile / Config System
-    load("ui/tab_util.lua")      -- Tab 5: Utilitas (Redeem, Lottery, Reward, Race)
-    load("ui/tab_sell.lua")      -- Tab 6: Sell
-    load("ui/tab_room.lua")      -- Tab 7: Room Hub
-    load("ui/tab_autobuy.lua")   -- Tab 8: Auto Buy
-    load("ui/tab_forge.lua")     -- Tab 9: Forge & Utilities
+    load("ui/tab_forge.lua")     -- Tab 4: Auto Forge V6
+    load("ui/tab_profile.lua")   -- Tab 5: Profile / Config System
+    load("ui/tab_util.lua")      -- Tab 6: Utilitas (Redeem, Lottery, Reward, Race)
+    load("ui/tab_sell.lua")      -- Tab 7: Sell
+    load("ui/tab_room.lua")      -- Tab 8: Room Hub
+    load("ui/tab_autobuy.lua")   -- Tab 9: Auto Buy
     load("ui/tab_visual.lua")    -- Tab 10-11: Tampilan, Font, Efek
 
     load("ui_sync.lua")          -- Sync semua visual UI + floating toggle button
