@@ -115,7 +115,7 @@ local _eggLastTriggered = nil        -- referensi egg terakhir yang di-trigger
 local _eggLockEnd       = 0          -- os.clock() deadline cooldown setelah trigger (12 detik)
 local _eggTriggeredAt   = -math.huge -- os.clock() saat trigger terakhir; 2 detik pertama = fase diam bawah egg
 local _eggCachedInst    = nil        -- egg instance yang sedang di-cache pivot-nya
-local _eggCachedPivot   = nil        -- Vector3 ground pivot egg; stabil, tidak scan tiap frame
+local _eggCachedPivot   = nil        -- Vector3 posisi scanner egg; stabil antar-scan
 -- Cari ProximityPrompt di dalam model DragonEgg (rekursif)
 local function GetEggPrompt(eggModel)
     return eggModel and eggModel:FindFirstChildWhichIsA("ProximityPrompt", true) or nil
@@ -149,7 +149,7 @@ local function TriggerEggIfNeeded(eggModel, eggPosition)
     -- ke orbit sementara TriggerEgg masih berjalan.
     _eggTriggeredAt   = os.clock()
 
-    -- Snap awal ke ground egg; Fase 1 main loop mengambil alih posisi setelahnya.
+    -- Teleport awal ke posisi egg + offset; Fase 1 mengambil alih setelahnya.
     MoveToEgg(eggModel, eggPosition)
 
     local prompt = GetEggPrompt(eggModel)
@@ -338,6 +338,9 @@ local function startFarmLoop()
     _eggTriggeredAt   = -math.huge
     _eggCachedInst    = nil
     _eggCachedPivot   = nil
+    _eggScanAt        = -math.huge
+    _eggScanResults   = {}
+    _eggBest          = nil
 
     -- [ENDLESS TOWER] State per-session
     _G._endlessTowerWaitUntil    = 0     -- tick() kapan CFrame pertama boleh jalan (delay setelah target habis)
@@ -453,8 +456,10 @@ local function startFarmLoop()
                 -- tiap frame dan tetap konsisten selama satu egg diproses.
                 if egg ~= _eggCachedInst then
                     _eggCachedInst  = egg
-                    _eggCachedPivot = eggPosition
                 end
+                -- Posisi scanner diperbarui setiap iterasi agar mengikuti egg
+                -- yang bergerak tanpa mengulang scan Workspace setiap frame.
+                _eggCachedPivot = eggPosition
                 local eggPivot    = _eggCachedPivot
                 local eggGroundCF = CFrame.new(eggPivot)
                 if os.clock() - _eggTriggeredAt < 2 then
@@ -881,6 +886,9 @@ local function startFarmLoop()
     _eggTriggeredAt   = -math.huge
     _eggCachedInst    = nil
     _eggCachedPivot   = nil
+    _eggScanAt        = -math.huge
+    _eggScanResults   = {}
+    _eggBest          = nil
     _G._chestApproached=nil  -- reset agar chest berikutnya di-approach ulang
     _farmLoopRunning=false
 end

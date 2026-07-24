@@ -1,0 +1,1 @@
+- [Luau validation](luau-validation.md) — Roblox Luau files may use syntax that standard Lua parsers reject; validate with Luau-aware tooling or targeted static checks.
