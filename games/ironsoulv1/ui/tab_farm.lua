@@ -95,31 +95,80 @@ _G.BuffCardToggle = CreateToggleUI(MainFarmPage, "🃏 Auto Buff Card", EngineCo
     if v and H.BuffCard_FireNow then task.spawn(H.BuffCard_FireNow) end
 end, "lblBuffCard")
 
-local _buffCardNames = {
+-- ── Buff Card: dynamic list dengan collector ──────────────────────────────────
+-- Default seed (kartu yang sudah diketahui)
+local _BUFF_CARD_DEFAULTS = {
     "Skill Cooldown",  "Dash Cooldown",   "Critical Damage",
     "Critical Chance", "Healing",          "Frost",
     "Base Attack",     "Dash Speed",       "Attack",
     "Coroside",        "Methyais",         "Movement Speed",
     "MAX Health",
 }
-H.BuffCardNames = _buffCardNames   -- dipakai ui_sync untuk :SetValue per item
 
-local _buffCardStates, _buffCardCallbacks = {}, {}
-for i, name in ipairs(_buffCardNames) do
-    _buffCardStates[i]    = EngineConfig.BuffCardEnabled[name] or false
-    _buffCardCallbacks[i] = function(v)
-        EngineConfig.BuffCardEnabled[name] = v
-        if EngineConfig.BuffCardActive and H.BuffCard_FireNow then
-            task.spawn(H.BuffCard_FireNow)
+-- Bangun list gabungan: defaults + kartu yang ditemukan collector sesi sebelumnya
+local function _buildBuffCardNames()
+    local seen, list = {}, {}
+    for _, n in ipairs(_BUFF_CARD_DEFAULTS) do
+        if not seen[n] then seen[n] = true; table.insert(list, n) end
+    end
+    for _, n in ipairs(EngineConfig.BuffCardDiscovered or {}) do
+        if not seen[n] then seen[n] = true; table.insert(list, n) end
+    end
+    return list
+end
+
+-- Holder frame: tempat MultiSelect dibuild ulang tanpa geser elemen lain
+local _buffCardHolder = Instance.new("Frame", MainFarmPage)
+_buffCardHolder.BackgroundTransparency = 1
+_buffCardHolder.Size                   = UDim2.new(1, 0, 0, 0)
+_buffCardHolder.AutomaticSize          = Enum.AutomaticSize.Y
+_buffCardHolder.BorderSizePixel        = 0
+
+local function _rebuildBuffCardUI()
+    -- Bersihkan widget lama
+    for _, c in ipairs(_buffCardHolder:GetChildren()) do c:Destroy() end
+
+    local names = _buildBuffCardNames()
+    H.BuffCardNames = names  -- dipakai ui_sync
+
+    local states, callbacks = {}, {}
+    for i, name in ipairs(names) do
+        states[i] = EngineConfig.BuffCardEnabled[name] or false
+        local n   = name
+        callbacks[i] = function(v)
+            EngineConfig.BuffCardEnabled[n] = v
+            if EngineConfig.BuffCardActive and H.BuffCard_FireNow then
+                task.spawn(H.BuffCard_FireNow)
+            end
         end
     end
+
+    _G.BuffCardMultiSelect = CreateScrollableMultiSelectUI(
+        _buffCardHolder,
+        "Pilih Buff Card  (bisa lebih dari 1)",
+        names, states, callbacks,
+        "lblBuffCardSelect"
+    )
 end
-_G.BuffCardMultiSelect = CreateScrollableMultiSelectUI(
-    MainFarmPage,
-    "Pilih Buff Card  (bisa lebih dari 1)",
-    _buffCardNames, _buffCardStates, _buffCardCallbacks,
-    "lblBuffCardSelect"
-)
+
+_rebuildBuffCardUI()
+
+-- H.BuffCardAddCard: dipanggil collector di buff_card.lua saat kartu baru terdeteksi
+H.BuffCardAddCard = function(name)
+    if not name or name == "" then return end
+    -- Sudah ada di list? Skip
+    local names = H.BuffCardNames or {}
+    for _, n in ipairs(names) do if n == name then return end end
+    -- Simpan ke discovered list (persisten via config)
+    local disc = EngineConfig.BuffCardDiscovered
+    if not disc then disc = {}; EngineConfig.BuffCardDiscovered = disc end
+    table.insert(disc, name)
+    if EngineConfig.BuffCardEnabled[name] == nil then
+        EngineConfig.BuffCardEnabled[name] = false
+    end
+    CustomNotify("🃏 BUFF CARD", "Kartu baru: " .. name, 3)
+    _rebuildBuffCardUI()
+end
 
 CreateSection(MainFarmPage, "Weapon Switcher", "secWeapon")
 _G.AutoSwitchToggle = CreateToggleUI(MainFarmPage, "🎒 Auto Weapon Switcher (3s)", EngineConfig.AutoWeaponSwitchActive, function(v)

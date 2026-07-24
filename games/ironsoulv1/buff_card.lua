@@ -134,6 +134,19 @@ local function fireBuffCards()
     end
 end
 
+-- Collector: kirim base name kartu ke tab_farm untuk memperluas dropdown
+local function collectCards(cards)
+    if not H.BuffCardAddCard then return end
+    for _, item in ipairs(cards:GetChildren()) do
+        if tonumber(item.Name:match("^Item(%d+)$")) then
+            local text = getCardText(item)
+            if text and text ~= "" then
+                H.BuffCardAddCard(baseName(text))
+            end
+        end
+    end
+end
+
 -- Monitor Cards container
 local function monitorCards()
     local gui = LocalPlayer:FindFirstChild("PlayerGui")
@@ -147,14 +160,17 @@ local function monitorCards()
 
     -- Scan kartu yang sudah ada
     fireBuffCards()
+    collectCards(cards)
 
     -- Monitor kartu baru / perubahan teks
     cards.DescendantAdded:Connect(function(desc)
         if desc.Name == "Name" and desc:IsA("TextLabel") then
             task.wait(0.15)
             fireBuffCards()
+            collectCards(cards)
             desc:GetPropertyChangedSignal("Text"):Connect(function()
                 fireBuffCards()
+                collectCards(cards)
             end)
         end
     end)

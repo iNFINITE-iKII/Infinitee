@@ -193,6 +193,7 @@ local EngineConfig = {
         ["Movement Speed"]  = false,
         ["MAX Health"]      = false,
     },
+    BuffCardDiscovered = {},            -- list kartu baru yang ditemukan collector (di luar default)
 }
 
 local GameLists = { NormalNPCs = {"None"}, BossNPCs = {"None"} }
