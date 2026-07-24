@@ -11,7 +11,7 @@ local LANGUAGES = { "Indonesia", "English" }
 local LANG_STRINGS = {
     Indonesia = {
         tabFarm="🏠 Farm", tabVector="⚙️ Vector", tabProfile="💾 Profil",
-        tabSell="💰 Jual", tabRoom="🚪 Room", tabForge="🏪 NPC",
+        tabSell="💰 Jual", tabRoom="🚪 Room", tabForge="⚒️ Auto Forge", tabNpc="🏪 NPC",
         tabAppear="🎨 Tampilan", tabFont="🔤 Font", tabFx="✨ Efek",
         secTheme="Tema Warna GUI", secTrans="Transparansi",
         secGesture="Gesture & Open Button", secTabMode="Mode Tab",
@@ -27,7 +27,7 @@ local LANG_STRINGS = {
         btnCatSeason="🌸 Toko Season",
         btnCatAll="🌐 Semua",
 
-        tabSell="🏪 Jual",       tabRoom="🗺️ Room",       tabForge="🏪 NPC",
+        tabSell="🏪 Jual",       tabRoom="🗺️ Room",       tabForge="⚒️ Auto Forge", tabNpc="🏪 NPC",
         tabAppear="🖌️ Tampilan", tabFont="🔡 Font",       tabFx="🌟 Efek",
         -- Header Seksi (Game)
         secWorld="Dunia",
@@ -201,7 +201,7 @@ local LANG_STRINGS = {
     },
     English = {
         tabFarm="🏠 Farm", tabVector="⚙️ Vector", tabProfile="💾 Profile",
-        tabSell="💰 Sell", tabRoom="🚪 Room", tabForge="🏪 NPC",
+        tabSell="💰 Sell", tabRoom="🚪 Room", tabForge="⚒️ Auto Forge", tabNpc="🏪 NPC",
         tabAppear="🎨 Appearance", tabFont="🔤 Font", tabFx="✨ Effects",
         secTheme="GUI Color Theme", secTrans="Transparency",
         secGesture="Gesture & Open Button", secTabMode="Tab Mode",
@@ -217,7 +217,7 @@ local LANG_STRINGS = {
         btnCatSeason="🌸 Season Shop",
         btnCatAll="🌐 All",
 
-      tabRoom="🗺️ Room",         tabForge="🏪 NPC",
+      tabRoom="🗺️ Room",         tabForge="⚒️ Auto Forge", tabNpc="🏪 NPC",
         tabAppear="🖌️ Appearance", tabFont="🔡 Font",         tabFx="🌟 Effects",
         -- Section headers (Game)
         secWorld="World",

@@ -691,17 +691,18 @@ startWithDRM(function(key, hwid)
     load("translate.lua")        -- Sistem translate multi-bahasa
 
     -- UI — core dulu, lalu tiap tab
-    load("ui/ui_core.lua")       -- S11-S16: VisualConfig, builder, window, tab system, BG effects
-    load("ui/tab_farm.lua")      -- Tab 1: Farm
-    load("ui/tab_vector.lua")    -- Tab 2: Vector Config
+    load("ui/ui_core.lua")        -- S11-S16: VisualConfig, builder, window, tab system, BG effects
+    load("ui/tab_farm.lua")       -- Tab 1: Farm
+    load("ui/tab_vector.lua")     -- Tab 2: Vector Config
     load("ui/tab_autopotion.lua") -- Tab 3: Auto Potion
-    load("ui/tab_profile.lua")   -- Tab 4: Profile / Config System
-    load("ui/tab_util.lua")      -- Tab 5: Utilitas (Redeem, Lottery, Reward, Race)
-    load("ui/tab_sell.lua")      -- Tab 6: Sell
-    load("ui/tab_room.lua")      -- Tab 7: Room Hub
-    load("ui/tab_autobuy.lua")   -- Tab 8: Auto Buy
-    load("ui/tab_forge.lua")     -- Tab 9: Forge & Utilities
-    load("ui/tab_visual.lua")    -- Tab 10-11: Tampilan, Font, Efek
+    load("ui/tab_forge.lua")      -- Tab 4: Auto Forge V6
+    load("ui/tab_npc.lua")        -- Tab 5: NPC Utilities (Forge Bypass, Enchant, dll)
+    load("ui/tab_profile.lua")    -- Tab 6: Profile / Config System
+    load("ui/tab_util.lua")       -- Tab 7: Utilitas (Redeem, Lottery, Reward, Race)
+    load("ui/tab_sell.lua")       -- Tab 8: Sell
+    load("ui/tab_room.lua")       -- Tab 9: Room Hub
+    load("ui/tab_autobuy.lua")    -- Tab 10: Auto Buy
+    load("ui/tab_visual.lua")     -- Tab 11-13: Tampilan, Font, Efek
 
     load("ui_sync.lua")          -- Sync semua visual UI + floating toggle button
     load("init.lua")             -- Intro animation, RGB loop, inisialisasi akhir
