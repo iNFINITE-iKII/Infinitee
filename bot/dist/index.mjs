@@ -92631,6 +92631,10 @@ function patchLuaUrls(content, req) {
   if (base === RAILWAY_URL) return content;
   return content.replaceAll(RAILWAY_URL, base);
 }
+function isRobloxRequest(req) {
+  const ua = (req.headers["user-agent"] ?? "").toLowerCase();
+  return ua.includes("roblox");
+}
 function parseQuery(url) {
   const q = {};
   const idx = url.indexOf("?");
@@ -92709,6 +92713,7 @@ async function handleLicenseCheck(req, res, query) {
   }
 }
 function handleLoader(req, res, query) {
+  if (!isRobloxRequest(req)) return json2(res, 403, { error: "Akses ditolak." });
   const game = (query.game ?? "").replace(/[^a-zA-Z0-9_-]/g, "");
   if (!game) return json2(res, 400, { error: "Parameter game wajib diisi." });
   const filePath = path.join(GAMES_DIR, `${game}.lua`);
@@ -92723,6 +92728,7 @@ function handleLoader(req, res, query) {
   }
 }
 function handleModule(req, res, pathname) {
+  if (!isRobloxRequest(req)) return json2(res, 403, { error: "Akses ditolak." });
   const prefix = "/api/lua/module/";
   const rest = pathname.slice(prefix.length);
   const normalized = path.normalize(rest);

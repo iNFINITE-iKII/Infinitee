@@ -54,6 +54,16 @@ function patchLuaUrls(content: string, req: http.IncomingMessage): string {
   return content.replaceAll(RAILWAY_URL, base);
 }
 
+/**
+ * Pastikan request berasal dari Roblox HttpService.
+ * game:HttpGet() selalu mengirim User-Agent yang mengandung "Roblox".
+ * Browser / curl / tool lain tidak punya header ini → tolak.
+ */
+function isRobloxRequest(req: http.IncomingMessage): boolean {
+  const ua = (req.headers['user-agent'] ?? '').toLowerCase();
+  return ua.includes('roblox');
+}
+
 function parseQuery(url: string): Record<string, string> {
   const q: Record<string, string> = {};
   const idx = url.indexOf('?');
@@ -178,6 +188,8 @@ function handleLoader(
   res: http.ServerResponse,
   query: Record<string, string>,
 ) {
+  if (!isRobloxRequest(req)) return json(res, 403, { error: 'Akses ditolak.' });
+
   const game = (query.game ?? '').replace(/[^a-zA-Z0-9_-]/g, '');
   if (!game) return json(res, 400, { error: 'Parameter game wajib diisi.' });
 
@@ -200,6 +212,8 @@ function handleModule(
   res: http.ServerResponse,
   pathname: string,
 ) {
+  if (!isRobloxRequest(req)) return json(res, 403, { error: 'Akses ditolak.' });
+
   // pathname contoh: /api/lua/module/ironsoulv1/ui/tab_farm.lua
   const prefix = '/api/lua/module/';
   const rest = pathname.slice(prefix.length); // ironsoulv1/ui/tab_farm.lua
