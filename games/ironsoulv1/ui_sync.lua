@@ -117,6 +117,12 @@ function SyncAllVisualUI()
         if _G.AutoJoinRoomToggle    then _G.AutoJoinRoomToggle:SetValue(EngineConfig.AutoJoinRoomActive) end
         if _G.AutoBuyToggle         then _G.AutoBuyToggle:SetValue(EngineConfig.AutoBuyActive) end
         if _G.AutoPotionToggle      then _G.AutoPotionToggle:SetValue(EngineConfig.AutoPotionActive) end
+        -- Re-link AutoPotion.Selected ke tabel yang baru di-load dari profil,
+        -- lalu rebuild UI agar checkmark potion sesuai dengan data tersimpan.
+        if H.AutoPotion then
+            H.AutoPotion.Selected = EngineConfig.AutoPotionSelected or {}
+            if H.RebuildPotionUI then task.spawn(H.RebuildPotionUI) end
+        end
         -- ── Utilitas Tab sync ──────────────────────────────────────────────
         if _G.UtilLotteryCountInput  then _G.UtilLotteryCountInput:SetValue(tostring(EngineConfig.UtilLotteryCount or 15)) end
         if _G.UtilRaceSlotDropdown   then

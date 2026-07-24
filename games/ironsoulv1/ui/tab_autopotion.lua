@@ -247,10 +247,23 @@ task.spawn(function()
     end
 end)
 
--- Build catalog & list saat modul pertama kali dimuat
+-- Build catalog & list saat modul pertama kali dimuat.
+-- Retry hingga 5x (jeda 2 detik) karena Framework Roblox mungkin
+-- belum siap saat task.defer pertama kali berjalan.
 task.defer(function()
-    AutoPotion.BuildCatalog(true)
+    local retries = 0
+    repeat
+        AutoPotion.BuildCatalog(true)
+        if #AutoPotion.Order == 0 then
+            task.wait(2)
+            retries = retries + 1
+        end
+    until #AutoPotion.Order > 0 or retries >= 5
     RebuildPotionUI()
 end)
+
+-- Ekspor RebuildPotionUI ke Hub agar SyncAllVisualUI bisa
+-- memanggil ulang setelah profil di-load (restore checkmark).
+H.RebuildPotionUI = RebuildPotionUI
 
 --------------------------------------------------------------------------------
