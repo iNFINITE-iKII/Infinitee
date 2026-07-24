@@ -177,23 +177,9 @@ local EngineConfig = {
     AutoPotionActive   = false,         -- master toggle Auto Potion
     AutoPotionSelected = {},            -- map: PotionId → bool (potion mana yang dipilih)
     -- ── Buff Card ─────────────────────────────────────────────────────────────
-    BuffCardActive  = false,            -- master toggle Auto Buff Card
-    BuffCardEnabled = {                 -- map: kategori (tanpa romawi) → bool
-        ["Skill Cooldown"]  = false,
-        ["Dash Cooldown"]   = false,
-        ["Critical Damage"] = false,
-        ["Critical Chance"] = false,
-        ["Healing"]         = false,
-        ["Frost"]           = false,
-        ["Base Attack"]     = false,
-        ["Dash Speed"]      = false,
-        ["Attack"]          = false,
-        ["Coroside"]        = false,
-        ["Methyais"]        = false,
-        ["Movement Speed"]  = false,
-        ["MAX Health"]      = false,
-    },
-    BuffCardDiscovered = {},            -- list kartu baru yang ditemukan collector (di luar default)
+    BuffCardActive     = false,          -- master toggle Auto Buff Card
+    BuffCardEnabled    = {},            -- map: baseName kartu → bool (terisi collector)
+    BuffCardDiscovered = {},            -- ordered list baseName kartu yang sudah ditemukan
 }
 
 local GameLists = { NormalNPCs = {"None"}, BossNPCs = {"None"} }

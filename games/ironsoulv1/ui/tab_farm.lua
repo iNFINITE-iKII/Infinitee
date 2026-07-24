@@ -95,22 +95,10 @@ _G.BuffCardToggle = CreateToggleUI(MainFarmPage, "🃏 Auto Buff Card", EngineCo
     if v and H.BuffCard_FireNow then task.spawn(H.BuffCard_FireNow) end
 end, "lblBuffCard")
 
--- ── Buff Card: dynamic list dengan collector ──────────────────────────────────
--- Default seed (kartu yang sudah diketahui)
-local _BUFF_CARD_DEFAULTS = {
-    "Skill Cooldown",  "Dash Cooldown",   "Critical Damage",
-    "Critical Chance", "Healing",          "Frost",
-    "Base Attack",     "Dash Speed",       "Attack",
-    "Coroside",        "Methyais",         "Movement Speed",
-    "MAX Health",
-}
-
--- Bangun list gabungan: defaults + kartu yang ditemukan collector sesi sebelumnya
+-- ── Buff Card: dynamic list via collector ─────────────────────────────────────
+-- List murni dari kartu yang sudah ditemukan collector (kosong pertama kali)
 local function _buildBuffCardNames()
     local seen, list = {}, {}
-    for _, n in ipairs(_BUFF_CARD_DEFAULTS) do
-        if not seen[n] then seen[n] = true; table.insert(list, n) end
-    end
     for _, n in ipairs(EngineConfig.BuffCardDiscovered or {}) do
         if not seen[n] then seen[n] = true; table.insert(list, n) end
     end
