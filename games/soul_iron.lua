@@ -687,6 +687,7 @@ startWithDRM(function(key, hwid)
     load("farm.lua")             -- Farm loop + background loops
     load("buff_card.lua")        -- Auto Buff Card selector
     load("auto_potion.lua")      -- Auto Potion engine
+    load("auto_forge.lua")       -- Auto Forge V6 engine
     load("translate.lua")        -- Sistem translate multi-bahasa
 
     -- UI — core dulu, lalu tiap tab
