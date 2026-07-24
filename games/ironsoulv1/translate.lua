@@ -98,6 +98,10 @@ local LANG_STRINGS = {
         lblHitMultiplier="Pengali Hit",
         lblLerpAlpha="Lerp Alpha (0-1)",
         lblSkillCooldown="Cooldown Skill (d)",
+        secResetLock="Reset Lock",
+        lblResetLockW4="Reset Lock W4 - Tartarus (d)",
+        lblResetLockW5="Reset Lock W5 - Endless Tower (d)",
+        lblETHoverY="Endless Tower Hover Y",
         lblSelectedProfile="Profil Dipilih",
         lblNewProfileName="Nama Profil Baru",
         lblAntiAFK="🛡️ Anti-AFK",
@@ -152,6 +156,12 @@ local LANG_STRINGS = {
         -- Dodge Dragon
         secDodgeDragon="🐉 Dodge Dragon",
         lblDodgeDragon="🐉 Dodge Dragon (Skill Bom)",
+        -- Auto Potion Tab
+        tabPotion="🧪 Auto Potion",
+        secPotionCtrl="Kontrol Auto Potion",
+        secPotionList="Daftar Buff Potion",
+        lblAutoPotion="🧪 Aktifkan Auto Potion",
+        btnRefreshPotion="🔄 Refresh Daftar Potion",
         -- Discord Webhook
         secWebhook="📡 Discord Webhook",
         lblWebhookActive="📡 Kirim Notif Dungeon ke Discord",
@@ -277,6 +287,10 @@ local LANG_STRINGS = {
         lblHitMultiplier="Hit Multiplier",
         lblLerpAlpha="Lerp Alpha (0-1)",
         lblSkillCooldown="Skill Cooldown (s)",
+        secResetLock="Reset Lock",
+        lblResetLockW4="Reset Lock W4 - Tartarus (s)",
+        lblResetLockW5="Reset Lock W5 - Endless Tower (s)",
+        lblETHoverY="Endless Tower Hover Y",
         lblSelectedProfile="Selected Profile",
         lblNewProfileName="New Profile Name",
         lblAntiAFK="🛡️ Anti-AFK",
@@ -331,6 +345,12 @@ local LANG_STRINGS = {
         -- Dodge Dragon
         secDodgeDragon="🐉 Dodge Dragon",
         lblDodgeDragon="🐉 Dodge Dragon (Bomb Skill)",
+        -- Auto Potion Tab
+        tabPotion="🧪 Auto Potion",
+        secPotionCtrl="Auto Potion Control",
+        secPotionList="Buff Potions",
+        lblAutoPotion="🧪 Enable Auto Potion",
+        btnRefreshPotion="🔄 Refresh Potion List",
         -- Discord Webhook
         secWebhook="📡 Discord Webhook",
         lblWebhookActive="📡 Send Dungeon Notif to Discord",

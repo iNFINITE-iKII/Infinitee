@@ -628,7 +628,7 @@ end
 
 
 -- CYCLE BUTTON
-local function CreateCycleUI(parent, text, list, default, callback)
+local function CreateCycleUI(parent, text, list, default, callback, langKey)
     local container = Instance.new("Frame", parent)
     container.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     container.BackgroundTransparency = 0.2
@@ -639,6 +639,7 @@ local function CreateCycleUI(parent, text, list, default, callback)
     lbl.Size = UDim2.new(0.45, 0, 1, 0); lbl.Font = Enum.Font.GothamMedium; lbl.Text = text
     lbl.TextColor3 = Color3.fromRGB(210, 210, 210); lbl.TextSize = 12; lbl.TextXAlignment = Enum.TextXAlignment.Left
     table.insert(ThemeRegistry.AllLabels, lbl)
+    if langKey then RegisterTranslation(langKey, lbl, "Text") end
     local btn = Instance.new("TextButton", container)
     btn.BackgroundColor3 = Color3.fromRGB(26, 26, 40)
     btn.Position = UDim2.new(1, -135, 0.5, -14); btn.Size = UDim2.new(0, 123, 0, 28)
@@ -675,7 +676,7 @@ local function CreateCycleUI(parent, text, list, default, callback)
 end
 
 -- INPUT BOX
-local function CreateInputUI(parent, text, default, numeric, callback)
+local function CreateInputUI(parent, text, default, numeric, callback, langKey)
     local container = Instance.new("Frame", parent)
     container.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     container.BackgroundTransparency = 0.2
@@ -686,6 +687,7 @@ local function CreateInputUI(parent, text, default, numeric, callback)
     lbl.Size = UDim2.new(0.55, 0, 1, 0); lbl.Font = Enum.Font.GothamMedium; lbl.Text = text
     lbl.TextColor3 = Color3.fromRGB(210, 210, 210); lbl.TextSize = 12; lbl.TextXAlignment = Enum.TextXAlignment.Left
     table.insert(ThemeRegistry.AllLabels, lbl)
+    if langKey then RegisterTranslation(langKey, lbl, "Text") end
     local boxBG = Instance.new("Frame", container)
     boxBG.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
     boxBG.Position = UDim2.new(1, -135, 0.5, -14); boxBG.Size = UDim2.new(0, 123, 0, 28)

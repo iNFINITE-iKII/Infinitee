@@ -21,10 +21,10 @@ local VectorPage = CreateTab("⚙️ Vector", "tabVector")
 CreateSection(VectorPage, "Target Selector", "secTargetSel")
 local NormalDropdown = CreateCycleUI(VectorPage, "Normal Mob", GameLists.NormalNPCs, "None", function(v)
     EngineConfig.SelectedNormalNpcId = (v ~= "None") and v or nil
-end, "lblWeaponSwitch")
+end, "lblNormalMob")
 local BossDropdown = CreateCycleUI(VectorPage, "Boss Mob", GameLists.BossNPCs, "None", function(v)
     EngineConfig.SelectedBossNpcId = (v ~= "None") and v or nil
-end, "lblAutoExec")
+end, "lblBossMob")
 CreateButton(VectorPage, "🔄 Scan Map Targets", function()
     local normalIds, bossIds = {"None"}, {"None"}
     local ef = Workspace:FindFirstChild("EnemyNpc")
@@ -117,27 +117,27 @@ task.spawn(function()
 end)
 
 CreateSection(VectorPage, "Dodge Boss", "secDodgeBoss")
-_G.RadiusInput = CreateInputUI(VectorPage, "Orbit Radius", EngineConfig.OrbitRadius, true, function(v) EngineConfig.OrbitRadius = tonumber(v) or 12 end)
+_G.RadiusInput = CreateInputUI(VectorPage, "Orbit Radius", EngineConfig.OrbitRadius, true, function(v) EngineConfig.OrbitRadius = tonumber(v) or 12 end, "lblOrbitRadius")
 CreateButton(VectorPage, "🎯 Dodge Boss Skil (20)",  function() EngineConfig.OrbitRadius = 20;  _G.RadiusInput:SetValue(20)  end, "btnDodge20")
 CreateButton(VectorPage, "🎯 Dodge Boss Skil(200)", function() EngineConfig.OrbitRadius = 200; _G.RadiusInput:SetValue(200) end, "btnDodge200")
 
 CreateSection(VectorPage, "Reset Lock", "secResetLock")
 _G.ResetLockW4Input = CreateInputUI(VectorPage, "Reset Lock W4 - Tartarus (s)", EngineConfig.ResetLockW4, true, function(v)
     EngineConfig.ResetLockW4 = tonumber(v) or 2
-end)
+end, "lblResetLockW4")
 _G.ResetLockW5Input = CreateInputUI(VectorPage, "Reset Lock W5 - Endless Tower (s)", EngineConfig.ResetLockW5, true, function(v)
     EngineConfig.ResetLockW5 = tonumber(v) or 3
-end)
+end, "lblResetLockW5")
 
 CreateSection(VectorPage, "Kinematic System Parameters", "secKinematic")
-_G.HeightInput       = CreateInputUI(VectorPage, "Height Normal Target (Y)", EngineConfig.StandHeight,        true,  function(v) EngineConfig.StandHeight        = tonumber(v) or 20    end)
-_G.BossHeightInput   = CreateInputUI(VectorPage, "Height Boss Target (Y)",   EngineConfig.BossHeight,         true,  function(v) EngineConfig.BossHeight          = tonumber(v) or 25    end)
-_G.SpeedInput        = CreateInputUI(VectorPage, "Orbit Speed",              EngineConfig.OrbitSpeed,         true,  function(v) EngineConfig.OrbitSpeed          = tonumber(v) or 5     end)
-_G.DelayInput        = CreateInputUI(VectorPage, "CFrame Delay",             EngineConfig.CFrameDelay,        false, function(v) EngineConfig.CFrameDelay         = tonumber(v) or 0.001 end)
-_G.MultiplierInput   = CreateInputUI(VectorPage, "Hit Multiplier",           EngineConfig.HitMultiplier,      true,  function(v) EngineConfig.HitMultiplier       = tonumber(v) or 1     end)
-_G.LerpAlphaInput    = CreateInputUI(VectorPage, "Lerp Alpha (0–1)",         EngineConfig.LerpAlpha,          false, function(v) EngineConfig.LerpAlpha           = math.clamp(tonumber(v) or 0.3, 0.01, 1) end)
-_G.SkillCooldownInput= CreateInputUI(VectorPage, "Skill Cooldown (s)",       EngineConfig.SkillCooldownDelay, false, function(v) EngineConfig.SkillCooldownDelay  = tonumber(v) or 0.5   end)
-_G.ETHoverYInput     = CreateInputUI(VectorPage, "Endless Tower Hover Y",    EngineConfig.EndlessTowerHoverY, false, function(v) EngineConfig.EndlessTowerHoverY   = tonumber(v) or 35    end)
+_G.HeightInput       = CreateInputUI(VectorPage, "Height Normal Target (Y)", EngineConfig.StandHeight,        true,  function(v) EngineConfig.StandHeight        = tonumber(v) or 20    end, "lblHeightNormal")
+_G.BossHeightInput   = CreateInputUI(VectorPage, "Height Boss Target (Y)",   EngineConfig.BossHeight,         true,  function(v) EngineConfig.BossHeight          = tonumber(v) or 25    end, "lblHeightBoss")
+_G.SpeedInput        = CreateInputUI(VectorPage, "Orbit Speed",              EngineConfig.OrbitSpeed,         true,  function(v) EngineConfig.OrbitSpeed          = tonumber(v) or 5     end, "lblOrbitSpeed")
+_G.DelayInput        = CreateInputUI(VectorPage, "CFrame Delay",             EngineConfig.CFrameDelay,        false, function(v) EngineConfig.CFrameDelay         = tonumber(v) or 0.001 end, "lblCFrameDelay")
+_G.MultiplierInput   = CreateInputUI(VectorPage, "Hit Multiplier",           EngineConfig.HitMultiplier,      true,  function(v) EngineConfig.HitMultiplier       = tonumber(v) or 1     end, "lblHitMultiplier")
+_G.LerpAlphaInput    = CreateInputUI(VectorPage, "Lerp Alpha (0–1)",         EngineConfig.LerpAlpha,          false, function(v) EngineConfig.LerpAlpha           = math.clamp(tonumber(v) or 0.3, 0.01, 1) end, "lblLerpAlpha")
+_G.SkillCooldownInput= CreateInputUI(VectorPage, "Skill Cooldown (s)",       EngineConfig.SkillCooldownDelay, false, function(v) EngineConfig.SkillCooldownDelay  = tonumber(v) or 0.5   end, "lblSkillCooldown")
+_G.ETHoverYInput     = CreateInputUI(VectorPage, "Endless Tower Hover Y",    EngineConfig.EndlessTowerHoverY, false, function(v) EngineConfig.EndlessTowerHoverY   = tonumber(v) or 35    end, "lblETHoverY")
 
 
 --------------------------------------------------------------------------------
