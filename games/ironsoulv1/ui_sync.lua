@@ -116,6 +116,7 @@ function SyncAllVisualUI()
         if _G.FriendOnlyToggle      then _G.FriendOnlyToggle:SetValue(EngineConfig.FriendOnlyRoom) end
         if _G.AutoJoinRoomToggle    then _G.AutoJoinRoomToggle:SetValue(EngineConfig.AutoJoinRoomActive) end
         if _G.AutoBuyToggle         then _G.AutoBuyToggle:SetValue(EngineConfig.AutoBuyActive) end
+        if _G.AutoPotionToggle      then _G.AutoPotionToggle:SetValue(EngineConfig.AutoPotionActive) end
         -- ── Utilitas Tab sync ──────────────────────────────────────────────
         if _G.UtilLotteryCountInput  then _G.UtilLotteryCountInput:SetValue(tostring(EngineConfig.UtilLotteryCount or 15)) end
         if _G.UtilRaceSlotDropdown   then

@@ -700,6 +700,7 @@ startWithDRM(function(key, hwid)
     load("navigation.lua")       -- Navigation engine (search world)
     load("farm.lua")             -- Farm loop + background loops
     load("buff_card.lua")        -- Auto Buff Card selector
+    load("auto_potion.lua")      -- Auto Potion engine
     load("translate.lua")        -- Sistem translate multi-bahasa
 
     -- UI — core dulu, lalu tiap tab
@@ -711,6 +712,7 @@ startWithDRM(function(key, hwid)
     load("ui/tab_sell.lua")      -- Tab 5: Sell
     load("ui/tab_room.lua")      -- Tab 6: Room Hub
     load("ui/tab_autobuy.lua")   -- Tab 7: Auto Buy
+    load("ui/tab_autopotion.lua") -- Tab 8: Auto Potion
     load("ui/tab_forge.lua")     -- Tab 8: Forge & Utilities
     load("ui/tab_visual.lua")    -- Tab 9-10: Tampilan, Font, Efek
 

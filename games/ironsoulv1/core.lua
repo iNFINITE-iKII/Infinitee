@@ -173,6 +173,10 @@ local EngineConfig = {
     WebhookActive = false,   -- toggle on/off notifikasi ke Discord
     WebhookUrl    = "",      -- URL webhook Discord yang diisi user
     -- ── Buff Card ─────────────────────────────────────────────────────────────
+    -- ── Auto Potion ───────────────────────────────────────────────────────────
+    AutoPotionActive   = false,         -- master toggle Auto Potion
+    AutoPotionSelected = {},            -- map: PotionId → bool (potion mana yang dipilih)
+    -- ── Buff Card ─────────────────────────────────────────────────────────────
     BuffCardActive  = false,            -- master toggle Auto Buff Card
     BuffCardEnabled = {                 -- map: kategori (tanpa romawi) → bool
         ["Skill Cooldown"]  = false,
