@@ -1,0 +1,6 @@
+--------------------------------------------------
+📦 NAMA CONFIG : PackageLink
+   Tipe        : PackageLink
+   Path        : ReplicatedStorage.Configs.PackageLink
+--------------------------------------------------
+⚠️ Format config tidak dikenali / bukan Module atau Folder.

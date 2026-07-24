@@ -1,0 +1,45 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResInviteReward
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResInviteReward
+--------------------------------------------------
+{
+    [1] = {
+        ["Index"] = 1,
+        ["Id"] = 1,
+        ["RequireInvite"] = 1,
+        ["Desc1"] = "Invite 1 NEW players to get:",
+        ["Desc2"] = "K_INVITE_REWARD_1",
+        ["Icon"] = "rbxassetid://84061971560723",
+        ["ThingCount"] = 1500,
+        ["ThingId"] = "Currency1",
+        ["ThingType"] = "Currency",
+    },
+    [2] = {
+        ["Index"] = 2,
+        ["Id"] = 2,
+        ["RequireInvite"] = 3,
+        ["Desc1"] = "Invite 3 NEW players to get:",
+        ["Desc2"] = "K_INVITE_REWARD_2",
+        ["Icon"] = "rbxassetid://140566314024962",
+        ["ThingCount"] = 3,
+        ["ThingId"] = "IceCrystalOre",
+        ["ThingType"] = "Ore",
+    },
+    [3] = {
+        ["Index"] = 3,
+        ["Id"] = 3,
+        ["RequireInvite"] = 5,
+        ["Desc1"] = "Invite 5 NEW players to get:",
+        ["Desc2"] = "K_INVITE_REWARD_3",
+        ["Icon"] = "rbxassetid://103375424128408",
+        ["ThingCount"] = 3,
+        ["ThingId"] = "Hexbane",
+        ["ThingType"] = "Ore",
+    },
+    ["__index"] = {
+        [1] = 1,
+        [2] = 2,
+        [3] = 3,
+    },
+}

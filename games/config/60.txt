@@ -1,0 +1,75 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResPetsEgg
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResPetsEgg
+--------------------------------------------------
+{
+    ["Pet_DragonDivine_Egg"] = {
+        ["Sort"] = 2,
+        ["HatchDuration"] = 5400,
+        ["Rarity"] = 6,
+        ["EggId"] = "Pet_DragonDivine_Egg",
+        ["Name"] = "K_NAME_PET_DRAGONDIVINE_EGG",
+        ["PetId"] = "Pet_DragonDivine",
+        ["Icon"] = "rbxassetid://106762250168708",
+        ["Desc"] = "K_DESC_PET_DRAGONDIVINE_EGG",
+    },
+    ["Pet_Eagle_Egg"] = {
+        ["Sort"] = 5,
+        ["HatchDuration"] = 3600,
+        ["Rarity"] = 5,
+        ["EggId"] = "Pet_Eagle_Egg",
+        ["Name"] = "K_NAME_PET_EAGLE_EGG",
+        ["PetId"] = "Pet_Eagle",
+        ["Icon"] = "rbxassetid://91251623816642",
+        ["Desc"] = "K_DESC_PET_EAGLE_EGG",
+    },
+    ["__index"] = {
+        [1] = "Pet_DragonIce_Egg",
+        [2] = "Pet_DragonDivine_Egg",
+        [3] = "Pet_FireFox_Egg",
+        [4] = "Random_Egg",
+        [5] = "Pet_SkeletonDog_Egg",
+        [6] = "Pet_Eagle_Egg",
+    },
+    ["Pet_SkeletonDog_Egg"] = {
+        ["Sort"] = 4,
+        ["HatchDuration"] = 7200,
+        ["Rarity"] = 7,
+        ["EggId"] = "Pet_SkeletonDog_Egg",
+        ["Name"] = "K_NAME_PET_SKELETONDOG_EGG",
+        ["PetId"] = "Pet_SkeletonDog",
+        ["Icon"] = "rbxassetid://81531035014368",
+        ["Desc"] = "K_DESC_PET_SKELETONDOG_EGG",
+    },
+    ["Pet_FireFox_Egg"] = {
+        ["Sort"] = 3,
+        ["HatchDuration"] = 5400,
+        ["Rarity"] = 6,
+        ["EggId"] = "Pet_FireFox_Egg",
+        ["Name"] = "K_NAME_PET_FIREFOX_EGG",
+        ["PetId"] = "Pet_FireFox",
+        ["Icon"] = "rbxassetid://99287278668438",
+        ["Desc"] = "K_DESC_PET_FIREFOX_EGG",
+    },
+    ["Pet_DragonIce_Egg"] = {
+        ["Sort"] = 1,
+        ["HatchDuration"] = 3600,
+        ["Rarity"] = 5,
+        ["EggId"] = "Pet_DragonIce_Egg",
+        ["Name"] = "K_NAME_PET_DRAGONICE_EGG",
+        ["PetId"] = "Pet_DragonIce",
+        ["Icon"] = "rbxassetid://100981999000204",
+        ["Desc"] = "K_DESC_PET_DRAGONICE_EGG",
+    },
+    ["Random_Egg"] = {
+        ["Sort"] = 6,
+        ["HatchDuration"] = 1,
+        ["Rarity"] = 6,
+        ["EggId"] = "Random_Egg",
+        ["Name"] = "K_NAME_RANDOM_EGG",
+        ["PetId"] = "",
+        ["Icon"] = "rbxassetid://91731734577409",
+        ["Desc"] = "",
+    },
+}

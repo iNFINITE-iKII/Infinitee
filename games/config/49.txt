@@ -1,0 +1,29 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResSeasonPass
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResSeasonPass
+--------------------------------------------------
+{
+    ["Season2"] = {
+        ["CloseTime"] = "2026-7-31-10:00",
+        ["MaxLevel"] = 60,
+        ["Name"] = "K_SEASON_2_NAME",
+        ["ID"] = "Season2",
+        ["EachEXP"] = 1000,
+        ["EndTime"] = "2026-7-30-10:00",
+        ["StartTime"] = "2026-6-17-10:00",
+    },
+    ["__index"] = {
+        [1] = "Season1",
+        [2] = "Season2",
+    },
+    ["Season1"] = {
+        ["CloseTime"] = "2026-6-18-10:00",
+        ["MaxLevel"] = 55,
+        ["Name"] = "K_SEASON_1_NAME",
+        ["ID"] = "Season1",
+        ["EachEXP"] = 1000,
+        ["EndTime"] = "2026-6-17-10:00",
+        ["StartTime"] = "2026-2-3-10:00",
+    },
+}

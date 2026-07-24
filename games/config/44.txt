@@ -1,0 +1,65 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResDailyReward
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResDailyReward
+--------------------------------------------------
+{
+    ["DR_6"] = {
+        ["RewardID"] = "DR_6",
+        ["Rarity"] = 5,
+        ["Reward"] = "Ticket1|Currency|8",
+        ["Icon"] = "rbxassetid://139395680627758",
+        ["Desc"] = "K_DR_6",
+    },
+    ["DR_3"] = {
+        ["RewardID"] = "DR_3",
+        ["Rarity"] = 4,
+        ["Reward"] = "Ticket1|Currency|5",
+        ["Icon"] = "rbxassetid://139395680627758",
+        ["Desc"] = "K_DR_3",
+    },
+    ["__index"] = {
+        [1] = "DR_1",
+        [2] = "DR_2",
+        [3] = "DR_3",
+        [4] = "DR_4",
+        [5] = "DR_5",
+        [6] = "DR_6",
+        [7] = "DR_7",
+    },
+    ["DR_2"] = {
+        ["RewardID"] = "DR_2",
+        ["Rarity"] = 6,
+        ["Reward"] = "SmokyQuartz|Ore|6",
+        ["Icon"] = "rbxassetid://133257474129012",
+        ["Desc"] = "K_DR_2",
+    },
+    ["DR_1"] = {
+        ["RewardID"] = "DR_1",
+        ["Rarity"] = 4,
+        ["Reward"] = "Currency1|Currency|1000",
+        ["Icon"] = "rbxassetid://119672178029404",
+        ["Desc"] = "K_DR_1",
+    },
+    ["DR_7"] = {
+        ["RewardID"] = "DR_7",
+        ["Rarity"] = 6,
+        ["Reward"] = "RaceSpins|RaceSpins|5",
+        ["Icon"] = "rbxassetid://111055180609520",
+        ["Desc"] = "K_DR_7",
+    },
+    ["DR_4"] = {
+        ["RewardID"] = "DR_4",
+        ["Rarity"] = 5,
+        ["Reward"] = "RaceSpins|RaceSpins|2",
+        ["Icon"] = "rbxassetid://111055180609520",
+        ["Desc"] = "K_DR_4",
+    },
+    ["DR_5"] = {
+        ["RewardID"] = "DR_5",
+        ["Rarity"] = 5,
+        ["Reward"] = "Currency1|Currency|5000",
+        ["Icon"] = "rbxassetid://84061971560723",
+        ["Desc"] = "K_DR_5",
+    },
+}
