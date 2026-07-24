@@ -22,49 +22,85 @@ local ApplyMovement         = H.ApplyMovement
 local WORLD_INDEX           = H.WORLD_INDEX
 local ROOM_WORLD_KEY        = H.ROOM_WORLD_KEY
 
--- [EGG] Cari instance "DragonEgg" yang BENAR di Workspace.
--- Server kadang membuat DragonEgg baru (placeholder, belum ada EggModel/Part)
--- SEBELUM DragonEgg lama selesai dihapus setelah proximity/broken → sesaat ada
--- 2 instance bernama sama. FindFirstChild("DragonEgg") tidak bisa diandalkan
--- karena bisa mengembalikan placeholder kosong itu. Jadi kita scan semua anak
--- bernama "DragonEgg" dan ambil yang benar-benar punya EggModel.Part.
-local function GetActiveDragonEgg()
-    local best = nil
-    for _,child in ipairs(Workspace:GetChildren()) do
-        if child.Name=="DragonEgg" then
-            local eggModel = child:FindFirstChild("EggModel")
-            local part = eggModel and eggModel:FindFirstChild("Part")
-            if part then
-                -- Prioritaskan yang Active & belum Broken; kalau tidak ada,
-                -- tetap simpan kandidat pertama yang punya Part sebagai fallback.
-                if child:GetAttribute("Active") and not child:GetAttribute("Broken") then
-                    return child
+-- [EGG] Scanner Dragon Egg berbasis nama + tier.
+-- Server dapat menaruh beberapa egg sekaligus di dalam model/Folder berbeda,
+-- sehingga scan dilakukan ke seluruh descendant Workspace, bukan hanya child
+-- langsung. Contoh: DragonEgg23 memiliki tier 23 dan diprioritaskan atas
+-- DragonEgg atau DragonEgg5.
+local EGG_SCAN_INTERVAL  = 2
+local EGG_NAME_FILTER    = "Dragon"
+local EGG_TELEPORT_OFFSET = Vector3.new(0, 5, 0)
+
+local _eggScanAt      = -math.huge
+local _eggScanResults = {}
+local _eggBest        = nil
+
+local function GetEggTier(obj)
+    local num = obj.Name:match("DragonEgg(%d+)")
+    return num and tonumber(num) or 0
+end
+
+local function ScanEggs()
+    local found = {}
+
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj.Name:find(EGG_NAME_FILTER, 1, true)
+            and (obj:IsA("Model") or obj:IsA("BasePart")) then
+            local partPosition = nil
+
+            if obj:IsA("Model") then
+                local part = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+                if part then
+                    partPosition = part.Position
                 end
-                best = best or child
+            elseif obj:IsA("BasePart") then
+                partPosition = obj.Position
             end
+
+            if partPosition and not obj:GetAttribute("Broken") then
+                table.insert(found, {
+                    object   = obj,
+                    tier     = GetEggTier(obj),
+                    position = partPosition,
+                })
+            end
+        end
+    end
+
+    return found
+end
+
+local function GetHighestTierEgg(eggs)
+    local best = nil
+    for _, egg in ipairs(eggs) do
+        if best == nil or egg.tier > best.tier then
+            best = egg
         end
     end
     return best
 end
 
--- [EGG] Ambil CFrame posisi TERENDAH dari egg (anti-model tinggi palsu).
--- Dev bisa sengaja taruh PrimaryPart / Pivot di puncak model setinggi ratusan stud
--- sehingga script snap karakter jauh di atas egg asli. Fix: scan SEMUA BasePart
--- di dalam egg, ambil yang Y-nya paling rendah → posisi fisik egg sesungguhnya.
-local function GetEggGroundCFrame(egg)
-    local lowestY   = math.huge
-    local lowestCF  = nil
-    for _, obj in ipairs(egg:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.CanCollide == false or obj:IsA("BasePart") then
-            local y = obj.Position.Y
-            if y < lowestY then
-                lowestY  = y
-                lowestCF = obj.CFrame
-            end
-        end
+-- Mengembalikan object egg, posisi scanner, dan record kandidat.
+-- Cache 2 detik mengikuti metode baru agar tidak scan seluruh Workspace setiap
+-- frame. Egg Broken atau object yang sudah dihapus memaksa scan ulang.
+local function GetActiveDragonEgg()
+    local shouldScan = (os.clock() - _eggScanAt >= EGG_SCAN_INTERVAL)
+        or not _eggBest
+        or not _eggBest.object
+        or not _eggBest.object.Parent
+        or _eggBest.object:GetAttribute("Broken")
+
+    if shouldScan then
+        _eggScanResults = ScanEggs()
+        _eggBest = GetHighestTierEgg(_eggScanResults)
+        _eggScanAt = os.clock()
     end
-    -- Fallback: pakai pivot jika tidak ada descendant BasePart sama sekali
-    return lowestCF or egg:GetPivot()
+
+    if not _eggBest then
+        return nil, nil, nil
+    end
+
+    return _eggBest.object, _eggBest.position, _eggBest
 end
 
 -- ============================================================================
@@ -80,39 +116,28 @@ local _eggLockEnd       = 0          -- os.clock() deadline cooldown setelah tri
 local _eggTriggeredAt   = -math.huge -- os.clock() saat trigger terakhir; 2 detik pertama = fase diam bawah egg
 local _eggCachedInst    = nil        -- egg instance yang sedang di-cache pivot-nya
 local _eggCachedPivot   = nil        -- Vector3 ground pivot egg; stabil, tidak scan tiap frame
-local _eggRayParams     = RaycastParams.new()
-_eggRayParams.FilterType = Enum.RaycastFilterType.Exclude
-
 -- Cari ProximityPrompt di dalam model DragonEgg (rekursif)
 local function GetEggPrompt(eggModel)
     return eggModel and eggModel:FindFirstChildWhichIsA("ProximityPrompt", true) or nil
 end
 
--- Teleport karakter ke posisi ground di bawah egg via CFrame + Raycast
--- Mengembalikan true jika berhasil
-local function MoveToEggGround(eggModel)
+-- Teleport seluruh model Character ke posisi egg + offset scanner.
+local function MoveToEgg(eggModel, eggPosition)
     local char  = LocalPlayer.Character
     local myHRP = char and char:FindFirstChild("HumanoidRootPart")
     local myHum = char and char:FindFirstChildOfClass("Humanoid")
-    if not myHRP or not myHum then return false end
-
-    local eggCF  = GetEggGroundCFrame(eggModel)
-    local eggPos = eggCF.Position
-
-    _eggRayParams.FilterDescendantsInstances = { eggModel, char }
-    local ray     = Workspace:Raycast(eggPos + Vector3.new(0, 8, 0), Vector3.new(0, -35, 0), _eggRayParams)
-    local groundPos = ray and ray.Position or eggPos
+    if not char or not myHRP or not myHum or not eggPosition then return false end
 
     myHum.PlatformStand = true
     CombatEngine.ResetPhysics(myHRP)
-    myHRP.CFrame = CFrame.new(groundPos + Vector3.new(0, 3, 0), eggPos)
+    char:PivotTo(CFrame.new(eggPosition + EGG_TELEPORT_OFFSET))
     myHRP.AssemblyLinearVelocity = Vector3.zero
     return true
 end
 
 -- Trigger egg: ProximityPrompt (utama) atau HoldKey F 3 detik (fallback).
 -- Lock 12 detik setelah trigger agar tidak spam.
-local function TriggerEggIfNeeded(eggModel)
+local function TriggerEggIfNeeded(eggModel, eggPosition)
     if _eggIsExtracting then return end
     if _eggLastTriggered == eggModel and os.clock() < _eggLockEnd then return end
 
@@ -125,7 +150,7 @@ local function TriggerEggIfNeeded(eggModel)
     _eggTriggeredAt   = os.clock()
 
     -- Snap awal ke ground egg; Fase 1 main loop mengambil alih posisi setelahnya.
-    MoveToEggGround(eggModel)
+    MoveToEgg(eggModel, eggPosition)
 
     local prompt = GetEggPrompt(eggModel)
     if prompt then
@@ -407,7 +432,7 @@ local function startFarmLoop()
 
         -- ──────────────── PRIORITAS 2: EGG (V6 Method) ────────────────
         -- On/Off : toggle 🥚 Egg di UI (EngineConfig.FarmTargetEgg)
-        -- Deteksi: GetActiveDragonEgg() — scan workspace, cek Broken attribute
+        -- Deteksi: GetActiveDragonEgg() — scan seluruh workspace, pilih tier tertinggi
         -- Trigger: ProximityPrompt (utama) atau HoldKey F 3s (fallback) — sekali per 12 detik
         -- Orbit  : selama menunggu cooldown, karakter orbit egg sesuai FarmPosition & FarmHeight
         elseif EngineConfig.FarmTargetEgg and (function()
@@ -415,20 +440,20 @@ local function startFarmLoop()
             return e and not e:GetAttribute("Broken")
         end)() then
             noTargetTimer=0; EngineConfig.IsLockDelay=false
-            local egg = GetActiveDragonEgg()
+            local egg, eggPosition = GetActiveDragonEgg()
             if not egg or egg:GetAttribute("Broken") then
                 Services.RunService.Heartbeat:Wait()
             else
                 myHum.PlatformStand = true
                 -- Trigger awal: approach + ProximityPrompt/HoldKey sekali (jika belum cooldown)
                 if not _eggIsExtracting and os.clock() >= _eggLockEnd then
-                    task.spawn(function() TriggerEggIfNeeded(egg) end)
+                    task.spawn(function() TriggerEggIfNeeded(egg, eggPosition) end)
                 end
-                -- Cache pivot per egg instance — tidak scan descendant tiap frame
-                -- agar eggPivot stabil meski animasi egg mengubah descendant-nya.
+                -- Cache posisi scanner per egg instance — tidak scan descendant
+                -- tiap frame dan tetap konsisten selama satu egg diproses.
                 if egg ~= _eggCachedInst then
                     _eggCachedInst  = egg
-                    _eggCachedPivot = GetEggGroundCFrame(egg).Position
+                    _eggCachedPivot = eggPosition
                 end
                 local eggPivot    = _eggCachedPivot
                 local eggGroundCF = CFrame.new(eggPivot)
@@ -888,11 +913,9 @@ task.spawn(function()
             if not hasActiveTarget and EngineConfig.FarmTargetEgg then
                 local char=LocalPlayer.Character
                 local hrp=char and char:FindFirstChild("HumanoidRootPart")
-                local egg=GetActiveDragonEgg()
-                -- Pakai posisi terendah egg (bukan Part yang bisa sengaja ditaruh tinggi)
-                if hrp and egg then
-                    local groundCF = GetEggGroundCFrame(egg)
-                    if (groundCF.Position - hrp.Position).Magnitude <= 500 then
+                local egg, eggPosition = GetActiveDragonEgg()
+                if hrp and egg and eggPosition then
+                    if (eggPosition - hrp.Position).Magnitude <= 500 then
                         hasActiveTarget = true
                     end
                 end
