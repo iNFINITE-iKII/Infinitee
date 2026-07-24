@@ -681,6 +681,7 @@ startWithDRM(function(key, hwid)
     load("ui/ui_core.lua")       -- S11-S16: VisualConfig, builder, window, tab system, BG effects
     load("ui/tab_farm.lua")      -- Tab 1: Farm
     load("ui/tab_vector.lua")    -- Tab 2: Vector Config
+    load("ui/tab_autopotion.lua") 
     load("ui/tab_profile.lua")   -- Tab 3: Profile / Config System
     load("ui/tab_util.lua")      -- Tab 4: Utilitas (Redeem, Lottery, Reward, Race)
     load("ui/tab_sell.lua")      -- Tab 5: Sell
