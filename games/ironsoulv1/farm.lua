@@ -132,6 +132,16 @@ local function GetEggPrompt(eggModel)
     return eggModel and eggModel:FindFirstChildWhichIsA("ProximityPrompt", true) or nil
 end
 
+-- Mobile tidak boleh menerima synthetic keyboard input karena dapat membuat
+-- Roblox menampilkan contextual prompt bergaya PC. Tablet dengan keyboard
+-- fisik tetap diperlakukan sebagai perangkat keyboard agar fallback F tersedia.
+local function IsMobileDevice()
+    local userInputService = Services.UserInputService
+    return userInputService
+        and userInputService.TouchEnabled
+        and not userInputService.KeyboardEnabled
+end
+
 -- Teleport seluruh model Character ke posisi egg + offset scanner.
 local function MoveToEgg(eggModel, eggPosition)
     local char  = LocalPlayer.Character
@@ -170,6 +180,15 @@ local function TriggerEggIfNeeded(eggModel, eggPosition)
             end
         end)
     else
+        if IsMobileDevice() then
+            -- Jangan kirim VirtualInputManager/KeyCode.F di mobile.
+            -- Tanpa ProximityPrompt, biarkan siklus farm berjalan tanpa
+            -- memaksa tampilan input Roblox berubah menjadi mode PC.
+            _eggIsExtracting = false
+            _eggLockEnd      = os.clock() + 3.0
+            CustomNotify("🥚 EGG", "Mobile: ProximityPrompt tidak ditemukan; input F dilewati.", 3)
+            return
+        end
         pcall(function() Services.VirtualInputManager:SendKeyEvent(true,  Enum.KeyCode.F, false, game) end)
         task.wait(3.0)
         pcall(function() Services.VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game) end)
