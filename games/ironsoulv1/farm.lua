@@ -367,6 +367,59 @@ local function startFarmLoop()
     _eggScanResults   = {}
     _eggBest          = nil
 
+    -- [EGG CYCLE THREAD] Siklus posisi 5 detik (0.7 + 1.3 + 3.0) berjalan di
+    -- thread terpisah dengan task.wait() nyata per fase, sehingga terus berulang
+    -- apapun kondisi main loop — termasuk selama cooldown 12 detik setelah trigger.
+    task.spawn(function()
+        while _farmLoopRunning do
+            if not EngineConfig.FarmTargetEgg then
+                task.wait(0.1)
+                continue
+            end
+            local egg, eggPos = GetActiveDragonEgg()
+            if not egg or egg:GetAttribute("Broken") or not eggPos then
+                task.wait(0.1)
+                continue
+            end
+            local char = LocalPlayer.Character
+            local myHRP = char and char:FindFirstChild("HumanoidRootPart")
+            if not char or not myHRP then task.wait(0.1) continue end
+
+            -- ▶ FASE 1 (0.7 detik): Y +5 dari egg
+            CombatEngine.ResetPhysics(myHRP)
+            char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_ABOVE_OFFSET, eggPos))
+            task.wait(EGG_CYCLE_ABOVE_DURATION)
+            if not _farmLoopRunning or not EngineConfig.FarmTargetEgg then break end
+
+            -- ▶ FASE 2 (1.3 detik): Y -5 dari egg
+            egg, eggPos = GetActiveDragonEgg()
+            char = LocalPlayer.Character; myHRP = char and char:FindFirstChild("HumanoidRootPart")
+            if egg and eggPos and char and myHRP then
+                CombatEngine.ResetPhysics(myHRP)
+                char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_BELOW_OFFSET, eggPos))
+            end
+            task.wait(EGG_CYCLE_BELOW_DURATION)
+            if not _farmLoopRunning or not EngineConfig.FarmTargetEgg then break end
+
+            -- ▶ FASE 3 (3.0 detik): FarmPosition — re-check posisi egg tiap 0.5 detik
+            local fase3End = os.clock() + (EGG_CYCLE_DURATION - EGG_CYCLE_ABOVE_DURATION - EGG_CYCLE_BELOW_DURATION)
+            while os.clock() < fase3End and _farmLoopRunning and EngineConfig.FarmTargetEgg do
+                egg, eggPos = GetActiveDragonEgg()
+                char = LocalPlayer.Character; myHRP = char and char:FindFirstChild("HumanoidRootPart")
+                if egg and eggPos and char and myHRP then
+                    local dropCF = GetPositionCFrame(eggPos, EngineConfig.FarmPosition)
+                    if (myHRP.Position - eggPos).Magnitude > 50 then
+                        CombatEngine.ResetPhysics(myHRP)
+                        char:PivotTo(dropCF)
+                    else
+                        ApplyMovement(myHRP, dropCF)
+                    end
+                end
+                task.wait(0.5)
+            end
+        end
+    end)
+
     -- [ENDLESS TOWER] State per-session
     _G._endlessTowerWaitUntil    = 0     -- tick() kapan CFrame pertama boleh jalan (delay setelah target habis)
     _G._endlessTowerDone         = false -- true setelah CFrame Portal; reset saat monster baru muncul
@@ -473,42 +526,13 @@ local function startFarmLoop()
                 Services.RunService.Heartbeat:Wait()
             else
                 myHum.PlatformStand = true
-                -- Trigger awal: approach + ProximityPrompt/HoldKey sekali (jika belum cooldown)
+                -- Trigger: ProximityPrompt/HoldKey sekali per 12 detik.
+                -- Siklus posisi 5 detik diurus oleh EGG CYCLE THREAD secara terpisah.
                 if not _eggIsExtracting and os.clock() >= _eggLockEnd then
                     task.spawn(function() TriggerEggIfNeeded(egg, eggPosition) end)
                 end
-                -- Cache posisi scanner per egg instance — tidak scan descendant
-                -- tiap frame dan tetap konsisten selama satu egg diproses.
-                if egg ~= _eggCachedInst then
-                    _eggCachedInst  = egg
-                    _eggCycleStartedAt = os.clock()
-                end
-                -- Posisi scanner diperbarui setiap iterasi agar mengikuti egg
-                -- yang bergerak tanpa mengulang scan Workspace setiap frame.
-                _eggCachedPivot = eggPosition
-                local eggPivot    = _eggCachedPivot
-                local eggGroundCF = CFrame.new(eggPivot)
-                local cycleElapsed = (os.clock() - (_eggCycleStartedAt or os.clock())) % EGG_CYCLE_DURATION
-                if cycleElapsed < EGG_CYCLE_ABOVE_DURATION then
-                    -- ▶ FASE 1 (0.7 detik): teleport ke Y +5 dari egg.
-                    local targetPosition = eggPivot + EGG_CYCLE_ABOVE_OFFSET
-                    CombatEngine.ResetPhysics(myHRP)
-                    LocalPlayer.Character:PivotTo(CFrame.new(targetPosition, eggPivot))
-                elseif cycleElapsed < EGG_CYCLE_FOLLOW_START then
-                    -- ▶ FASE 2 (1.3 detik): teleport ke Y -5 dari egg.
-                    local targetPosition = eggPivot + EGG_CYCLE_BELOW_OFFSET
-                    CombatEngine.ResetPhysics(myHRP)
-                    LocalPlayer.Character:PivotTo(CFrame.new(targetPosition, eggPivot))
-                else
-                    -- ▶ FASE 3 (3 detik): mengikuti posisi dan height pengaturan Farm.
-                    local dropCF = GetPositionCFrame(eggPivot, EngineConfig.FarmPosition)
-                    if (myHRP.Position - eggPivot).Magnitude > 50 then
-                        CombatEngine.ResetPhysics(myHRP)
-                        LocalPlayer.Character:PivotTo(dropCF)
-                    else
-                        ApplyMovement(myHRP, dropCF)
-                    end
-                end
+                -- Serang egg tiap interval senjata
+                local eggGroundCF = CFrame.new(eggPosition)
                 local now = tick()
                 local _atkInterval = EngineConfig.SelectedWeapon == "Bow" and BOW_ATTACK_INTERVAL or FARM_ATTACK_INTERVAL
                 if now - _lastFarmAttack >= _atkInterval and not _autoAttackPaused then
