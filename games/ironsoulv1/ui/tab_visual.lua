@@ -72,6 +72,16 @@ _G.GestureModeDropdown = CreateDropdownUI(AppearPage, "🖐️ Mode Buka GUI", {
     VisualConfig.GestureMode = v; CustomNotify("🖐️ GESTURE","Mode buka: "..v,2)
 end, "lblGesture")
 
+CreateSection(AppearPage, "Perilaku Awal GUI", "secStartBehavior")
+_G.GuiStartHiddenToggle = CreateToggleUI(AppearPage, "🙈 Sembunyikan GUI saat Mulai", EngineConfig.GuiStartHidden, function(v)
+    EngineConfig.GuiStartHidden = v
+    if v then
+        CustomNotify("🙈 GUI START", "GUI akan tersembunyi saat mulai. Klik Floating Button untuk membuka.", 4)
+    else
+        CustomNotify("🙈 GUI START", "GUI akan otomatis muncul saat script dijalankan.", 3)
+    end
+end, "lblGuiStartHidden")
+
 CreateSection(AppearPage, "Mode Tab", "secTabMode")
 _G.TabModeDropdownUI = CreateDropdownUI(AppearPage, "📑 Orientasi Tab", { "Horizontal", "Vertikal" }, VisualConfig.TabMode, function(v)
     VisualConfig.TabMode = v; ApplyTabMode(v)

@@ -167,6 +167,8 @@ local EngineConfig = {
     UtilAutoRerollActive = false, -- toggle auto reroll race
     UtilRaceSlot         = "Free_1",  -- slot race yang di-reroll ("Free_1" atau "1")
     UtilTargetRaces      = {},   -- map: raceName → bool (target race yg dicari)
+    -- ── GUI Start Behavior ────────────────────────────────────────────────────
+    GuiStartHidden = false,  -- true = GUI tidak muncul otomatis; harus klik Floating Button
     -- ── Dodge Dragon ───────────────────────────────────────────────────────────
     DodgeDragonActive = false,  -- toggle auto-dodge skill Bom (BombRed)
     -- ── Discord Webhook ────────────────────────────────────────────────────────

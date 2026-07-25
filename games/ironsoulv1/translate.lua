@@ -153,6 +153,9 @@ local LANG_STRINGS = {
         secRoomSettings="Pengaturan Room",
         secAutoRoom="Auto Room",
         lblAutoReturn="🏠 Auto Kembali ke Lobby",
+        -- GUI Start Behavior
+        secStartBehavior="Perilaku Awal GUI",
+        lblGuiStartHidden="🙈 Sembunyikan GUI saat Mulai",
         -- Dodge Dragon
         secDodgeDragon="🐉 Dodge Dragon",
         lblDodgeDragon="🐉 Dodge Dragon (Skill Bom)",
@@ -381,6 +384,9 @@ local LANG_STRINGS = {
         secRoomSettings="Room Settings",
         secAutoRoom="Auto Room",
         lblAutoReturn="🏠 Auto Return to Lobby",
+        -- GUI Start Behavior
+        secStartBehavior="GUI Start Behavior",
+        lblGuiStartHidden="🙈 Hide GUI on Start",
         -- Dodge Dragon
         secDodgeDragon="🐉 Dodge Dragon",
         lblDodgeDragon="🐉 Dodge Dragon (Bomb Skill)",

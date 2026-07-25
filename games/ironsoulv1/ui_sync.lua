@@ -70,6 +70,7 @@ function SyncAllVisualUI()
         if _G.AntiPausedToggle      then _G.AntiPausedToggle:SetValue(EngineConfig.AntiPausedActive) end
         if _G.AutoExecuteToggle      then _G.AutoExecuteToggle:SetValue(EngineConfig.AutoExecuteOnRejoin) end
         if _G.AutoReturnLobbyToggle  then _G.AutoReturnLobbyToggle:SetValue(EngineConfig.AutoReturnLobbyActive) end
+        if _G.GuiStartHiddenToggle   then _G.GuiStartHiddenToggle:SetValue(EngineConfig.GuiStartHidden == true) end
         if _G.DodgeDragonToggle      then _G.DodgeDragonToggle:SetValue(EngineConfig.DodgeDragonActive) end
         if _G.WebhookToggle          then _G.WebhookToggle:SetValue(EngineConfig.WebhookActive) end
         if _G.WebhookUrlInput        then _G.WebhookUrlInput:SetValue(EngineConfig.WebhookUrl or "") end

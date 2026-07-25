@@ -248,7 +248,11 @@ local function PlayIntroAnimation()
     TweenService:Create(BtnContainer, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = finalSize, Position = finalPos}):Play()
     task.wait(0.55)
     IntroGui:Destroy()
-    ToggleGUI()
+    -- Jika GuiStartHidden=false (default): buka GUI otomatis seperti biasa.
+    -- Jika GuiStartHidden=true: biarkan tersembunyi — user harus klik Floating Button.
+    if not EngineConfig.GuiStartHidden then
+        ToggleGUI()
+    end
 end
 
 
