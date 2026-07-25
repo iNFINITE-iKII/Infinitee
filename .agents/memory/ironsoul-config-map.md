@@ -37,4 +37,4 @@ Reader harus memiliki timeout, menangani config yang belum muncul, membedakan Mo
 
 **Why:** dump config sudah jauh lebih lengkap daripada fitur yang saat ini dipakai script, dan verifikasi terbaru memastikan pembacaan live baru terbatas pada beberapa config. Memisahkan data reader dari remote mapping mencegah implementasi rapuh dan asumsi server yang salah.
 
-**How to apply:** saat ada permintaan upgrade IronSoul v1, baca topik ini bersama `AGENT_PROMPT.md`, cek kode terbaru di `games/ironsoulv1/`, lalu bedakan dengan jelas antara config yang benar-benar di-`require` saat runtime dan dump yang hanya menjadi referensi. Laporkan root cause/alur dalam Bahasa Indonesia dan lakukan perubahan minimal.
+**How to apply:** saat ada permintaan upgrade IronSoul v1, baca topik ini bersama `AGENT_PROMPT.md` dan `.agents/guides/ironsoul-read-map.md`; pilih hanya kategori/file yang relevan, lalu bedakan config live dari dump referensi. Laporkan root cause/alur dalam Bahasa Indonesia dan lakukan perubahan minimal.

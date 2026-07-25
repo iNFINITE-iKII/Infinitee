@@ -1,7 +1,7 @@
 # Agent Prompt — Infinitee Script Hub
 
 > File ini adalah instruksi untuk agen AI yang bekerja di repo ini.
-> Baca seluruhnya sebelum merespons atau menyentuh kode apapun.
+> Baca aturan inti ini sebelum merespons. Untuk pekerjaan IronSoul, buka guide pemetaan hanya sesuai kategori permintaan.
 
 ---
 
@@ -125,52 +125,19 @@ local Services     = H.Services
 local CustomNotify = H.CustomNotify
 ```
 
-### Prosedur pembacaan otomatis sebelum menjawab atau mengubah IronSoul v1:
+### Routing pembacaan otomatis IronSoul v1:
 
-Ikuti urutan ini setiap kali user meminta audit, bug fix, upgrade, atau fitur baru:
+Sebelum pekerjaan IronSoul, klasifikasikan permintaan sebagai `AUDIT`, `BUG_FIX`, `FEATURE`, `UI`, `CONFIG`, `PUSH`, atau `DOCS`.
 
-1. Baca `AGENT_PROMPT.md` sampai selesai.
-2. Baca `.agents/memory/MEMORY.md`, lalu buka `.agents/memory/ironsoul-config-map.md` untuk pekerjaan IronSoul/config/remote.
-3. Baca `games/ironsoulv1.lua` dan `games/ironsoulv1/loader.lua` untuk entry point, urutan load, license, dan dependency modul.
-4. Baca `games/ironsoulv1/core.lua` untuk `Services`, `EngineConfig`, konstanta, dan remote yang diekspor ke `Hub`.
-5. Baca modul fitur yang sesuai permintaan menggunakan tabel pemetaan di bawah. Jangan membaca atau mengubah semua file secara membabi buta.
-6. Cari dengan `rg` semua `FireServer`, `InvokeServer`, `WaitForChild`, `require`, dan `Res...` yang terkait sebelum menyimpulkan alur.
-7. Bedakan status berikut secara eksplisit:
-   - `DATA_DUMP`: hanya ada file `games/config/*.txt`.
-   - `LIVE_CONFIG`: script benar-benar `require`/membaca config dari `ReplicatedStorage.Configs` saat runtime.
-   - `CONFIRMED_REMOTE`: remote dan action terlihat dipanggil oleh kode.
-   - `PLANNER_ONLY`: baru scanner, filter, kalkulator, dashboard, atau rekomendasi.
-   - `UNVERIFIED`: remote, argument, atau respons server belum terbukti.
-8. Sebelum menambah action server, pastikan remote dan argument-nya sudah terlihat di kode atau alur resmi yang berwenang. Jangan menebak dari nama file config.
+1. Baca bagian aturan inti yang relevan, `.agents/memory/MEMORY.md`, dan `.agents/memory/ironsoul-config-map.md`.
+2. Untuk `AUDIT`, `BUG_FIX`, atau `FEATURE`, baca entry point (`games/ironsoulv1.lua`, `games/ironsoulv1/loader.lua`) dan `games/ironsoulv1/core.lua`, lalu buka `.agents/guides/ironsoul-read-map.md` hanya untuk kategori yang sesuai.
+3. Untuk `UI`, mulai dari modul UI terkait; untuk `CONFIG`, mulai dari config yang diminta dan cari pemakaian live-nya; untuk `PUSH`, cukup periksa status, diff, commit, branch, dan remote.
+4. Gunakan `rg` untuk menemukan dependency, `FireServer`, `InvokeServer`, `WaitForChild`, `require`, dan `Res...` sebelum membaca file tambahan.
+5. Jangan membaca seluruh repository tanpa alasan. Berhenti setelah alur utama, dependency, dan bukti status sudah jelas.
+6. Tandai hasil sebagai `DATA_DUMP`, `LIVE_CONFIG`, `CONFIRMED_REMOTE`, `PLANNER_ONLY`, atau `UNVERIFIED` sesuai bukti kode aktual.
+7. Jangan menebak remote/argument server dari nama config; jika belum terbukti, buat planner/read-only atau laporkan gap.
 
-| Permintaan user | File utama yang wajib dibaca | Config yang menjadi titik awal |
-|---|---|---|
-| Farm enemy/chest/egg/loot | `farm.lua`, `combat.lua`, `navigation.lua`, `ui/tab_farm.lua` | `ResEnemy`, `ResDropLoot`, `ResChestLoot`, `ResDragonEggLoot`, `RoundEnemy`, `World` |
-| Forge/QTE/ore | `auto_forge.lua`, `ui/tab_forge.lua`, `ui/tab_sell.lua` | `ResOres`, `ResForgeQTE`, `ResWeapon`, `ResArmor`, `ResFortifyConfig`, `ResFortifyCost` |
-| Enchant/unforge/fortify/scroll | `auto_forge.lua`, `ui/tab_forge.lua`, `ui/tab_sell.lua`, `core.lua` | `ResEnchantedStoneConfig`, `ResUnForge`, `ResFortifyConfig`, `ResFortifyCost`, `ResScrolls` |
-| Weapon/armor/equipment | `ui/tab_sell.lua`, `farm.lua`, `auto_forge.lua`, `core.lua` | `ResWeapon`, `ResArmor`, `ResWeaponProbability`, `ResArmorProbability` |
-| Potion/buff | `auto_potion.lua`, `buff_card.lua`, `ui/tab_autopotion.lua`, `ui/tab_farm.lua` | `ResPotion`, `ResBuff`, `ResTimedBuff` |
-| Shop/buy/sell | `farm.lua`, `ui/tab_autobuy.lua`, `ui/tab_sell.lua`, `core.lua` | `ResShop_Gold`, `ResShop_Bond`, `ResSeasonShop`, `ResHonorStore`, `ResProducts`, `ResGamePass` |
-| Quest/achievement/reward | `ui/tab_util.lua`, `ui/tab_npc.lua`, `combat.lua` | `ResAchievement`, `ResDailyQuest`, `ResDailyQuestReward`, `ResDailyTask`, `ResEventTask`, `ResMainTask`, `ResDailyReward`, `ResGuidebookReward` |
-| Season/update pass | `farm.lua`, `ui/tab_util.lua`, `core.lua` | `ResSeasonPassTask`, `ResSeasonPassLevel`, `ResSeasonPass`, `ResUpdateLog` |
-| Pet/expedition/bond | `ui/tab_npc.lua`, `ui/tab_autobuy.lua`, `core.lua` | `ResPets`, `ResPetsEgg`, `ResPetsSkill`, `ResPetsExpeditionSlot`, `ResBondLevel`, `ResBondTask` |
-| Race/attribute/skill | `ui/tab_util.lua`, `ui/tab_farm.lua`, `core.lua` | `ResRace`, `ResAttributeUpgrade`, `ResSkillTree`, `ResSkillStage`, `ResSkill`, `ResProbabilityUp` |
-| UI/profile/translation | `ui/ui_core.lua`, `ui_sync.lua`, `config_system.lua`, `translate.lua` | Config tidak wajib; cek `EngineConfig` dan `VisualConfig` |
-
-**Reader config:** bila permintaan memerlukan data live, cek dulu apakah config sudah dipakai melalui `require(ReplicatedStorage.Configs.<Nama>)`. Jika belum, perlakukan file `games/config/*.txt` sebagai `DATA_DUMP`, bukan sumber runtime. Implementasi reader baru harus memiliki timeout, validasi tipe/field, cache, dan pesan error yang jelas. `RoundEnemy`/`World` adalah Folder dan `PackageLink` bukan ModuleScript biasa, sehingga tidak boleh diproses dengan asumsi `require` yang sama.
-
-**Remote map:** remote utama saat ini diekspor dari `core.lua`: `PlayerActionRE`, `GameRoundRE`, `EquipmentRE`, `ForgeRF`, `MaterialRE`, `WorldPlaceRE`, `WorldBonusCardRE`, `GameMatchRE`, dan `SeasonUtilRE`. Remote dinamis yang perlu dicari di file terkait antara lain `CodeRE`, `RaceRE`, `TaskRE`, `UpdateLogSystem.RemoteEvent`, `ConsumableShopUtil.RemoteEvent`, dan `WindowUtil.RemoteEvent`. Hanya action yang benar-benar terlihat dipanggil yang boleh diberi status `CONFIRMED_REMOTE`.
-
-**Format laporan setelah audit:**
-
-```text
-Status data: DATA_DUMP / LIVE_CONFIG
-Status remote: CONFIRMED_REMOTE / UNVERIFIED
-File yang dibaca: [daftar singkat]
-Alur saat ini: [input → logic → remote/UI → output]
-Gap: [bagian yang belum ada atau belum terverifikasi]
-Rencana aman: [perubahan minimal atau planner-only]
-```
+Peta file dan config per kategori ada di `.agents/guides/ironsoul-read-map.md`. Format laporan audit ada di guide tersebut.
 
 ---
 
