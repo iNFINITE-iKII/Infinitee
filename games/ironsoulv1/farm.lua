@@ -384,12 +384,9 @@ local function startFarmLoop()
             local myHRP = char and char:FindFirstChild("HumanoidRootPart")
             if not char or not myHRP then task.wait(0.1) continue end
 
-            -- ▶ FASE 1 (0.7 detik): Y +5 dari EggModel.Root
-            -- Referensi posisi dari Root part egg agar CFrame tepat di titik interaksi.
-            local eggRoot1 = egg:FindFirstChild("EggModel") and egg.EggModel:FindFirstChild("Root")
-            local rootPos1 = (eggRoot1 and eggRoot1.Position) or eggPos
+            -- ▶ FASE 1 (0.7 detik): Y +5 dari posisi egg (eggPos)
             CombatEngine.ResetPhysics(myHRP)
-            char:PivotTo(CFrame.new(rootPos1 + EGG_CYCLE_ABOVE_OFFSET))
+            char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_ABOVE_OFFSET))
             task.wait(EGG_CYCLE_ABOVE_DURATION)
             if not _farmLoopRunning then break end
             if not EngineConfig.FarmTargetEgg then continue end
