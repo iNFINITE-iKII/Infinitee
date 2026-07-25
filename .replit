@@ -1,4 +1,4 @@
-modules = ["lua-5.2", "web", "nodejs-20", "python-base-3.13"]
+modules = ["lua-5.2", "web", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
