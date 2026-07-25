@@ -641,6 +641,7 @@ local function startFarmLoop()
                         -- Spawn Heartbeat koreksi Y: jika drift > 2 stud dari Y terkunci → snap kembali
                         if _G._endlessTowerYLockConn then pcall(function() _G._endlessTowerYLockConn:Disconnect() end) end
                         _G._endlessTowerYLockConn = Services.RunService.Heartbeat:Connect(function()
+                            if EngineConfig.FarmTargetEgg then return end  -- egg aktif → skip lock Y
                             local lockedY = _G._endlessTowerFixedY
                             if not lockedY then
                                 pcall(function() _G._endlessTowerYLockConn:Disconnect() end)
@@ -711,6 +712,7 @@ local function startFarmLoop()
                         -- Spawn Heartbeat koreksi Y drift
                         if _G._tartarusYLockConn then pcall(function() _G._tartarusYLockConn:Disconnect() end) end
                         _G._tartarusYLockConn = Services.RunService.Heartbeat:Connect(function()
+                            if EngineConfig.FarmTargetEgg then return end  -- egg aktif → skip lock Y
                             local lockedY = _G._tartarusFixedY
                             if not lockedY then
                                 pcall(function() _G._tartarusYLockConn:Disconnect() end)
