@@ -22,6 +22,19 @@ Remote yang dicari secara dinamis mencakup `CodeRE`, `RaceRE`, `UpdateLogSystem.
 
 **Urutan upgrade yang disarankan:** (1) buat reader live yang aman dan hanya mengaktifkan config yang sudah divalidasi, (2) farm planner berbasis enemy/chest/egg/drop/world, (3) forge dan equipment optimizer, (4) quest/reward dashboard, (5) pet, expedition, bond, dan season pass satu per satu. Pertahankan struktur Luau yang ada dan validasi dengan tooling Luau-aware.
 
+**Live Config Reader — penjelasan untuk agent berikutnya:** ini adalah fondasi yang membaca config langsung dari `ReplicatedStorage.Configs` saat runtime, lalu menyediakan data terpusat untuk Farm, Forge, Shop, UI, planner, dan dashboard. Tujuannya mengurangi dump lama dan hardcode, mengikuti enemy/loot/weapon/armor/shop/egg baru setelah update game, membuat dropdown UI dinamis, serta memudahkan validasi dan debugging. Reader tidak menjalankan remote, tidak mengubah inventory, tidak melakukan claim, fortify, enchant, hatch, atau action server lain.
+
+Alur yang disarankan:
+```text
+ReplicatedStorage.Configs
+  → ConfigReader.Load(name)
+  → validasi tipe/field + cache
+  → Farm/Forge/UI/Planner
+  → gunakan remote hanya jika action-nya sudah terverifikasi
+```
+
+Reader harus memiliki timeout, menangani config yang belum muncul, membedakan ModuleScript dari Folder/PackageLink, memeriksa format yang berubah, dan mengembalikan kegagalan secara jelas. Mulai dari `ResEnemy`, `ResDropLoot`, `ResChestLoot`, `ResDragonEggLoot`, `ResOres`, `ResSeasonShop`, `ResWeapon`, dan `ResArmor`; jangan menganggap seluruh 66 config sudah terintegrasi hanya karena file dump-nya ada.
+
 **Why:** dump config sudah jauh lebih lengkap daripada fitur yang saat ini dipakai script, dan verifikasi terbaru memastikan pembacaan live baru terbatas pada beberapa config. Memisahkan data reader dari remote mapping mencegah implementasi rapuh dan asumsi server yang salah.
 
 **How to apply:** saat ada permintaan upgrade IronSoul v1, baca topik ini bersama `AGENT_PROMPT.md`, cek kode terbaru di `games/ironsoulv1/`, lalu bedakan dengan jelas antara config yang benar-benar di-`require` saat runtime dan dump yang hanya menjadi referensi. Laporkan root cause/alur dalam Bahasa Indonesia dan lakukan perubahan minimal.
