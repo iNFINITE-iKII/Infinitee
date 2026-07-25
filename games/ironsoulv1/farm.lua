@@ -384,6 +384,20 @@ local function startFarmLoop()
             local myHRP = char and char:FindFirstChild("HumanoidRootPart")
             if not char or not myHRP then task.wait(0.1) continue end
 
+            -- Pastikan Y-lock World 4 / World 5 tidak fight melawan CFrame egg.
+            -- Lock ini dibuat saat farm monster; jika user beralih ke Egg tanpa restart
+            -- Auto Farm, Heartbeat-nya masih hidup dan akan snap Y kembali tiap frame.
+            if _G._tartarusYLockConn then
+                pcall(function() _G._tartarusYLockConn:Disconnect() end)
+                _G._tartarusYLockConn = nil
+            end
+            _G._tartarusFixedY = nil
+            if _G._endlessTowerYLockConn then
+                pcall(function() _G._endlessTowerYLockConn:Disconnect() end)
+                _G._endlessTowerYLockConn = nil
+            end
+            _G._endlessTowerFixedY = nil
+
             -- ▶ FASE 1 (0.7 detik): Y +5 dari posisi egg (eggPos)
             CombatEngine.ResetPhysics(myHRP)
             char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_ABOVE_OFFSET))
