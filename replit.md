@@ -1,53 +1,37 @@
-# infinitee-bot
+# Infinitee Script Hub
 
-A Discord bot built with TypeScript + Discord.js v14, using PostgreSQL (Neon) via Drizzle ORM.
+Repo ini berisi dua komponen utama:
 
-## Features
-- License key management (generate, delete, renew, revoke, transfer)
-- HWID tracking and reset
-- Premium sync
-- Ticket / panel system
-- User key lookups and stats
+| Komponen | Lokasi | Bahasa | Tujuan |
+|---|---|---|---|
+| **Script Hub Roblox** | `games/ironsoulv1/` | Luau (Roblox) | Cheat/automation script untuk game IronSoul v1 |
+| **Discord Bot** | `bot/` | TypeScript + Discord.js v14 | Manajemen lisensi, HWID, tiket |
 
-## Stack
-- **Runtime:** Node.js (ESM)
-- **Language:** TypeScript (compiled to `dist/` via esbuild)
-- **Discord library:** discord.js v14
-- **Database:** PostgreSQL via Drizzle ORM (Neon)
-- **HTTP server:** lightweight server in `src/server.ts`
+## Cara Menjalankan
 
-## Required secrets
-| Secret | Description |
-|---|---|
-| `DISCORD_BOT_TOKEN` | Bot token from the Discord Developer Portal |
-| `DISCORD_CLIENT_ID` | Application ID from the Discord Developer Portal (for slash-command registration) |
-| `DISCORD_GUILD_ID` | ID of the Discord server to register commands in |
-| `NEON_DATABASE_URL` | PostgreSQL connection string from Neon |
+### Discord Bot
+- Workflow: `cd bot && node dist/index.mjs`
+- Rebuild: `cd bot && npm run build`
+- Secrets yang dibutuhkan: `DISCORD_BOT_TOKEN`, `NEON_DATABASE_URL`
+- Env vars yang sudah di-set: `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`
 
-## Optional secrets
-| Secret | Description |
-|---|---|
-| `LOGGER_CHANNEL_ID` | Discord channel ID for bot logs |
-| `TICKET_STAFF_ROLE_ID` | Role ID that can see/manage tickets |
-| `TICKET_CHANNEL_ID` | Channel ID where ticket transcripts are logged |
-| `LOADER_URL` | Override the default loader script URL |
-| `SERVER_BASE_URL` | Override the base URL of the HTTP server |
-| `PREMIUM_ROLE_NAME` | Name of the premium role (defaults to `PREMIUM`) |
+### Roblox Script
+- File Luau di `games/ironsoulv1/` — dijalankan di lingkungan Roblox, bukan Replit
+- Entry point: `games/ironsoulv1/loader.lua`
 
-## Running
-The bot is pre-built in `dist/`. The configured workflow runs:
-```
-cd bot && node dist/index.mjs
-```
+## Git & GitHub
+- Remote: `https://github.com/iNFINITE-iKII/Infinitee`
+- Branch utama: `main`
+- Push menggunakan secret `GITHUB_PERSONAL_ACCESS_TOKEN` via Basic auth
 
-To rebuild after code changes:
-```
-cd bot && npm run build
-```
+## User Preferences
 
-To push schema changes to the database:
-```
-cd bot && npm run db:push
-```
-
-## User preferences
+- **Bahasa komunikasi**: Indonesia penuh. Nama teknis (function, variable, file path) boleh Inggris.
+- **Nada**: Profesional tapi tidak kaku. Langsung ke inti.
+- **Tidak perlu** konfirmasi "apakah saya boleh lanjut?" — langsung kerjakan dan laporkan hasilnya.
+- Saat menjelaskan bug: tampilkan root cause → alur lama (❌) → alur baru (✅)
+- Saat push berhasil: tampilkan ringkasan (hash, branch, remote, status sinkron)
+- Saat implementasi fitur: jelaskan 2–4 kalimat + snippet kode yang berubah + file yang diubah
+- Jangan gunakan `luac` untuk validasi file Luau di `games/` — gunakan `git diff --check`
+- Jangan `git push --force` kecuali diminta eksplisit
+- Toggle baru di Roblox script wajib ditambahkan ke `SyncAllVisualUI` (ui_sync.lua)
