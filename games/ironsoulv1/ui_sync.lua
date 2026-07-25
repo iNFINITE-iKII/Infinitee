@@ -75,6 +75,28 @@ function SyncAllVisualUI()
         if _G.WebhookUrlInput        then _G.WebhookUrlInput:SetValue(EngineConfig.WebhookUrl or "") end
         if _G.SellCategoryDropdown  then _G.SellCategoryDropdown:SetValue(EngineConfig.SellCategory) end
 
+        -- ── Prioritas Musuh sync ───────────────────────────────────────────
+        -- GameLists diisi oleh scanner runtime (tab_priority.lua).
+        -- Sync hanya bisa benar jika scan sudah pernah dilakukan di sesi ini.
+        if _G.NormalNpcChecks then
+            local _nl = H.GameLists.NormalNPCs or {}
+            for i, check in ipairs(_G.NormalNpcChecks) do
+                local npcId = _nl[i]
+                if npcId then
+                    check:SetValue(EngineConfig.PriorityNormalNpcIds[npcId] == true)
+                end
+            end
+        end
+        if _G.BossNpcChecks then
+            local _bl = H.GameLists.BossNPCs or {}
+            for i, check in ipairs(_G.BossNpcChecks) do
+                local npcId = _bl[i]
+                if npcId then
+                    check:SetValue(EngineConfig.PriorityBossNpcIds[npcId] == true)
+                end
+            end
+        end
+
         -- ── Room tab sync ──────────────────────────────────────────────────
         -- RoomWorldDropdown:SetValue() fires its callback which calls
         -- updateModeDropdown() → resets EngineConfig.RoomMode + RoomTarget.

@@ -125,8 +125,8 @@ local EngineConfig = {
     SkillActiveAW      = true,
     SkillCooldownDelay = 0.5,
     AutoWeaponSwitchActive = false,
-    SelectedNormalNpcId = nil,
-    SelectedBossNpcId   = nil,
+    PriorityNormalNpcIds = {},  -- map: npcId → bool (normal monster diprioritaskan)
+    PriorityBossNpcIds   = {},  -- map: npcId → bool (boss monster diprioritaskan)
     SellCategory         = "All",
     AutoSellStaticList   = {},
     AutoSellScanActive   = false,
@@ -182,7 +182,12 @@ local EngineConfig = {
     BuffCardDiscovered = {},            -- ordered list baseName kartu yang sudah ditemukan
 }
 
-local GameLists = { NormalNPCs = {"None"}, BossNPCs = {"None"} }
+local GameLists = {
+    NormalNPCs     = {},  -- array of npcId (key untuk EngineConfig)
+    NormalNPCNames = {},  -- array of display name (paralel dengan NormalNPCs)
+    BossNPCs       = {},  -- array of npcId
+    BossNPCNames   = {},  -- array of display name
+}
 
 
 --------------------------------------------------------------------------------

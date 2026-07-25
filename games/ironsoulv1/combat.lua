@@ -107,8 +107,9 @@ function CombatEngine.GetValidMonsters()
         local hum=monster:FindFirstChildOfClass("Humanoid")
         if hrp and (not hum or hum.Health>0) then
             local npcId=CombatEngine.GetNpcId(monster)
-            if (EngineConfig.SelectedNormalNpcId and npcId==EngineConfig.SelectedNormalNpcId)
-            or (EngineConfig.SelectedBossNpcId   and npcId==EngineConfig.SelectedBossNpcId) then
+            local isPriority = EngineConfig.PriorityNormalNpcIds[npcId] == true
+                            or EngineConfig.PriorityBossNpcIds[npcId]   == true
+            if isPriority then
                 table.insert(priority,1,monster)
             elseif CombatEngine.GetLevelType(monster)=="boss" then
                 table.insert(priority,monster)
