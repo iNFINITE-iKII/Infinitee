@@ -126,6 +126,7 @@ PotionLayout.Padding   = UDim.new(0, 4)
 PotionLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- Warna background berdasarkan state potion
+local SELECTED_BG = Color3.fromRGB(30, 100, 55) -- hijau: selalu berarti dipilih
 local STATE_BG = {
     Active          = Color3.fromRGB(25, 80, 145),   -- biru (buff aktif)
     Pending         = Color3.fromRGB(90, 65, 15),    -- kuning (sedang di-queue)
@@ -180,7 +181,7 @@ RebuildPotionUI = function()
         Btn.Text             = "  🧪 " .. (Entry.DisplayName or PotionId)
         Btn.TextColor3       = Color3.fromRGB(220, 220, 230)
         Btn.BackgroundColor3 = isSelected
-            and Color3.fromRGB(30, 100, 55)
+            and SELECTED_BG
             or  (STATE_BG[State] or STATE_BG.Inactive)
         Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 
@@ -208,7 +209,7 @@ RebuildPotionUI = function()
             else
                 AutoPotion.Selected[capturedId]              = true
                 EngineConfig.AutoPotionSelected[capturedId]  = true
-                Btn.BackgroundColor3 = Color3.fromRGB(30, 100, 55)
+                Btn.BackgroundColor3 = SELECTED_BG
                 -- Langsung evaluate jika engine sudah aktif
                 if EngineConfig.AutoPotionActive then
                     task.spawn(function()
@@ -231,9 +232,9 @@ task.spawn(function()
                 local State      = AutoPotion.GetEntryState(Entry)
                 local isSelected = AutoPotion.Selected[PotionId] == true
                 if isSelected then
-                    refs.Btn.BackgroundColor3 = (State == "Active")
-                        and STATE_BG.Active
-                        or  Color3.fromRGB(30, 100, 55)
+                    -- Pilihan harus tetap terlihat hijau walaupun buff sedang
+                    -- aktif, pending, atau stok potion sedang berubah.
+                    refs.Btn.BackgroundColor3 = SELECTED_BG
                 else
                     refs.Btn.BackgroundColor3 = STATE_BG[State] or STATE_BG.Inactive
                 end
