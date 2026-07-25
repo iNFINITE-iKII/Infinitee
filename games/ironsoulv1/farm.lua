@@ -40,7 +40,6 @@ local EGG_CYCLE_ABOVE_DURATION = 0.7
 local EGG_CYCLE_BELOW_DURATION = 1.3
 local EGG_CYCLE_FOLLOW_START   = EGG_CYCLE_ABOVE_DURATION + EGG_CYCLE_BELOW_DURATION
 local EGG_CYCLE_ABOVE_OFFSET   = Vector3.new(0, 5, 0)
-local EGG_CYCLE_BELOW_OFFSET   = Vector3.new(0, -5, 0)
 
 local _eggScanAt      = -math.huge
 local _eggScanResults = {}
@@ -385,21 +384,24 @@ local function startFarmLoop()
             local myHRP = char and char:FindFirstChild("HumanoidRootPart")
             if not char or not myHRP then task.wait(0.1) continue end
 
-            -- ▶ FASE 1 (0.7 detik): Y +5 dari egg
-            -- Pakai CFrame.new(pos) tanpa lookAt agar karakter tidak dipaksa
-            -- merotasi menghadap egg — pergerakan naik/turun lebih terlihat jelas.
+            -- ▶ FASE 1 (0.7 detik): Y +5 dari EggModel.Root
+            -- Referensi posisi dari Root part egg agar CFrame tepat di titik interaksi.
+            local eggRoot1 = egg:FindFirstChild("EggModel") and egg.EggModel:FindFirstChild("Root")
+            local rootPos1 = (eggRoot1 and eggRoot1.Position) or eggPos
             CombatEngine.ResetPhysics(myHRP)
-            char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_ABOVE_OFFSET))
+            char:PivotTo(CFrame.new(rootPos1 + EGG_CYCLE_ABOVE_OFFSET))
             task.wait(EGG_CYCLE_ABOVE_DURATION)
             if not _farmLoopRunning then break end
             if not EngineConfig.FarmTargetEgg then continue end
 
-            -- ▶ FASE 2 (1.3 detik): Y -5 dari egg
+            -- ▶ FASE 2 (1.3 detik): tepat di EggModel.Root (tanpa offset)
             egg, eggPos = GetActiveDragonEgg()
             char = LocalPlayer.Character; myHRP = char and char:FindFirstChild("HumanoidRootPart")
             if egg and eggPos and char and myHRP then
+                local eggRoot2 = egg:FindFirstChild("EggModel") and egg.EggModel:FindFirstChild("Root")
+                local rootPos2 = (eggRoot2 and eggRoot2.Position) or eggPos
                 CombatEngine.ResetPhysics(myHRP)
-                char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_BELOW_OFFSET))
+                char:PivotTo(CFrame.new(rootPos2))
             end
             task.wait(EGG_CYCLE_BELOW_DURATION)
             if not _farmLoopRunning then break end
