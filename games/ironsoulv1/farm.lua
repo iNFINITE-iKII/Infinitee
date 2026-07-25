@@ -31,6 +31,17 @@ local EGG_SCAN_INTERVAL  = 2
 local EGG_NAME_FILTER    = "Dragon"
 local EGG_TELEPORT_OFFSET = Vector3.new(0, 5, 0)
 
+-- Siklus posisi Auto Farm Egg:
+--   0.0 - 0.7s : tepat di atas egg, offset Y +5
+--   0.7 - 2.0s : di bawah egg, offset Y -5
+--   2.0 - 5.0s : mengikuti FarmPosition + StandHeight
+local EGG_CYCLE_DURATION       = 5.0
+local EGG_CYCLE_ABOVE_DURATION = 0.7
+local EGG_CYCLE_BELOW_DURATION = 1.3
+local EGG_CYCLE_FOLLOW_START   = EGG_CYCLE_ABOVE_DURATION + EGG_CYCLE_BELOW_DURATION
+local EGG_CYCLE_ABOVE_OFFSET   = Vector3.new(0, 5, 0)
+local EGG_CYCLE_BELOW_OFFSET   = Vector3.new(0, -5, 0)
+
 local _eggScanAt      = -math.huge
 local _eggScanResults = {}
 local _eggBest        = nil
@@ -113,7 +124,7 @@ end
 local _eggIsExtracting  = false      -- true saat TriggerEggIfNeeded sedang jalan
 local _eggLastTriggered = nil        -- referensi egg terakhir yang di-trigger
 local _eggLockEnd       = 0          -- os.clock() deadline cooldown setelah trigger (12 detik)
-local _eggTriggeredAt   = -math.huge -- os.clock() saat trigger terakhir; 2 detik pertama = fase diam bawah egg
+local _eggCycleStartedAt = nil       -- os.clock() awal siklus posisi 5 detik
 local _eggCachedInst    = nil        -- egg instance yang sedang di-cache pivot-nya
 local _eggCachedPivot   = nil        -- Vector3 posisi scanner egg; stabil antar-scan
 -- Cari ProximityPrompt di dalam model DragonEgg (rekursif)
@@ -143,11 +154,6 @@ local function TriggerEggIfNeeded(eggModel, eggPosition)
 
     _eggIsExtracting  = true
     _eggLastTriggered = eggModel
-    -- Set _eggTriggeredAt SEKARANG agar main loop langsung masuk Fase 1
-    -- dan mengunci karakter di dekat egg sebelum prompt difire.
-    -- Ini mencegah race condition di mana main loop Fase 2 menarik karakter
-    -- ke orbit sementara TriggerEgg masih berjalan.
-    _eggTriggeredAt   = os.clock()
 
     -- Teleport awal ke posisi egg + offset; Fase 1 mengambil alih setelahnya.
     MoveToEgg(eggModel, eggPosition)
@@ -335,7 +341,7 @@ local function startFarmLoop()
     _eggIsExtracting  = false
     _eggLastTriggered = nil
     _eggLockEnd       = 0
-    _eggTriggeredAt   = -math.huge
+    _eggCycleStartedAt = nil
     _eggCachedInst    = nil
     _eggCachedPivot   = nil
     _eggScanAt        = -math.huge
@@ -456,54 +462,39 @@ local function startFarmLoop()
                 -- tiap frame dan tetap konsisten selama satu egg diproses.
                 if egg ~= _eggCachedInst then
                     _eggCachedInst  = egg
+                    _eggCycleStartedAt = os.clock()
                 end
                 -- Posisi scanner diperbarui setiap iterasi agar mengikuti egg
                 -- yang bergerak tanpa mengulang scan Workspace setiap frame.
                 _eggCachedPivot = eggPosition
                 local eggPivot    = _eggCachedPivot
                 local eggGroundCF = CFrame.new(eggPivot)
-                if os.clock() - _eggTriggeredAt < 2 then
-                    -- ▶ FASE 1 (2 detik pertama setelah trigger):
-                    -- 1 detik pertama : 2 stud di ATAS egg
-                    -- 1 detik kedua   : 2 stud di BAWAH egg
-                    -- Sambil terus-menerus fire proximity prompt setiap frame
-                    local elapsed = os.clock() - _eggTriggeredAt
-                    local offsetY  = elapsed < 1 and 2 or -2
-                    local targetCF = CFrame.new(eggPivot + Vector3.new(0, offsetY, 0), eggPivot)
+                local cycleElapsed = (os.clock() - (_eggCycleStartedAt or os.clock())) % EGG_CYCLE_DURATION
+                if cycleElapsed < EGG_CYCLE_ABOVE_DURATION then
+                    -- ▶ FASE 1 (0.7 detik): teleport ke Y +5 dari egg.
+                    local targetPosition = eggPivot + EGG_CYCLE_ABOVE_OFFSET
                     CombatEngine.ResetPhysics(myHRP)
-                    myHRP.CFrame = targetCF
-                    pcall(function()
-                        local prompt = GetEggPrompt(egg)
-                        if prompt then
-                            if fireproximityprompt then
-                                fireproximityprompt(prompt)
-                            else
-                                prompt:InputHoldBegin()
-                            end
-                        end
-                    end)
+                    LocalPlayer.Character:PivotTo(CFrame.new(targetPosition, eggPivot))
+                elseif cycleElapsed < EGG_CYCLE_FOLLOW_START then
+                    -- ▶ FASE 2 (1.3 detik): teleport ke Y -5 dari egg.
+                    local targetPosition = eggPivot + EGG_CYCLE_BELOW_OFFSET
+                    CombatEngine.ResetPhysics(myHRP)
+                    LocalPlayer.Character:PivotTo(CFrame.new(targetPosition, eggPivot))
                 else
-                    -- ▶ FASE 2 (setelah 2 detik): orbit sesuai Posisi Farm + Auto Attack ke egg
-                    -- Guard: jika trigger sedang berjalan (_eggIsExtracting=true), beku di posisi
-                    -- sekarang — jangan override CFrame sehingga TriggerEgg bisa approach egg
-                    -- tanpa dilawan main loop yang menarik karakter ke orbit position.
-                    if not _eggIsExtracting then
-                        local dropCF = GetPositionCFrame(eggPivot, EngineConfig.FarmPosition)
-                        if (myHRP.Position - eggPivot).Magnitude > 50 then
-                            CombatEngine.ResetPhysics(myHRP)
-                            myHRP.CFrame = dropCF
-                        else
-                            ApplyMovement(myHRP, dropCF)
-                        end
-                    else
+                    -- ▶ FASE 3 (3 detik): mengikuti posisi dan height pengaturan Farm.
+                    local dropCF = GetPositionCFrame(eggPivot, EngineConfig.FarmPosition)
+                    if (myHRP.Position - eggPivot).Magnitude > 50 then
                         CombatEngine.ResetPhysics(myHRP)
+                        LocalPlayer.Character:PivotTo(dropCF)
+                    else
+                        ApplyMovement(myHRP, dropCF)
                     end
-                    local now = tick()
-                    local _atkInterval = EngineConfig.SelectedWeapon == "Bow" and BOW_ATTACK_INTERVAL or FARM_ATTACK_INTERVAL
-                    if now - _lastFarmAttack >= _atkInterval and not _autoAttackPaused then
-                        _lastFarmAttack = now
-                        task.defer(function() FireWeaponAttack(egg, eggGroundCF) end)
-                    end
+                end
+                local now = tick()
+                local _atkInterval = EngineConfig.SelectedWeapon == "Bow" and BOW_ATTACK_INTERVAL or FARM_ATTACK_INTERVAL
+                if now - _lastFarmAttack >= _atkInterval and not _autoAttackPaused then
+                    _lastFarmAttack = now
+                    task.defer(function() FireWeaponAttack(egg, eggGroundCF) end)
                 end
                 task.wait(EngineConfig.CFrameDelay)
             end
@@ -883,7 +874,7 @@ local function startFarmLoop()
     -- Reset egg V6 state saat farm dimatikan
     _eggIsExtracting  = false
     _eggLockEnd       = 0
-    _eggTriggeredAt   = -math.huge
+    _eggCycleStartedAt = nil
     _eggCachedInst    = nil
     _eggCachedPivot   = nil
     _eggScanAt        = -math.huge
