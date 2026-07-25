@@ -4,49 +4,82 @@
 local H              = getgenv().Hub
 local EngineConfig   = H.EngineConfig
 local GameLists      = H.GameLists
-local CombatEngine   = H.CombatEngine
-local Workspace      = H.Workspace
 local CustomNotify   = H.CustomNotify
-local CreateTab         = H.CreateTab
-local CreateSection     = H.CreateSection
-local CreateToggleUI    = H.CreateToggleUI
-local CreateCycleUI     = H.CreateCycleUI
-local CreateInputUI     = H.CreateInputUI
-local CreateButton      = H.CreateButton
+local CreateTab                     = H.CreateTab
+local CreateSection                 = H.CreateSection
+local CreateToggleUI                = H.CreateToggleUI
+local CreateInputUI                 = H.CreateInputUI
+local CreateButton                  = H.CreateButton
+local CreateScrollableMultiSelectUI = H.CreateScrollableMultiSelectUI
 
 -- [S18] TAB 2 — VECTOR CONFIG
 --------------------------------------------------------------------------------
 local VectorPage = CreateTab("⚙️ Vector", "tabVector")
 
-CreateSection(VectorPage, "Target Selector", "secTargetSel")
-local NormalDropdown = CreateCycleUI(VectorPage, "Normal Mob", GameLists.NormalNPCs, "None", function(v)
-    EngineConfig.SelectedNormalNpcId = (v ~= "None") and v or nil
-end, "lblNormalMob")
-local BossDropdown = CreateCycleUI(VectorPage, "Boss Mob", GameLists.BossNPCs, "None", function(v)
-    EngineConfig.SelectedBossNpcId = (v ~= "None") and v or nil
-end, "lblBossMob")
-CreateButton(VectorPage, "🔄 Scan Map Targets", function()
-    local normalIds, bossIds = {"None"}, {"None"}
-    local ef = Workspace:FindFirstChild("EnemyNpc")
-    if ef then
-        local cn, cb = {}, {}
-        for _, m in ipairs(ef:GetChildren()) do
-            local id = CombatEngine.GetNpcId(m)
-            if id and id ~= "" then
-                if CombatEngine.GetLevelType(m) == "boss" then
-                    if not cb[id] then cb[id] = true; table.insert(bossIds, id) end
-                else
-                    if not cn[id] then cn[id] = true; table.insert(normalIds, id) end
-                end
+-- ── Prioritas Monster — dari ResEnemy (LIVE_CONFIG) ──────────────────────────
+CreateSection(VectorPage, "Prioritas Monster", "secTargetSel")
+
+local function _formatName(id)
+    return (id:gsub("^NPC_", ""):gsub("_", " "))
+end
+
+local _resEnemy = nil
+local _reOk, _reResult = pcall(function()
+    return require(game:GetService("ReplicatedStorage").Configs.ResEnemy)
+end)
+if _reOk and type(_reResult) == "table" then _resEnemy = _reResult end
+
+local _normalIds, _normalNames = {}, {}
+local _bossIds,   _bossNames   = {}, {}
+
+if _resEnemy then
+    local normals, bosses = {}, {}
+    for _, data in pairs(_resEnemy) do
+        if type(data) == "table" and data.ID then
+            if tostring(data.LevelType or "Normal") == "Boss" then
+                table.insert(bosses, data.ID)
+            else
+                table.insert(normals, data.ID)
             end
         end
     end
-    GameLists.NormalNPCs = normalIds; GameLists.BossNPCs = bossIds
-    NormalDropdown:SetValues(normalIds); BossDropdown:SetValues(bossIds)
-    CustomNotify("Scan","Target disinkronkan.",2)
-end, "btnScanMap")
+    table.sort(normals)
+    table.sort(bosses)
+    for _, id in ipairs(normals) do table.insert(_normalIds, id); table.insert(_normalNames, _formatName(id)) end
+    for _, id in ipairs(bosses)  do table.insert(_bossIds,   id); table.insert(_bossNames,  _formatName(id)) end
+end
 
--- ── Dodge Dragon ──────────────────────────────────────────────────────────
+-- Simpan ke GameLists agar ui_sync bisa sinkronkan saat load profil
+GameLists.NormalNPCs     = _normalIds;   GameLists.NormalNPCNames = _normalNames
+GameLists.BossNPCs       = _bossIds;     GameLists.BossNPCNames   = _bossNames
+
+local function _makeStatesCallbacks(ids, configMap)
+    local states, callbacks = {}, {}
+    for i, npcId in ipairs(ids) do
+        states[i] = configMap[npcId] == true
+        local id  = npcId
+        callbacks[i] = function(v) configMap[id] = v end
+    end
+    return states, callbacks
+end
+
+if #_normalNames > 0 then
+    local st, cb = _makeStatesCallbacks(_normalIds, EngineConfig.PriorityNormalNpcIds)
+    _G.NormalNpcChecks = CreateScrollableMultiSelectUI(
+        VectorPage, "⚔️ Normal  (" .. #_normalNames .. " monster)",
+        _normalNames, st, cb, "lblNormalNpcSelect"
+    )
+end
+
+if #_bossNames > 0 then
+    local st, cb = _makeStatesCallbacks(_bossIds, EngineConfig.PriorityBossNpcIds)
+    _G.BossNpcChecks = CreateScrollableMultiSelectUI(
+        VectorPage, "💀 Boss  (" .. #_bossNames .. " monster)",
+        _bossNames, st, cb, "lblBossNpcSelect"
+    )
+end
+
+-- ── Dodge Dragon ──────────────────────────────────────────────────────────────
 CreateSection(VectorPage, "🐉 Dodge Dragon", "secDodgeDragon")
 
 _G.DodgeDragonToggle = CreateToggleUI(VectorPage, "🐉 Dodge Dragon (Skill Bom)",
@@ -61,7 +94,6 @@ _G.DodgeDragonToggle = CreateToggleUI(VectorPage, "🐉 Dodge Dragon (Skill Bom)
 
 -- Listener RedShow: deteksi BombRed lalu ubah radius → 100 selama 2 detik
 task.spawn(function()
-    -- Coba require GameEnum untuk dapat nilai BombRed yang akurat
     local _bombRedVal = nil
     local enumOk, GameEnum = pcall(function()
         return require(game:GetService("ReplicatedStorage")
@@ -73,34 +105,27 @@ task.spawn(function()
         _bombRedVal = GameEnum.SkillSkinBase.BombRed
     end
 
-    -- Tunggu folder RedShow muncul di Workspace
     local RedShow = game:GetService("Workspace"):WaitForChild("RedShow", 30)
     if not RedShow then return end
 
-    local _dodging = false  -- flag cegah tumpang tindih
+    local _dodging = false
 
     RedShow.ChildAdded:Connect(function(bar)
-        -- Guard: Dodge Dragon ON + Auto Farm ON + tidak sedang dodge
         if not EngineConfig.DodgeDragonActive then return end
         if not EngineConfig.AutoFarmActive     then return end
         if _dodging then return end
 
         task.defer(function()
-            -- Filter hanya BombRed (jika enum berhasil di-require)
             local skin = bar:GetAttribute("Skin")
             if _bombRedVal ~= nil and skin ~= _bombRedVal then return end
 
-            -- Hitung berapa banyak BombRed aktif di RedShow sekarang
             local count = 0
             for _, child in ipairs(RedShow:GetChildren()) do
                 local s = child:GetAttribute("Skin")
-                if _bombRedVal == nil or s == _bombRedVal then
-                    count = count + 1
-                end
+                if _bombRedVal == nil or s == _bombRedVal then count = count + 1 end
             end
-            if count <= 3 then return end  -- butuh lebih dari 3
+            if count <= 3 then return end
 
-            -- ── DODGE ─────────────────────────────────────────
             _dodging = true
             local prevRadius = EngineConfig.OrbitRadius
             EngineConfig.OrbitRadius = 100
@@ -130,14 +155,13 @@ _G.ResetLockW5Input = CreateInputUI(VectorPage, "Reset Lock W5 - Endless Tower (
 end, "lblResetLockW5")
 
 CreateSection(VectorPage, "Kinematic System Parameters", "secKinematic")
-_G.HeightInput       = CreateInputUI(VectorPage, "Height Normal Target (Y)", EngineConfig.StandHeight,        true,  function(v) EngineConfig.StandHeight        = tonumber(v) or 20    end, "lblHeightNormal")
-_G.BossHeightInput   = CreateInputUI(VectorPage, "Height Boss Target (Y)",   EngineConfig.BossHeight,         true,  function(v) EngineConfig.BossHeight          = tonumber(v) or 25    end, "lblHeightBoss")
-_G.SpeedInput        = CreateInputUI(VectorPage, "Orbit Speed",              EngineConfig.OrbitSpeed,         true,  function(v) EngineConfig.OrbitSpeed          = tonumber(v) or 5     end, "lblOrbitSpeed")
-_G.DelayInput        = CreateInputUI(VectorPage, "CFrame Delay",             EngineConfig.CFrameDelay,        false, function(v) EngineConfig.CFrameDelay         = tonumber(v) or 0.001 end, "lblCFrameDelay")
-_G.MultiplierInput   = CreateInputUI(VectorPage, "Hit Multiplier",           EngineConfig.HitMultiplier,      true,  function(v) EngineConfig.HitMultiplier       = tonumber(v) or 1     end, "lblHitMultiplier")
-_G.LerpAlphaInput    = CreateInputUI(VectorPage, "Lerp Alpha (0–1)",         EngineConfig.LerpAlpha,          false, function(v) EngineConfig.LerpAlpha           = math.clamp(tonumber(v) or 0.3, 0.01, 1) end, "lblLerpAlpha")
-_G.SkillCooldownInput= CreateInputUI(VectorPage, "Skill Cooldown (s)",       EngineConfig.SkillCooldownDelay, false, function(v) EngineConfig.SkillCooldownDelay  = tonumber(v) or 0.5   end, "lblSkillCooldown")
-_G.ETHoverYInput     = CreateInputUI(VectorPage, "Endless Tower Hover Y",    EngineConfig.EndlessTowerHoverY, false, function(v) EngineConfig.EndlessTowerHoverY   = tonumber(v) or 35    end, "lblETHoverY")
-
+_G.HeightInput        = CreateInputUI(VectorPage, "Height Normal Target (Y)", EngineConfig.StandHeight,        true,  function(v) EngineConfig.StandHeight        = tonumber(v) or 20    end, "lblHeightNormal")
+_G.BossHeightInput    = CreateInputUI(VectorPage, "Height Boss Target (Y)",   EngineConfig.BossHeight,         true,  function(v) EngineConfig.BossHeight          = tonumber(v) or 25    end, "lblHeightBoss")
+_G.SpeedInput         = CreateInputUI(VectorPage, "Orbit Speed",              EngineConfig.OrbitSpeed,         true,  function(v) EngineConfig.OrbitSpeed          = tonumber(v) or 5     end, "lblOrbitSpeed")
+_G.DelayInput         = CreateInputUI(VectorPage, "CFrame Delay",             EngineConfig.CFrameDelay,        false, function(v) EngineConfig.CFrameDelay         = tonumber(v) or 0.001 end, "lblCFrameDelay")
+_G.MultiplierInput    = CreateInputUI(VectorPage, "Hit Multiplier",           EngineConfig.HitMultiplier,      true,  function(v) EngineConfig.HitMultiplier       = tonumber(v) or 1     end, "lblHitMultiplier")
+_G.LerpAlphaInput     = CreateInputUI(VectorPage, "Lerp Alpha (0–1)",         EngineConfig.LerpAlpha,          false, function(v) EngineConfig.LerpAlpha           = math.clamp(tonumber(v) or 0.3, 0.01, 1) end, "lblLerpAlpha")
+_G.SkillCooldownInput = CreateInputUI(VectorPage, "Skill Cooldown (s)",       EngineConfig.SkillCooldownDelay, false, function(v) EngineConfig.SkillCooldownDelay  = tonumber(v) or 0.5   end, "lblSkillCooldown")
+_G.ETHoverYInput      = CreateInputUI(VectorPage, "Endless Tower Hover Y",    EngineConfig.EndlessTowerHoverY, false, function(v) EngineConfig.EndlessTowerHoverY   = tonumber(v) or 35    end, "lblETHoverY")
 
 --------------------------------------------------------------------------------

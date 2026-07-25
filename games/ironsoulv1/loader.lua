@@ -707,8 +707,7 @@ startWithDRM(function(key, hwid)
     -- UI — core dulu, lalu tiap tab
     load("ui/ui_core.lua")       -- S11-S16: VisualConfig, builder, window, tab system, BG effects
     load("ui/tab_farm.lua")       -- Tab 1: Farm
-    load("ui/tab_priority.lua")  -- Tab 2: Prioritas Musuh
-    load("ui/tab_vector.lua")    -- Tab 3: Vector Config
+    load("ui/tab_vector.lua")    -- Tab 2: Vector Config
     load("ui/tab_autopotion.lua") -- Tab 3: Auto Potion
     load("ui/tab_forge.lua")     -- Tab 4: Auto Forge V6
     load("ui/tab_profile.lua")   -- Tab 5: Profile / Config System
