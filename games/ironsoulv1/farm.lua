@@ -386,8 +386,10 @@ local function startFarmLoop()
             if not char or not myHRP then task.wait(0.1) continue end
 
             -- ▶ FASE 1 (0.7 detik): Y +5 dari egg
+            -- Pakai CFrame.new(pos) tanpa lookAt agar karakter tidak dipaksa
+            -- merotasi menghadap egg — pergerakan naik/turun lebih terlihat jelas.
             CombatEngine.ResetPhysics(myHRP)
-            char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_ABOVE_OFFSET, eggPos))
+            char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_ABOVE_OFFSET))
             task.wait(EGG_CYCLE_ABOVE_DURATION)
             if not _farmLoopRunning then break end
             if not EngineConfig.FarmTargetEgg then continue end
@@ -397,7 +399,7 @@ local function startFarmLoop()
             char = LocalPlayer.Character; myHRP = char and char:FindFirstChild("HumanoidRootPart")
             if egg and eggPos and char and myHRP then
                 CombatEngine.ResetPhysics(myHRP)
-                char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_BELOW_OFFSET, eggPos))
+                char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_BELOW_OFFSET))
             end
             task.wait(EGG_CYCLE_BELOW_DURATION)
             if not _farmLoopRunning then break end
