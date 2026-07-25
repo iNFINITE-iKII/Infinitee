@@ -389,7 +389,8 @@ local function startFarmLoop()
             CombatEngine.ResetPhysics(myHRP)
             char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_ABOVE_OFFSET, eggPos))
             task.wait(EGG_CYCLE_ABOVE_DURATION)
-            if not _farmLoopRunning or not EngineConfig.FarmTargetEgg then break end
+            if not _farmLoopRunning then break end
+            if not EngineConfig.FarmTargetEgg then continue end
 
             -- ▶ FASE 2 (1.3 detik): Y -5 dari egg
             egg, eggPos = GetActiveDragonEgg()
@@ -399,7 +400,8 @@ local function startFarmLoop()
                 char:PivotTo(CFrame.new(eggPos + EGG_CYCLE_BELOW_OFFSET, eggPos))
             end
             task.wait(EGG_CYCLE_BELOW_DURATION)
-            if not _farmLoopRunning or not EngineConfig.FarmTargetEgg then break end
+            if not _farmLoopRunning then break end
+            if not EngineConfig.FarmTargetEgg then continue end
 
             -- ▶ FASE 3 (3.0 detik): FarmPosition — re-check posisi egg tiap 0.5 detik
             local fase3End = os.clock() + (EGG_CYCLE_DURATION - EGG_CYCLE_ABOVE_DURATION - EGG_CYCLE_BELOW_DURATION)
