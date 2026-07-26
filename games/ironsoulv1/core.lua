@@ -154,7 +154,7 @@ local EngineConfig = {
     AutoJoinRoomActive    = false,
     SellByRarityActive   = false,
     SellByRarityInterval = 5,
-    SellByRarity         = "Legendary",  -- threshold rarity: jual semua ore Rarity ≤ pilihan ini ("OFF"=tidak jual)
+    SellByRarity         = "OFF",  -- threshold rarity: jual semua ore Rarity ≤ pilihan ini ("OFF"=tidak jual)
     OreSellModes         = {},  -- per-ore override: OreId → "JUAL"|"SIMPAN"|nil (nil = ikut threshold)
     -- ── Utilitas Tab ──────────────────────────────────────────────────────
     -- Kunci disimpan eksplisit agar JSON encode/decode selalu lengkap.

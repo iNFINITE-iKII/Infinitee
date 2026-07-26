@@ -229,12 +229,9 @@ local function RefreshOreList()
     task.spawn(function() task.wait(); _OreList.CanvasPosition = savedScroll end)
 end
 
-CreateButton(SellPage, "🔄 Refresh Ore List", function()
-    pcall(RefreshOreList)
-end, "btnRefreshOreList")
-
 CreateButton(SellPage, "🗑️ Sell Sekarang (Rarity)", function()
     doSellByRarity()
+    task.spawn(function() task.wait(0.5); pcall(RefreshOreList) end)
 end, "btnSellByRarityNow")
 
 _G.SellByRarityIntervalInput = CreateInputUI(SellPage, "Interval Auto Sell (detik)",
@@ -256,13 +253,18 @@ task.spawn(function()
         if EngineConfig.SellByRarityActive then
             elapsed = elapsed + 1
             if elapsed >= math.max(EngineConfig.SellByRarityInterval or 5, 1) then
-                elapsed = 0; pcall(doSellByRarity)
+                elapsed = 0
+                pcall(doSellByRarity)
+                task.spawn(function() task.wait(0.5); pcall(RefreshOreList) end)
             end
         else
             elapsed = 0
         end
     end
 end)
+
+-- Auto-load ore list saat script dijalankan
+task.spawn(function() task.wait(1); pcall(RefreshOreList) end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
 CreateSection(SellPage, "Inventory Management", "secInventory")
