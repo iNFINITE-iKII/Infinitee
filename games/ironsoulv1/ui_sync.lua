@@ -176,16 +176,11 @@ function SyncAllVisualUI()
         end
         if _G.SellByRarityToggle        then _G.SellByRarityToggle:SetValue(EngineConfig.SellByRarityActive) end
         if _G.SellByRarityIntervalInput  then _G.SellByRarityIntervalInput:SetValue(tostring(EngineConfig.SellByRarityInterval)) end
+        if _G.SellByRarityLevelInput     then _G.SellByRarityLevelInput:SetValue(tostring(EngineConfig.SellByRarity)) end
         if _G.AutoSellScanToggle         then _G.AutoSellScanToggle:SetValue(EngineConfig.AutoSellScanActive) end
         if _G.AutoSellScanIntervalInput  then _G.AutoSellScanIntervalInput:SetValue(tostring(EngineConfig.AutoSellScanInterval)) end
-        if _G.SellRarityChecks then
-            local _RL = {"Common","Uncommon","Rare","Epic","Legendary","Mythical"}
-            for i, r in ipairs(_RL) do
-                if _G.SellRarityChecks[i] then
-                    _G.SellRarityChecks[i]:SetValue(EngineConfig.SellByRarityList[r] == true)
-                end
-            end
-        end
+        -- OreSellModes (per-ore override) tidak perlu SetValue karena direfresh
+        -- on-demand via tombol "🔄 Refresh Ore List" di tab Sell.
 
         -- [2] SYNC DATA TAMPILAN / VISUAL (VisualConfig)
         if _G.BgColorDropdown       then _G.BgColorDropdown:SetValue(VisualConfig.CurrentBg) end

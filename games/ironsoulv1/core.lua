@@ -153,13 +153,9 @@ local EngineConfig = {
     FriendOnlyRoom        = true,
     AutoJoinRoomActive    = false,
     SellByRarityActive   = false,
-    SellByRarityInterval = 3,
-    -- Semua key disimpan eksplisit (false, bukan nil) agar JSON encode/decode
-    -- selalu menyertakan semua 6 rarity → save/load visual pill bekerja benar.
-    SellByRarityList     = {
-        Common=false, Uncommon=false, Rare=false,
-        Epic=false, Legendary=false, Mythical=false,
-    },
+    SellByRarityInterval = 5,
+    SellByRarity         = 5,   -- threshold rarity: jual semua ore Rarity ≤ nilai ini (0 = OFF)
+    OreSellModes         = {},  -- per-ore override: OreId → "JUAL"|"SIMPAN"|nil (nil = ikut threshold)
     -- ── Utilitas Tab ──────────────────────────────────────────────────────
     -- Kunci disimpan eksplisit agar JSON encode/decode selalu lengkap.
     UtilSelectedCodes    = {},   -- map: codeName → bool (kode mana yang dipilih)

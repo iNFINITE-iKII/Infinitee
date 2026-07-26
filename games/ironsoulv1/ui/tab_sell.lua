@@ -26,117 +26,246 @@ local RegisterTranslation = H.RegisterTranslation
 local SellPage = CreateTab("💰 Jual", "tabSell")
 
 -- ════════════════════════════════════════════════════════════════════════════
--- [AUTO SELL BY RARITY] — Paling atas tab Sell
--- Deteksi rarity dari UIGradient color / TextLabel, jual semua yang dipilih.
+-- [AUTO SELL BY RARITY — V2] — Live data via Framework, tahan update game
+-- Baca ore dari DataUtil (live), filter by rarity threshold + per-ore override.
+-- Remote: ForgeRF:InvokeServer("JUAL", list) — sesuai V6.
 -- ════════════════════════════════════════════════════════════════════════════
-local RARITY_COLOR_MAP_SR = {
-    ["195,195,195"] = "Common",
-    ["76,206,103"]  = "Uncommon",
-    ["88,201,253"]  = "Rare",
-    ["253,88,234"]  = "Epic",
-    ["255,245,83"]  = "Legendary",
-    ["255,112,112"] = "Mythical",
-}
-local RARITY_TEXT_MAP_SR = {
-    ["common"]="Common",["uncommon"]="Uncommon",["rare"]="Rare",
-    ["epic"]="Epic",["legendary"]="Legendary",["mythical"]="Mythical",["divine"]="Divine",
-}
-local RARITY_ORDER_SR = {Common=1,Uncommon=2,Rare=3,Epic=4,Legendary=5,Mythical=6,Divine=7}
-local RARITY_LIST_SR  = {"Common","Uncommon","Rare","Epic","Legendary","Mythical"}
+local RS = game:GetService("ReplicatedStorage")
 
-local function _cleanSR(s) return string.lower(string.gsub(s,"[^%w]","")) end
+-- Lazy-load Framework & remote (di-cache setelah pertama kali)
+local _Fw, _TaskRE, _ResOres
 
-local function _detectRarity(slot)
-    local best = "Common"
-    for _, d in ipairs(slot:GetDescendants()) do
-        if d:IsA("UIGradient") and #d.Color.Keypoints > 0 then
-            local c   = d.Color.Keypoints[1].Value
-            local key = math.floor(c.R*255+.5)..","..math.floor(c.G*255+.5)..","..math.floor(c.B*255+.5)
-            local r   = RARITY_COLOR_MAP_SR[key]
-            if r and (RARITY_ORDER_SR[r] or 0) > (RARITY_ORDER_SR[best] or 0) then best = r end
-        elseif d:IsA("TextLabel") then
-            local m = RARITY_TEXT_MAP_SR[_cleanSR(d.Text)]
-            if m and (RARITY_ORDER_SR[m] or 0) > (RARITY_ORDER_SR[best] or 0) then best = m end
+local function _getFw()
+    if not _Fw then _Fw = require(RS:WaitForChild("Framework")) end
+    return _Fw
+end
+
+local function _getTaskRE()
+    if not _TaskRE then
+        _TaskRE = RS:WaitForChild("Framework")
+            :WaitForChild("Features"):WaitForChild("TaskSystem"):WaitForChild("TaskRE")
+    end
+    return _TaskRE
+end
+
+local _cachedCatalog = nil
+
+local function _getOreCatalog(forceRefresh)
+    if _cachedCatalog and not forceRefresh then return _cachedCatalog end
+    local fw = _getFw()
+    local du, fu, rt = fw.Modules.DataUtil, fw.Modules.ForgeUtil, fw.Modules.RarityTiers
+    if not _ResOres then
+        _ResOres = require(RS:WaitForChild("Configs"):WaitForChild("ResOres"))
+    end
+    local ores = du:GetValue(LocalPlayer, {"Ores"}) or {}
+    local result, seen = {}, {}
+    local function addOre(id)
+        if type(id) ~= "string" or id == "" or seen[id] then return end
+        seen[id] = true
+        local def = fu:GetDef(id) or _ResOres[id]
+        if not def then return end
+        local rarity = tonumber(def.Rarity) or 0
+        local rarityName = tostring(rarity)
+        pcall(function() rarityName = rt:GetTierName(rarity) end)
+        table.insert(result, {
+            ItemId = id, Count = tonumber(ores[id]) or 0,
+            Rarity = rarity, RarityName = rarityName, Def = def,
+        })
+    end
+    if type(_ResOres.__index) == "table" then
+        for _, id in ipairs(_ResOres.__index) do addOre(id) end
+    end
+    for id in pairs(_ResOres) do if id ~= "__index" then addOre(id) end end
+    for id in pairs(ores) do addOre(id) end
+    table.sort(result, function(a, b)
+        if a.Count ~= b.Count then return a.Count > b.Count end
+        if a.Rarity ~= b.Rarity then return a.Rarity > b.Rarity end
+        return tostring(a.ItemId) < tostring(b.ItemId)
+    end)
+    _cachedCatalog = result
+    return result
+end
+
+local function _getDisplayName(id)
+    local base = string.split(tostring(id or "Unknown"), ":")[1]
+    local key  = "K_" .. string.upper(base)
+    local name; pcall(function() name = _getFw().Modules.TranslationUtil:TranslateByKey(key) end)
+    if type(name) == "string" and name ~= "" and name ~= key then return name end
+    return string.gsub(base, "_", " ")
+end
+
+local function _getRarityLabel(level)
+    if level <= 0 then return "OFF" end
+    local catalog = _getOreCatalog(false)
+    if catalog then
+        for _, e in ipairs(catalog) do
+            if e.Rarity == level then return e.RarityName end
         end
     end
-    return best
+    return "Lvl " .. level
 end
 
-local function _getOresScrollSR()
-    local pg = LocalPlayer:FindFirstChildOfClass("PlayerGui")
-    local mg = pg  and pg:FindFirstChild("MainGui")
-    local bp = mg  and mg:FindFirstChild("ScreenBackpack")
-    local iv = bp  and bp:FindFirstChild("InventoryFrame")
-    local oc = iv  and iv:FindFirstChild("OresContent")
-    return oc and oc:FindFirstChild("ScrollingFrame")
+local function _shouldSell(id, def)
+    local mode = EngineConfig.OreSellModes[id] or "OFF"
+    if mode == "SIMPAN" then return false end
+    if mode == "JUAL"   then return true end
+    local r = def and tonumber(def.Rarity)
+    return EngineConfig.SellByRarity > 0 and r and r <= EngineConfig.SellByRarity
 end
 
+local _lastCtxFire = 0
 local function doSellByRarity()
-    local scroll = _getOresScrollSR()
-    if not scroll then CustomNotify("⚠️ SELL RARITY","Buka Inventory dulu!",3); return 0 end
-    local ids = {}
-    for _, slot in ipairs(scroll:GetChildren()) do
-        if slot:IsA("GuiObject") and slot.Name ~= "UIListLayout" and slot.Name ~= "UIPadding" then
-            local r = _detectRarity(slot)
-            if EngineConfig.SellByRarityList[r] then
-                local id = slot.Name
-                local io = slot:FindFirstChild("ID", true)
-                if io then id = io:IsA("ValueBase") and tostring(io.Value) or io.Text end
-                table.insert(ids, id)
-            end
+    local ok, fw = pcall(_getFw)
+    if not ok or not fw then
+        CustomNotify("⚠️ SELL RARITY", "Framework belum siap", 3); return 0
+    end
+    local du, fu = fw.Modules.DataUtil, fw.Modules.ForgeUtil
+    local ores = du:GetValue(LocalPlayer, {"Ores"}) or {}
+    local sellList = {}
+    for id, count in pairs(ores) do
+        if (tonumber(count) or 0) > 0 then
+            local def = fu:GetDef(id)
+            if _shouldSell(id, def) then table.insert(sellList, id) end
         end
     end
-    if #ids > 0 then
-        pcall(function() ForgeRF:InvokeServer("Sell", ids) end)
-        CustomNotify("🗑️ SELL RARITY","Terjual "..(#ids).." Ore",2)
+    if #sellList == 0 then return 0 end
+    -- Picu context TaskSystem tiap 10 detik agar NPC sell tidak timeout
+    if (os.clock() - _lastCtxFire) >= 10 then
+        _lastCtxFire = os.clock()
+        pcall(function()
+            local tre = _getTaskRE()
+            tre:FireServer("UpdateTaskProgress", "DialogNpc",    "EquipmentSellNpc1|1")
+            tre:FireServer("UpdateTaskProgress", "DialogNpc",    "EquipmentSellNpc1|0")
+            tre:FireServer("UpdateTaskProgress", "OpenGUIWindow","ScreenEquipSell")
+            tre:FireServer("UpdateTaskProgress", "OpenGUIWindow","ScreenTips")
+        end)
+        task.wait(0.25)
     end
-    return #ids
+    local sold = 0
+    if pcall(function() ForgeRF:InvokeServer("JUAL", sellList) end) then
+        sold = #sellList
+        CustomNotify("🗑️ SELL RARITY", "Terjual " .. sold .. " jenis Ore", 2)
+    end
+    return sold
 end
 
 -- ─── UI ──────────────────────────────────────────────────────────────────────
-CreateSection(SellPage, "Auto Sell by Rarity", "secSellByRarity")
+CreateSection(SellPage, "Auto Sell by Rarity (Live)", "secSellByRarity")
 
--- Multi-check: bisa pilih lebih dari 1 rarity
-local _rarityInitVals, _rarityCbs = {}, {}
-for _, r in ipairs(RARITY_LIST_SR) do
-    table.insert(_rarityInitVals, EngineConfig.SellByRarityList[r] == true)
-    local rName = r
-    table.insert(_rarityCbs, function(v)
-        -- Simpan nilai boolean eksplisit (true/false, bukan nil) agar JSON
-        -- encode selalu menyertakan semua 6 rarity → save/load bekerja benar.
-        EngineConfig.SellByRarityList[rName] = (v == true)
+-- Input threshold rarity (0 = OFF, 1-7 = Common…Divine)
+_G.SellByRarityLevelInput = CreateInputUI(SellPage,
+    "Sell Rarity ≤ Level (0=OFF · 1=Common · 5=Legendary · 7=Divine)",
+    tostring(EngineConfig.SellByRarity), false, function(v)
+        local n = tonumber(v)
+        if n then EngineConfig.SellByRarity = math.clamp(math.floor(n), 0, 7) end
     end)
+
+-- Ore list per-item (OFF / JUAL / SIMPAN) — embedded ScrollingFrame
+local _OreList = Instance.new("ScrollingFrame", SellPage)
+_OreList.Name                = "OreListSR"
+_OreList.Size                = UDim2.new(1, 0, 0, 220)
+_OreList.BackgroundTransparency = 1
+_OreList.ScrollBarThickness  = 3
+_OreList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Instance.new("UIListLayout", _OreList).Padding = UDim.new(0, 4)
+
+local _MODE_CLR = {
+    JUAL   = Color3.fromRGB(230, 157, 52),  -- oranye = dijual
+    SIMPAN = Color3.fromRGB(200, 60,  60),  -- merah  = dikecualikan
+}
+local _MODE_CLR_DEFAULT = Color3.fromRGB(55, 85, 170)  -- biru = ikut threshold
+
+local function RefreshOreList()
+    local savedScroll = _OreList.CanvasPosition
+    for _, c in ipairs(_OreList:GetChildren()) do
+        if c:IsA("Frame") then c:Destroy() end
+    end
+    local catalog = _getOreCatalog(true)  -- force refresh: baca live dari DataUtil
+    for _, entry in ipairs(catalog) do
+        local row = Instance.new("Frame", _OreList)
+        row.Size             = UDim2.new(1, -4, 0, 44)
+        row.BackgroundColor3 = Color3.fromRGB(28, 33, 43)
+        row.BorderSizePixel  = 0
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 5)
+
+        local lbl = Instance.new("TextLabel", row)
+        lbl.Size              = UDim2.new(1, -72, 0, 22)
+        lbl.Position          = UDim2.fromOffset(8, 3)
+        lbl.BackgroundTransparency = 1
+        lbl.Text              = _getDisplayName(entry.ItemId)
+        lbl.TextColor3        = Color3.fromRGB(235, 239, 247)
+        lbl.Font              = Enum.Font.GothamMedium
+        lbl.TextSize          = 11
+        lbl.TextXAlignment    = Enum.TextXAlignment.Left
+        lbl.TextTruncate      = Enum.TextTruncate.AtEnd
+
+        local detail = Instance.new("TextLabel", row)
+        detail.Size           = UDim2.new(1, -72, 0, 16)
+        detail.Position       = UDim2.fromOffset(8, 25)
+        detail.BackgroundTransparency = 1
+        detail.Text           = tostring(entry.RarityName) .. " (Lvl " .. entry.Rarity .. ") · ×" .. entry.Count
+        detail.TextColor3     = Color3.fromRGB(147, 158, 179)
+        detail.Font           = Enum.Font.Gotham
+        detail.TextSize       = 9
+        detail.TextXAlignment = Enum.TextXAlignment.Left
+
+        local modeBtn = Instance.new("TextButton", row)
+        modeBtn.Size           = UDim2.fromOffset(58, 24)
+        modeBtn.Position       = UDim2.new(1, -64, 0.5, -12)
+        modeBtn.AutoButtonColor = false
+        modeBtn.BorderSizePixel = 0
+        modeBtn.Font           = Enum.Font.GothamBold
+        modeBtn.TextSize       = 9
+        modeBtn.TextColor3     = Color3.new(1, 1, 1)
+        Instance.new("UICorner", modeBtn).CornerRadius = UDim.new(0, 5)
+
+        local eid = entry.ItemId
+        local function updateModeBtn()
+            local m = EngineConfig.OreSellModes[eid] or "OFF"
+            modeBtn.Text             = m
+            modeBtn.BackgroundColor3 = _MODE_CLR[m] or _MODE_CLR_DEFAULT
+        end
+        updateModeBtn()
+
+        modeBtn.Activated:Connect(function()
+            local m = EngineConfig.OreSellModes[eid] or "OFF"
+            if     m == "OFF"   then EngineConfig.OreSellModes[eid] = "JUAL"
+            elseif m == "JUAL"  then EngineConfig.OreSellModes[eid] = "SIMPAN"
+            else                     EngineConfig.OreSellModes[eid] = nil end
+            updateModeBtn()
+        end)
+    end
+    task.spawn(function() task.wait(); _OreList.CanvasPosition = savedScroll end)
 end
-_G.SellRarityChecks = CreateScrollableMultiSelectUI(SellPage, "Rarity yang dijual", RARITY_LIST_SR, _rarityInitVals, _rarityCbs)
 
--- Interval auto sell
--- FIX: argument order sebelumnya salah (callback & langKey tertukar).
--- Signature: CreateInputUI(parent, text, default, numeric, callback)
-_G.SellByRarityIntervalInput = CreateInputUI(SellPage, "Interval Auto Sell (detik)", tostring(EngineConfig.SellByRarityInterval), false, function(v)
-    local n = tonumber(v); if n and n >= 1 then EngineConfig.SellByRarityInterval = n end
-end)
+CreateButton(SellPage, "🔄 Refresh Ore List", function()
+    pcall(RefreshOreList)
+end, "btnRefreshOreList")
 
--- Sell sekali sekarang
 CreateButton(SellPage, "🗑️ Sell Sekarang (Rarity)", function()
     doSellByRarity()
 end, "btnSellByRarityNow")
 
--- Auto Sell toggle
-_G.SellByRarityToggle = CreateToggleUI(SellPage, "⚡ Auto Sell by Rarity", EngineConfig.SellByRarityActive, function(v)
-    EngineConfig.SellByRarityActive = v
-    if v then CustomNotify("⚡ AUTO SELL RARITY","Aktif!",2)
-    else      CustomNotify("⚡ AUTO SELL RARITY","Nonaktif",2) end
-end, "lblSellByRarityAuto")
+_G.SellByRarityIntervalInput = CreateInputUI(SellPage, "Interval Auto Sell (detik)",
+    tostring(EngineConfig.SellByRarityInterval), false, function(v)
+        local n = tonumber(v); if n and n >= 1 then EngineConfig.SellByRarityInterval = n end
+    end)
 
--- Background loop: jual otomatis setiap interval detik
+_G.SellByRarityToggle = CreateToggleUI(SellPage, "⚡ Auto Sell by Rarity",
+    EngineConfig.SellByRarityActive, function(v)
+        EngineConfig.SellByRarityActive = v
+        if v then CustomNotify("⚡ AUTO SELL RARITY","Aktif!",2)
+        else      CustomNotify("⚡ AUTO SELL RARITY","Nonaktif",2) end
+    end, "lblSellByRarityAuto")
+
 task.spawn(function()
     local elapsed = 0
     while true do
         task.wait(1)
         if EngineConfig.SellByRarityActive then
             elapsed = elapsed + 1
-            if elapsed >= math.max(EngineConfig.SellByRarityInterval or 3, 1) then
-                elapsed = 0; doSellByRarity()
+            if elapsed >= math.max(EngineConfig.SellByRarityInterval or 5, 1) then
+                elapsed = 0; pcall(doSellByRarity)
             end
         else
             elapsed = 0
