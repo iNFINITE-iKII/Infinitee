@@ -89,7 +89,7 @@ local RARITY_NAMES = {
     [4]="Epic",   [5]="Legendary",[6]="Mythical", [7]="Secret",
 }
 
-local RACE_LIST, RACE_DISPLAY = (function()
+local RACE_LIST, RACE_DISPLAY, RACE_RARITY = (function()
     local ok, res = pcall(function()
         return require(Services.ReplicatedStorage
             :WaitForChild("Configs", 10)
@@ -104,7 +104,9 @@ local RACE_LIST, RACE_DISPLAY = (function()
             { "Lucifer (Mythical)","Archdruid (Secret)","Elf (Mythical)",
               "Demon (Mythical)","Angel (Mythical)","DragonKnight (Secret)",
               "Fairy (Legendary)","Curse (Legendary)","Dragonborn (Epic)",
-              "Undead (Rare)","Goblin (Uncommon)","Orc (Uncommon)","Human (Common)" }
+              "Undead (Rare)","Goblin (Uncommon)","Orc (Uncommon)","Human (Common)" },
+            { Lucifer=6,Archdruid=7,Elf=6,Demon=6,Angel=6,DragonKnight=7,
+              Fairy=5,Curse=5,Dragonborn=4,Undead=3,Goblin=2,Orc=2,Human=1 }
     end
 
     -- Kumpulkan entry valid: harus punya Id (string) dan Sort (number)
@@ -119,13 +121,14 @@ local RACE_LIST, RACE_DISPLAY = (function()
     -- Sort descending: nilai Sort besar = race langka = tampil di atas
     table.sort(entries, function(a, b) return a.Sort > b.Sort end)
 
-    local ids, display = {}, {}
+    local ids, display, rarityMap = {}, {}, {}
     for _, data in ipairs(entries) do
         local rName = RARITY_NAMES[data.Rarity] or ("R"..tostring(data.Rarity or "?"))
         table.insert(ids,     data.Id)
         table.insert(display, data.Id .. " (" .. rName .. ")")
+        rarityMap[data.Id] = data.Rarity
     end
-    return ids, display
+    return ids, display, rarityMap
 end)()
 
 -- Export lists ke Hub agar ui_sync bisa sync tanpa duplikat konstanta
@@ -376,7 +379,10 @@ task.spawn(function()
             if verified then
                 EngineConfig.UtilAutoRerollActive = false
                 if _G.UtilAutoRerollToggle then _G.UtilAutoRerollToggle:SetValue(false) end
-                CustomNotify("🎉 RACE MATCH!","Dapat race: "..doubleRace,8)
+                local rNum   = RACE_RARITY and RACE_RARITY[doubleRace]
+                local rLabel = rNum and RARITY_NAMES[rNum] or ""
+                local detail = rLabel ~= "" and (" ("..rLabel..")") or ""
+                CustomNotify("🎉 RACE DIDAPAT!", doubleRace..detail.." — target tercapai!", 10)
             end
         else
             -- Belum cocok → fire Rolling pada slot yang dipilih
