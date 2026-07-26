@@ -1,37 +1,31 @@
 # Infinitee Script Hub
 
+## Gambaran Proyek
+
 Repo ini berisi dua komponen utama:
 
-| Komponen | Lokasi | Bahasa | Tujuan |
+| Komponen | Lokasi | Stack | Tujuan |
 |---|---|---|---|
-| **Script Hub Roblox** | `games/ironsoulv1/` | Luau (Roblox) | Cheat/automation script untuk game IronSoul v1 |
-| **Discord Bot** | `bot/` | TypeScript + Discord.js v14 | Manajemen lisensi, HWID, tiket |
+| **Script Hub Roblox** | `games/ironsoulv1/` | Luau (Roblox) | Cheat/automation script untuk game IronSoul |
+| **Discord Bot** | `bot/` | TypeScript + Discord.js v14 + Drizzle ORM | Manajemen lisensi, HWID, tiket |
 
 ## Cara Menjalankan
 
 ### Discord Bot
-- Workflow: `cd bot && node dist/index.mjs`
-- Rebuild: `cd bot && npm run build`
-- Secrets yang dibutuhkan: `DISCORD_BOT_TOKEN`, `NEON_DATABASE_URL`
-- Env vars yang sudah di-set: `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`
+- Workflow: **Discord Bot** → `cd bot && node dist/index.mjs`
+- Build ulang: `cd bot && npm run build`
+- Secret yang dibutuhkan: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`, `NEON_DATABASE_URL`
 
-### Roblox Script
-- File Luau di `games/ironsoulv1/` — dijalankan di lingkungan Roblox, bukan Replit
-- Entry point: `games/ironsoulv1/loader.lua`
+### Script Roblox (Luau)
+- Tidak dijalankan di Replit. File di `games/ironsoulv1/` dieksekusi via exploit executor di Roblox.
+- **Jangan validasi** file `.lua` di `games/` dengan `luac` — hanya support Luau-aware tooling.
 
-## Git & GitHub
-- Remote: `https://github.com/iNFINITE-iKII/Infinitee`
-- Branch utama: `main`
-- Push menggunakan secret `GITHUB_PERSONAL_ACCESS_TOKEN` via Basic auth
+## Panduan Agen
+
+Baca `AGENT_PROMPT.md` sebelum bekerja di repo ini. Instruksi lengkap ada di sana: struktur modul, aturan Luau, alur kerja standar, dan cara push ke GitHub.
 
 ## User Preferences
 
-- **Bahasa komunikasi**: Indonesia penuh. Nama teknis (function, variable, file path) boleh Inggris.
-- **Nada**: Profesional tapi tidak kaku. Langsung ke inti.
-- **Tidak perlu** konfirmasi "apakah saya boleh lanjut?" — langsung kerjakan dan laporkan hasilnya.
-- Saat menjelaskan bug: tampilkan root cause → alur lama (❌) → alur baru (✅)
-- Saat push berhasil: tampilkan ringkasan (hash, branch, remote, status sinkron)
-- Saat implementasi fitur: jelaskan 2–4 kalimat + snippet kode yang berubah + file yang diubah
-- Jangan gunakan `luac` untuk validasi file Luau di `games/` — gunakan `git diff --check`
-- Jangan `git push --force` kecuali diminta eksplisit
-- Toggle baru di Roblox script wajib ditambahkan ke `SyncAllVisualUI` (ui_sync.lua)
+- Komunikasi dalam **Bahasa Indonesia**.
+- Jangan campur dengan Inggris kecuali nama teknis.
+- Langsung kerjakan tanpa konfirmasi "boleh lanjut?".
