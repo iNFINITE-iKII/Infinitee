@@ -70,8 +70,9 @@ end
 -- Kode redeem (terbaru di atas)
 local CODE_LIST = {
     "CELEBRATEFOR150KMEMBER", "NEWMAPEXPAND",      "IRONSOULWEEKEND16",
-    "SEASON2EXPAND",          "IRONSOULWEEKEND15", "SEASON2OPEN",
-    "SEASON2LIVE",            "IRONSOULWEEKEND13", "NEWMAP"
+    "SEASON2EXPAND",          "SEASON2OPEN",       "SEASON2LIVE",
+    "IRONSOULWEEKEND13",      "NEWMAP",            "IRONSOULWEEKEND17",
+    "SCYTHEWEAPON",
 }
 
 
@@ -146,6 +147,33 @@ end
 _G.UtilCodeChecks = CreateScrollableMultiSelectUI(
     UtilPage, "Pilih Kode Redeem", CODE_LIST, _codeInitVals, _codeCbs
 )
+
+-- Tombol "Semua": pilih semua kode sekaligus lalu langsung redeem
+CreateButton(UtilPage, "✅ Semua — Pilih & Redeem", function()
+    -- Centang semua
+    for i, code in ipairs(CODE_LIST) do
+        EngineConfig.UtilSelectedCodes[code] = true
+        if _G.UtilCodeChecks and _G.UtilCodeChecks[i] then
+            _G.UtilCodeChecks[i]:SetValue(true)
+        end
+    end
+    -- Langsung trigger redeem
+    local re = getCodeRE()
+    if not re then CustomNotify("⚠️ UTIL","CodeRE tidak ditemukan!",3); return end
+    task.spawn(function()
+        CustomNotify("🎁 REDEEM SEMUA","Memulai "..#CODE_LIST.." kode (15d jeda)...",4)
+        for i, code in ipairs(CODE_LIST) do
+            pcall(function() re:FireServer({event="usecode", code=code}) end)
+            if i < #CODE_LIST then
+                for cd = 15, 1, -1 do
+                    CustomNotify("🎁 REDEEM","["..i.."/"..#CODE_LIST.."] "..code.." | Berikutnya: "..cd.."d",1)
+                    task.wait(1)
+                end
+            end
+        end
+        CustomNotify("🎁 REDEEM SEMUA","Selesai! "..#CODE_LIST.." kode di-redeem.",4)
+    end)
+end, "btnUtilRedeemAll")
 
 local _redeemBusy = false
 CreateButton(UtilPage, "🎁 Redeem Kode Terpilih", function()
