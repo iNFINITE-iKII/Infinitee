@@ -75,36 +75,51 @@ local CODE_LIST = {
     "SCYTHEWEAPON",
 }
 
-
--- Race (langka → umum; key harus cocok dengan text dari PlayerTitleGUI)
-local RACE_LIST = {
-    "Demon",     -- 0.20 %
-    "Night Elf", -- 0.20 %
-    "Angel",     -- 0.30 %
-    "Archdruid", -- 1.00 %
-    "Fairy",     -- 1.70 %
-    "Sorcerer",  -- 2.10 %
-    "Dragonkin", -- 6.00 %
-    "Undead",    -- 13.00 %
-    "Goblin",    -- 24.50 %
-    "Orc",       -- 25.50 %
-    "Human",     -- 25.50 %
-}
-
--- Label dropdown (dengan persentase untuk konteks user)
-local RACE_DISPLAY = {
-    "Demon (0.20%)",     "Night Elf (0.20%)",
-    "Angel (0.30%)",     "Archdruid (1.00%)",
-    "Fairy (1.70%)",     "Sorcerer (2.10%)",
-    "Dragonkin (6.00%)", "Undead (13.00%)",
-    "Goblin (24.50%)",   "Orc (25.50%)",
-    "Human (25.50%)",
-}
-
 -- Versi reward update (tambah versi baru di sini)
 local REWARD_VERSIONS = {
     "V10.1", "V10", "V9.5", "V9.4", "V9.3", "V9.2",
 }
+
+-- [UTIL] RACE LIST — dibangun dari ResRace (ReplicatedStorage.Configs.ResRace)
+-- Otomatis sinkron saat game tambah race baru; tidak perlu edit manual.
+-- Sort besar = langka = tampil di atas daftar.
+--------------------------------------------------------------------------------
+local RACE_LIST, RACE_DISPLAY = (function()
+    local ok, res = pcall(function()
+        return require(Services.ReplicatedStorage
+            :WaitForChild("Configs", 10)
+            :WaitForChild("ResRace",  10))
+    end)
+
+    if not ok or type(res) ~= "table" then
+        warn("[XiFil] ResRace gagal dimuat — pakai fallback statis")
+        return
+            { "Lucifer","Archdruid","Elf","Demon","Angel","DragonKnight",
+              "Fairy","Curse","Dragonborn","Undead","Goblin","Orc","Human" },
+            { "Lucifer [R6]","Archdruid [R7]","Elf [R6]","Demon [R6]","Angel [R6]",
+              "DragonKnight [R7]","Fairy [R5]","Curse [R5]","Dragonborn [R4]",
+              "Undead [R3]","Goblin [R2]","Orc [R2]","Human [R1]" }
+    end
+
+    -- Kumpulkan entry valid: harus punya Id (string) dan Sort (number)
+    local entries = {}
+    for _, data in pairs(res) do
+        if type(data) == "table"
+            and type(data.Id)   == "string"
+            and type(data.Sort) == "number" then
+            table.insert(entries, data)
+        end
+    end
+    -- Sort descending: nilai Sort besar = race langka = tampil di atas
+    table.sort(entries, function(a, b) return a.Sort > b.Sort end)
+
+    local ids, display = {}, {}
+    for _, data in ipairs(entries) do
+        table.insert(ids,     data.Id)
+        table.insert(display, data.Id .. " [R" .. tostring(data.Rarity or "?") .. "]")
+    end
+    return ids, display
+end)()
 
 -- Export lists ke Hub agar ui_sync bisa sync tanpa duplikat konstanta
 H.UtilCodeList = CODE_LIST
