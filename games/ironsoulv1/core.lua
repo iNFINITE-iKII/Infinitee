@@ -153,7 +153,7 @@ local EngineConfig = {
     FriendOnlyRoom        = true,
     AutoJoinRoomActive    = false,
     SellByRarityActive   = false,
-    SellByRarityInterval = 5,
+    SellByRarityInterval = 0,   -- 0 = jual secepat inventory terdeteksi
     SellByRarity         = "OFF",  -- threshold rarity: jual semua ore Rarity ≤ pilihan ini ("OFF"=tidak jual)
     OreSellModes         = {},  -- per-ore override: OreId → "JUAL"|"SIMPAN"|nil (nil = ikut threshold)
     -- ── Utilitas Tab ──────────────────────────────────────────────────────

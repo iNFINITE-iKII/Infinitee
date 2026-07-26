@@ -107,39 +107,45 @@ local function _shouldSell(id, def)
 end
 
 local _lastCtxFire = 0
+local _sellRarityBusy = false
 local function doSellByRarity()
-    local ok, fw = pcall(_getFw)
-    if not ok or not fw then
-        CustomNotify("⚠️ SELL RARITY", "Framework belum siap", 3); return 0
-    end
-    local du, fu = fw.Modules.DataUtil, fw.Modules.ForgeUtil
-    local ores = du:GetValue(LocalPlayer, {"Ores"}) or {}
-    local sellList = {}
-    for id, count in pairs(ores) do
-        if (tonumber(count) or 0) > 0 then
-            local def = fu:GetDef(id)
-            if _shouldSell(id, def) then table.insert(sellList, id) end
+    if _sellRarityBusy then return 0 end
+    _sellRarityBusy = true
+    local ok, sold = pcall(function()
+        local fw = _getFw()
+        local du, fu = fw.Modules.DataUtil, fw.Modules.ForgeUtil
+        local ores = du:GetValue(LocalPlayer, {"Ores"}) or {}
+        local sellList = {}
+        for id, count in pairs(ores) do
+            if (tonumber(count) or 0) > 0 then
+                local def = fu:GetDef(id)
+                if _shouldSell(id, def) then table.insert(sellList, id) end
+            end
         end
+        if #sellList == 0 then return 0 end
+        -- Picu context TaskSystem tiap 10 detik agar NPC sell tidak timeout.
+        if (os.clock() - _lastCtxFire) >= 10 then
+            _lastCtxFire = os.clock()
+            pcall(function()
+                local tre = _getTaskRE()
+                tre:FireServer("UpdateTaskProgress", "DialogNpc",    "EquipmentSellNpc1|1")
+                tre:FireServer("UpdateTaskProgress", "DialogNpc",    "EquipmentSellNpc1|0")
+                tre:FireServer("UpdateTaskProgress", "OpenGUIWindow","ScreenEquipSell")
+                tre:FireServer("UpdateTaskProgress", "OpenGUIWindow","ScreenTips")
+            end)
+        end
+        if not pcall(function() ForgeRF:InvokeServer("Sell", sellList) end) then
+            return 0
+        end
+        CustomNotify("🗑️ SELL RARITY", "Terjual " .. #sellList .. " jenis Ore", 2)
+        return #sellList
+    end)
+    _sellRarityBusy = false
+    if not ok then
+        CustomNotify("⚠️ SELL RARITY", "Gagal membaca inventory", 3)
+        return 0
     end
-    if #sellList == 0 then return 0 end
-    -- Picu context TaskSystem tiap 10 detik agar NPC sell tidak timeout
-    if (os.clock() - _lastCtxFire) >= 10 then
-        _lastCtxFire = os.clock()
-        pcall(function()
-            local tre = _getTaskRE()
-            tre:FireServer("UpdateTaskProgress", "DialogNpc",    "EquipmentSellNpc1|1")
-            tre:FireServer("UpdateTaskProgress", "DialogNpc",    "EquipmentSellNpc1|0")
-            tre:FireServer("UpdateTaskProgress", "OpenGUIWindow","ScreenEquipSell")
-            tre:FireServer("UpdateTaskProgress", "OpenGUIWindow","ScreenTips")
-        end)
-        task.wait(0.25)
-    end
-    local sold = 0
-    if pcall(function() ForgeRF:InvokeServer("Sell", sellList) end) then
-        sold = #sellList
-        CustomNotify("🗑️ SELL RARITY", "Terjual " .. sold .. " jenis Ore", 2)
-    end
-    return sold
+    return sold or 0
 end
 
 -- ─── UI ──────────────────────────────────────────────────────────────────────
@@ -234,25 +240,33 @@ CreateButton(SellPage, "🗑️ Sell Sekarang (Rarity)", function()
     task.spawn(function() task.wait(0.5); pcall(RefreshOreList) end)
 end, "btnSellByRarityNow")
 
-_G.SellByRarityIntervalInput = CreateInputUI(SellPage, "Interval Auto Sell (detik)",
+_G.SellByRarityIntervalInput = CreateInputUI(SellPage, "Interval Auto Sell (0 = tanpa jeda)",
     tostring(EngineConfig.SellByRarityInterval), false, function(v)
-        local n = tonumber(v); if n and n >= 1 then EngineConfig.SellByRarityInterval = n end
+        local n = tonumber(v); if n and n >= 0 then EngineConfig.SellByRarityInterval = n end
     end)
 
 _G.SellByRarityToggle = CreateToggleUI(SellPage, "⚡ Auto Sell by Rarity",
     EngineConfig.SellByRarityActive, function(v)
         EngineConfig.SellByRarityActive = v
-        if v then CustomNotify("⚡ AUTO SELL RARITY","Aktif!",2)
+        if v then
+            CustomNotify("⚡ AUTO SELL RARITY","Aktif — jual langsung!",2)
+            task.spawn(doSellByRarity)
         else      CustomNotify("⚡ AUTO SELL RARITY","Nonaktif",2) end
     end, "lblSellByRarityAuto")
 
 task.spawn(function()
     local elapsed = 0
     while true do
-        task.wait(1)
+        task.wait(0.1)
         if EngineConfig.SellByRarityActive then
-            elapsed = elapsed + 1
-            if elapsed >= math.max(EngineConfig.SellByRarityInterval or 5, 1) then
+            local interval = tonumber(EngineConfig.SellByRarityInterval) or 0
+            if interval <= 0 then
+                -- Mode cepat: polling 0,1 detik agar item baru segera terjual.
+                pcall(doSellByRarity)
+            else
+                elapsed = elapsed + 0.1
+            end
+            if interval > 0 and elapsed >= interval then
                 elapsed = 0
                 pcall(doSellByRarity)
                 task.spawn(function() task.wait(0.5); pcall(RefreshOreList) end)
