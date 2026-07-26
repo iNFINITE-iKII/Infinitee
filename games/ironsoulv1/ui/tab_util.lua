@@ -68,7 +68,7 @@ end
 --------------------------------------------------------------------------------
 
 -- Kode redeem (terbaru di atas)
-Local CODE_LIST = {
+local CODE_LIST = {
     "CELEBRATEFOR150KMEMBER", "NEWMAPEXPAND",      "IRONSOULWEEKEND16",
     "SEASON2EXPAND",          "IRONSOULWEEKEND15", "SEASON2OPEN",
     "SEASON2LIVE",            "IRONSOULWEEKEND13", "NEWMAP"
