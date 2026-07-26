@@ -84,6 +84,11 @@ local REWARD_VERSIONS = {
 -- Otomatis sinkron saat game tambah race baru; tidak perlu edit manual.
 -- Sort besar = langka = tampil di atas daftar.
 --------------------------------------------------------------------------------
+local RARITY_NAMES = {
+    [1]="Common", [2]="Uncommon", [3]="Rare",
+    [4]="Epic",   [5]="Legendary",[6]="Mythical", [7]="Secret",
+}
+
 local RACE_LIST, RACE_DISPLAY = (function()
     local ok, res = pcall(function()
         return require(Services.ReplicatedStorage
@@ -96,9 +101,10 @@ local RACE_LIST, RACE_DISPLAY = (function()
         return
             { "Lucifer","Archdruid","Elf","Demon","Angel","DragonKnight",
               "Fairy","Curse","Dragonborn","Undead","Goblin","Orc","Human" },
-            { "Lucifer [R6]","Archdruid [R7]","Elf [R6]","Demon [R6]","Angel [R6]",
-              "DragonKnight [R7]","Fairy [R5]","Curse [R5]","Dragonborn [R4]",
-              "Undead [R3]","Goblin [R2]","Orc [R2]","Human [R1]" }
+            { "Lucifer (Mythical)","Archdruid (Secret)","Elf (Mythical)",
+              "Demon (Mythical)","Angel (Mythical)","DragonKnight (Secret)",
+              "Fairy (Legendary)","Curse (Legendary)","Dragonborn (Epic)",
+              "Undead (Rare)","Goblin (Uncommon)","Orc (Uncommon)","Human (Common)" }
     end
 
     -- Kumpulkan entry valid: harus punya Id (string) dan Sort (number)
@@ -115,8 +121,9 @@ local RACE_LIST, RACE_DISPLAY = (function()
 
     local ids, display = {}, {}
     for _, data in ipairs(entries) do
+        local rName = RARITY_NAMES[data.Rarity] or ("R"..tostring(data.Rarity or "?"))
         table.insert(ids,     data.Id)
-        table.insert(display, data.Id .. " [R" .. tostring(data.Rarity or "?") .. "]")
+        table.insert(display, data.Id .. " (" .. rName .. ")")
     end
     return ids, display
 end)()

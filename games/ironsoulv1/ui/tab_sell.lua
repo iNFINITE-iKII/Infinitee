@@ -94,8 +94,8 @@ local function _getDisplayName(id)
     return string.gsub(base, "_", " ")
 end
 
-local RARITY_SELL_OPTS  = {"OFF","Common","Uncommon","Rare","Epic","Legendary","Mythical","Divine"}
-local RARITY_SELL_LEVEL = {OFF=0,Common=1,Uncommon=2,Rare=3,Epic=4,Legendary=5,Mythical=6,Divine=7}
+local RARITY_SELL_OPTS  = {"OFF","Common","Uncommon","Rare","Epic","Legendary","Mythical","Secret"}
+local RARITY_SELL_LEVEL = {OFF=0,Common=1,Uncommon=2,Rare=3,Epic=4,Legendary=5,Mythical=6,Secret=7,Divine=7}
 
 local function _shouldSell(id, def)
     local mode = EngineConfig.OreSellModes[id] or "OFF"
