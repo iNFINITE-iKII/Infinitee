@@ -68,17 +68,12 @@ end
 --------------------------------------------------------------------------------
 
 -- Kode redeem (terbaru di atas)
-local CODE_LIST = {
-    "TGIFSEASON2",       "SEASON2GIFTA",      "SEASON2LIVE",
-    "IRONSOULWEEKEND13", "100KCONGRATS",       "IRONSOULWEEKEND12",
-    "GOODJOB70KMEMBER",  "THURSDAYGIFT",       "IRONSOULWEEKEND11",
-    "EXPEDITIONFIX",     "GROCERYFIX",
-    "IRONSOULWEEKEND10", "THXFOR60KMEMBER",    "HAPPYJUNE",
-    "50KMEMBER",         "IRONSOULWEEKEND9",   "40KMEMBER",
-    "30KMEMBER",         "IRONSOULWEEKEND8",   "MEMBER20000",
-    "IRONSOULWEEKEND7",  "FIXINGPATCH",        "IRONSOULWEEKEND6",
-    "LIMITEDGIFT1",      "MEMBER10000",
+Local CODE_LIST = {
+    "CELEBRATEFOR150KMEMBER", "NEWMAPEXPAND",      "IRONSOULWEEKEND16",
+    "SEASON2EXPAND",          "IRONSOULWEEKEND15", "SEASON2OPEN",
+    "SEASON2LIVE",            "IRONSOULWEEKEND13", "NEWMAP"
 }
+
 
 -- Race (langka → umum; key harus cocok dengan text dari PlayerTitleGUI)
 local RACE_LIST = {
