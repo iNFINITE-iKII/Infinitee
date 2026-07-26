@@ -240,15 +240,20 @@ end, "btnUtilClaimReward")
 CreateSection(UtilPage, "Auto Reroll Race", "secUtilRace")
 
 -- Dropdown pilih slot (hanya 2 opsi: Free_1 dan 1)
-local SLOT_LIST    = {"Free 1", "Slot 1"}
-local SLOT_KEY_MAP = { ["Free 1"]="Free_1", ["Slot 1"]="1" }
+local SLOT_LIST        = {"Free 1", "Slot 1"}
+local SLOT_KEY_MAP     = { ["Free 1"]="Free_1", ["Slot 1"]="1" }
+local SLOT_DISPLAY_MAP = { ["Free_1"]="Free 1", ["1"]="Slot 1" }
 -- Konversi default lama (integer) ke display string jika diperlukan
 local _slotDefault = (EngineConfig.UtilRaceSlot == "1") and "Slot 1" or "Free 1"
 _G.UtilRaceSlotDropdown = CreateDropdownUI(
     UtilPage, "🎰 Race Slot", SLOT_LIST,
     _slotDefault,
     function(val)
-        EngineConfig.UtilRaceSlot = SLOT_KEY_MAP[val] or "Free_1"
+        local sk = SLOT_KEY_MAP[val] or "Free_1"
+        EngineConfig.UtilRaceSlot = sk
+        -- FireServer SelectSlot HANYA dari sini — saat user memilih dari dropdown
+        local re = getRaceRE()
+        if re then pcall(function() re:FireServer("SelectSlot", sk) end) end
     end, "lblUtilRaceSlot"
 )
 
@@ -329,12 +334,12 @@ task.spawn(function()
                 CustomNotify("🎉 RACE MATCH!","Dapat race: "..doubleRace,8)
             end
         else
-            -- Belum cocok → roll sekali pada slot yang dipilih
-            -- Normalisasi: jaga kompatibilitas jika nilai lama (integer) masih tersimpan
-            local _rawSlot = EngineConfig.UtilRaceSlot
-            local slotKey = (type(_rawSlot)=="string" and (_rawSlot=="Free_1" or _rawSlot=="1"))
-                            and _rawSlot or "Free_1"
-            pcall(function() re:FireServer("SelectSlot", slotKey) end)
+            -- Belum cocok → reroll: trigger via dropdown callback agar FireServer
+            -- SelectSlot HANYA melewati satu jalur (dropdown), bukan direct call
+            local _display = SLOT_DISPLAY_MAP[EngineConfig.UtilRaceSlot] or "Free 1"
+            if _G.UtilRaceSlotDropdown then
+                _G.UtilRaceSlotDropdown:SetValue(_display)
+            end
         end
     end
 end)
