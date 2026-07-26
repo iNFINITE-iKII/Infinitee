@@ -372,12 +372,10 @@ task.spawn(function()
                 CustomNotify("🎉 RACE MATCH!","Dapat race: "..doubleRace,8)
             end
         else
-            -- Belum cocok → reroll: trigger via dropdown callback agar FireServer
-            -- SelectSlot HANYA melewati satu jalur (dropdown), bukan direct call
-            local _display = SLOT_DISPLAY_MAP[EngineConfig.UtilRaceSlot] or "Free 1"
-            if _G.UtilRaceSlotDropdown then
-                _G.UtilRaceSlotDropdown:SetValue(_display)
-            end
+            -- Belum cocok → fire Rolling pada slot yang dipilih
+            local slotKey = EngineConfig.UtilRaceSlot
+            if slotKey ~= "Free_1" and slotKey ~= "1" then slotKey = "Free_1" end
+            pcall(function() re:FireServer("Rolling", slotKey) end)
         end
     end
 end)
