@@ -176,7 +176,7 @@ function SyncAllVisualUI()
         end
         if _G.SellByRarityToggle        then _G.SellByRarityToggle:SetValue(EngineConfig.SellByRarityActive) end
         if _G.SellByRarityIntervalInput  then _G.SellByRarityIntervalInput:SetValue(tostring(EngineConfig.SellByRarityInterval)) end
-        if _G.SellByRarityLevelInput     then _G.SellByRarityLevelInput:SetValue(tostring(EngineConfig.SellByRarity)) end
+        if _G.SellByRarityDropdown       then _G.SellByRarityDropdown:SetValue(EngineConfig.SellByRarity) end
         if _G.AutoSellScanToggle         then _G.AutoSellScanToggle:SetValue(EngineConfig.AutoSellScanActive) end
         if _G.AutoSellScanIntervalInput  then _G.AutoSellScanIntervalInput:SetValue(tostring(EngineConfig.AutoSellScanInterval)) end
         -- OreSellModes (per-ore override) tidak perlu SetValue karena direfresh

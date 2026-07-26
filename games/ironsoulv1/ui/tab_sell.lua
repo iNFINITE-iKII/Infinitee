@@ -94,23 +94,16 @@ local function _getDisplayName(id)
     return string.gsub(base, "_", " ")
 end
 
-local function _getRarityLabel(level)
-    if level <= 0 then return "OFF" end
-    local catalog = _getOreCatalog(false)
-    if catalog then
-        for _, e in ipairs(catalog) do
-            if e.Rarity == level then return e.RarityName end
-        end
-    end
-    return "Lvl " .. level
-end
+local RARITY_SELL_OPTS  = {"OFF","Common","Uncommon","Rare","Epic","Legendary","Mythical","Divine"}
+local RARITY_SELL_LEVEL = {OFF=0,Common=1,Uncommon=2,Rare=3,Epic=4,Legendary=5,Mythical=6,Divine=7}
 
 local function _shouldSell(id, def)
     local mode = EngineConfig.OreSellModes[id] or "OFF"
     if mode == "SIMPAN" then return false end
     if mode == "JUAL"   then return true end
+    local threshold = RARITY_SELL_LEVEL[EngineConfig.SellByRarity] or 0
     local r = def and tonumber(def.Rarity)
-    return EngineConfig.SellByRarity > 0 and r and r <= EngineConfig.SellByRarity
+    return threshold > 0 and r and r <= threshold
 end
 
 local _lastCtxFire = 0
@@ -152,12 +145,10 @@ end
 -- ─── UI ──────────────────────────────────────────────────────────────────────
 CreateSection(SellPage, "Auto Sell by Rarity (Live)", "secSellByRarity")
 
--- Input threshold rarity (0 = OFF, 1-7 = Common…Divine)
-_G.SellByRarityLevelInput = CreateInputUI(SellPage,
-    "Sell Rarity ≤ Level (0=OFF · 1=Common · 5=Legendary · 7=Divine)",
-    tostring(EngineConfig.SellByRarity), false, function(v)
-        local n = tonumber(v)
-        if n then EngineConfig.SellByRarity = math.clamp(math.floor(n), 0, 7) end
+-- Dropdown threshold rarity (cycle seperti World di tab Farm)
+_G.SellByRarityDropdown = CreateCycleUI(SellPage,
+    "Sell Rarity ≤", RARITY_SELL_OPTS, EngineConfig.SellByRarity, function(v)
+        EngineConfig.SellByRarity = v
     end)
 
 -- Ore list per-item (OFF / JUAL / SIMPAN) — embedded ScrollingFrame
