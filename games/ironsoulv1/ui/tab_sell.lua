@@ -194,7 +194,7 @@ local function RefreshOreList()
         detail.Size           = UDim2.new(1, -72, 0, 16)
         detail.Position       = UDim2.fromOffset(8, 25)
         detail.BackgroundTransparency = 1
-        detail.Text           = tostring(entry.RarityName) .. " (Lvl " .. entry.Rarity .. ") · ×" .. entry.Count
+        detail.Text           = tostring(entry.RarityName) .. " · ×" .. entry.Count
         detail.TextColor3     = Color3.fromRGB(147, 158, 179)
         detail.Font           = Enum.Font.Gotham
         detail.TextSize       = 9
