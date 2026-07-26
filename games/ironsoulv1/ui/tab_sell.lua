@@ -28,7 +28,7 @@ local SellPage = CreateTab("💰 Jual", "tabSell")
 -- ════════════════════════════════════════════════════════════════════════════
 -- [AUTO SELL BY RARITY — V2] — Live data via Framework, tahan update game
 -- Baca ore dari DataUtil (live), filter by rarity threshold + per-ore override.
--- Remote: ForgeRF:InvokeServer("JUAL", list) — sesuai V6.
+-- Remote: ForgeRF:InvokeServer("Sell", list).
 -- ════════════════════════════════════════════════════════════════════════════
 local RS = game:GetService("ReplicatedStorage")
 
@@ -142,7 +142,7 @@ local function doSellByRarity()
         task.wait(0.25)
     end
     local sold = 0
-    if pcall(function() ForgeRF:InvokeServer("JUAL", sellList) end) then
+    if pcall(function() ForgeRF:InvokeServer("Sell", sellList) end) then
         sold = #sellList
         CustomNotify("🗑️ SELL RARITY", "Terjual " .. sold .. " jenis Ore", 2)
     end
