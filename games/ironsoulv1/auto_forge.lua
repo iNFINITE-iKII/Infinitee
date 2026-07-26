@@ -100,6 +100,7 @@ local function GetOreCatalog(forceRefresh)
         end
 
         table.sort(Out, function(A, B)
+            if A.Count ~= B.Count then return A.Count > B.Count end
             if A.Rarity ~= B.Rarity then return A.Rarity < B.Rarity end
             if A.Sort   ~= B.Sort   then return A.Sort   < B.Sort   end
             return A.ItemId < B.ItemId
