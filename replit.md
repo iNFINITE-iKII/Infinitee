@@ -1,31 +1,31 @@
 # Infinitee Script Hub
 
-## Gambaran Proyek
+Repo berisi dua komponen utama:
 
-Repo ini berisi dua komponen utama:
+| Komponen | Lokasi | Bahasa |
+|---|---|---|
+| Script Hub Roblox | `games/ironsoulv1/` | Luau (Roblox) |
+| Discord Bot | `bot/` | TypeScript + Discord.js v14 |
 
-| Komponen | Lokasi | Stack | Tujuan |
-|---|---|---|---|
-| **Script Hub Roblox** | `games/ironsoulv1/` | Luau (Roblox) | Cheat/automation script untuk game IronSoul |
-| **Discord Bot** | `bot/` | TypeScript + Discord.js v14 + Drizzle ORM | Manajemen lisensi, HWID, tiket |
+## Cara menjalankan Discord Bot
 
-## Cara Menjalankan
+```bash
+cd bot && npm run build   # compile TypeScript → dist/
+# Workflow: "Discord Bot" → cd bot && node dist/index.mjs
+```
 
-### Discord Bot
-- Workflow: **Discord Bot** → `cd bot && node dist/index.mjs`
-- Build ulang: `cd bot && npm run build`
-- Secret yang dibutuhkan: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`, `NEON_DATABASE_URL`
+Secret yang dibutuhkan: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`, `NEON_DATABASE_URL`
 
-### Script Roblox (Luau)
-- Tidak dijalankan di Replit. File di `games/ironsoulv1/` dieksekusi via exploit executor di Roblox.
-- **Jangan validasi** file `.lua` di `games/` dengan `luac` — hanya support Luau-aware tooling.
+## Script Roblox (Luau)
 
-## Panduan Agen
-
-Baca `AGENT_PROMPT.md` sebelum bekerja di repo ini. Instruksi lengkap ada di sana: struktur modul, aturan Luau, alur kerja standar, dan cara push ke GitHub.
+- Entry point: `games/ironsoulv1.lua` → `games/ironsoulv1/loader.lua`
+- **Jangan validasi dengan `luac`** — file adalah Luau, bukan Lua standar
+- Untuk cek whitespace conflict: `git diff --check`
+- Panduan lengkap ada di `AGENT_PROMPT.md`
 
 ## User Preferences
 
-- Komunikasi dalam **Bahasa Indonesia**.
-- Jangan campur dengan Inggris kecuali nama teknis.
-- Langsung kerjakan tanpa konfirmasi "boleh lanjut?".
+- Fokus utama: `games/ironsoulv1/` — script Roblox IronSoul v1
+- Tab prioritas: `games/ironsoulv1/ui/tab_util.lua` (Utilitas)
+- Komunikasi dalam Bahasa Indonesia
+- Tidak perlu konfirmasi sebelum mengerjakan — langsung kerjakan dan laporkan
