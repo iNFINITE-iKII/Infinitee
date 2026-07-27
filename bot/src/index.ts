@@ -50,12 +50,15 @@ async function main() {
       }
     } catch (err) {
       log.error({ err }, 'Interaction error');
-      if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: '❌ Terjadi kesalahan internal. Coba lagi nanti.',
-          ephemeral: true,
-        }).catch(() => {});
-      }
+      try {
+        if (interaction.isRepliable()) {
+          if (interaction.deferred) {
+            await (interaction as any).editReply({ content: '❌ Terjadi kesalahan internal. Coba lagi nanti.' });
+          } else if (!interaction.replied) {
+            await interaction.reply({ content: '❌ Terjadi kesalahan internal. Coba lagi nanti.', ephemeral: true });
+          }
+        }
+      } catch {}
     }
   });
 

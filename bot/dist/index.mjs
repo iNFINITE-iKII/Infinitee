@@ -92350,7 +92350,8 @@ async function handleVipRole(interaction) {
     });
   }
   const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? "PREMIUM";
-  const role = interaction.guild?.roles.cache.find((r) => r.name === premiumRoleName);
+  const allRoles = await interaction.guild.roles.fetch();
+  const role = allRoles.find((r) => r.name === premiumRoleName);
   if (!role) {
     return interaction.editReply({ content: `\u274C Role "${premiumRoleName}" tidak ditemukan di server.` });
   }
@@ -92812,12 +92813,15 @@ async function main() {
       }
     } catch (err) {
       log.error({ err }, "Interaction error");
-      if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: "\u274C Terjadi kesalahan internal. Coba lagi nanti.",
-          ephemeral: true
-        }).catch(() => {
-        });
+      try {
+        if (interaction.isRepliable()) {
+          if (interaction.deferred) {
+            await interaction.editReply({ content: "\u274C Terjadi kesalahan internal. Coba lagi nanti." });
+          } else if (!interaction.replied) {
+            await interaction.reply({ content: "\u274C Terjadi kesalahan internal. Coba lagi nanti.", ephemeral: true });
+          }
+        }
+      } catch {
       }
     }
   });

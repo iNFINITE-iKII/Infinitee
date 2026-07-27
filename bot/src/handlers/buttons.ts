@@ -270,7 +270,8 @@ async function handleVipRole(interaction: ButtonInteraction) {
   }
 
   const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? 'PREMIUM';
-  const role = interaction.guild?.roles.cache.find((r) => r.name === premiumRoleName);
+  const allRoles = await interaction.guild!.roles.fetch();
+  const role = allRoles.find((r) => r.name === premiumRoleName);
 
   if (!role) {
     return interaction.editReply({ content: `❌ Role "${premiumRoleName}" tidak ditemukan di server.` });
