@@ -1,31 +1,50 @@
 # Infinitee Script Hub
 
-Repo berisi dua komponen utama:
+Repo ini berisi dua komponen utama:
 
-| Komponen | Lokasi | Bahasa |
-|---|---|---|
-| Script Hub Roblox | `games/ironsoulv1/` | Luau (Roblox) |
-| Discord Bot | `bot/` | TypeScript + Discord.js v14 |
+| Komponen | Lokasi | Bahasa | Tujuan |
+|---|---|---|---|
+| **Script Hub Roblox** | `games/ironsoulv1/` | Luau (Roblox) | Script automation untuk game IronSoul v1 |
+| **Discord Bot** | `bot/` | TypeScript + Discord.js v14 | Manajemen lisensi, HWID, tiket |
 
 ## Cara menjalankan Discord Bot
 
-```bash
-cd bot && npm run build   # compile TypeScript → dist/
-# Workflow: "Discord Bot" → cd bot && node dist/index.mjs
+1. Set secrets: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`, `NEON_DATABASE_URL`
+2. Build (jika perlu): `cd bot && npm run build`
+3. Jalankan workflow **Discord Bot**: `cd bot && node dist/index.mjs`
+
+## Struktur IronSoul v1
+
+```
+games/ironsoulv1/
+├── core.lua          — Services, EngineConfig, konstanta global
+├── loader.lua        — Entry point, urutan load semua modul
+├── init.lua          — Inisialisasi Hub (getgenv().Hub)
+├── farm.lua          — Auto Farm loop (Egg / Chest / Monster)
+├── combat.lua        — GetPositionCFrame(), CombatEngine
+├── navigation.lua    — Navigasi antar room/world
+├── auto_potion.lua   — Sistem Auto Buff Potion
+├── auto_forge.lua    — Auto Forge
+├── buff_card.lua     — Auto Buff Card
+├── config_system.lua — Save/Load profil ke JSON
+├── ui_sync.lua       — SyncAllVisualUI()
+├── notify.lua        — CustomNotify()
+├── maid.lua          — Lifecycle / cleanup connections
+├── npc_scanner.lua   — Scanner NPC/monster
+├── translate.lua     — Sistem terjemahan label UI
+└── ui/               — Semua tab UI (farm, potion, sell, dll.)
 ```
 
-Secret yang dibutuhkan: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`, `NEON_DATABASE_URL`
+## Catatan Penting
 
-## Script Roblox (Luau)
-
-- Entry point: `games/ironsoulv1.lua` → `games/ironsoulv1/loader.lua`
-- **Jangan validasi dengan `luac`** — file adalah Luau, bukan Lua standar
-- Untuk cek whitespace conflict: `git diff --check`
+- File `.lua` di `games/` adalah **Luau** (Roblox) — jangan validasi dengan `luac` standar
+- Semua modul berbagi data lewat `getgenv().Hub` (disingkat `H`)
+- Saat menambah toggle baru: wajib tambahkan key di `EngineConfig` (core.lua) DAN `SetValue` di `SyncAllVisualUI` (ui_sync.lua)
 - Panduan lengkap ada di `AGENT_PROMPT.md`
 
 ## User Preferences
 
-- Fokus utama: `games/ironsoulv1/` — script Roblox IronSoul v1
-- Tab prioritas: `games/ironsoulv1/ui/tab_util.lua` (Utilitas)
+- Fokus utama: IronSoul v1 (`games/ironsoulv1/`)
 - Komunikasi dalam Bahasa Indonesia
-- Tidak perlu konfirmasi sebelum mengerjakan — langsung kerjakan dan laporkan
+- Nada profesional, langsung ke inti
+- Baca `AGENT_PROMPT.md` sebelum mengerjakan IronSoul
