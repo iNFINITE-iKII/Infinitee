@@ -124,15 +124,36 @@ async function handleBuy(interaction: ButtonInteraction) {
   try {
     await createPremiumTicket(interaction);
   } catch (error: any) {
-    log.error({ err: error, userId: interaction.user.id }, 'Buy PREMIUM ticket creation failed');
+    log.error({
+      err: error,
+      userId: interaction.user.id,
+      stage: error?.stage,
+      discordCode: error?.code,
+      databaseCode: error?.cause?.code,
+    }, 'Buy PREMIUM ticket creation failed');
 
     const message = error?.code === 50013
       ? '❌ Bot tidak memiliki permission **Manage Channels**. Minta admin mengaktifkan permission tersebut.'
       : error?.code === 50001
         ? '❌ Bot tidak memiliki akses ke server atau category tiket.'
-        : '❌ Tiket belum dapat dibuat. Pastikan database dan permission bot sudah aktif, lalu coba lagi.';
+        : error?.stage?.startsWith('database')
+          ? '❌ Database tiket belum siap. Pastikan tabel bot sudah dibuat di Neon, lalu coba lagi.'
+          : error?.stage === 'send ticket message'
+            ? '❌ Bot tidak memiliki permission **Send Messages** di channel tiket.'
+            : error?.stage === 'create ticket channel' || error?.stage === 'create Tickets category'
+              ? '❌ Bot gagal membuat channel tiket. Pastikan permission **Manage Channels** aktif.'
+              : '❌ Tiket belum dapat dibuat. Pastikan database dan permission bot sudah aktif, lalu coba lagi.';
 
     await interaction.editReply({ content: message }).catch(() => {});
+  }
+}
+
+async function ticketStage<T>(stage: string, operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error: any) {
+    if (error && typeof error === 'object') error.stage ??= stage;
+    throw error;
   }
 }
 
@@ -141,7 +162,8 @@ async function createPremiumTicket(interaction: ButtonInteraction) {
   const userId = interaction.user.id;
 
   // Cek whitelist
-  const [wl] = await db.select().from(whitelist).where(eq(whitelist.discordUserId, userId));
+  const [wl] = await ticketStage('database whitelist lookup', () =>
+    db.select().from(whitelist).where(eq(whitelist.discordUserId, userId)));
   if (wl) {
     return interaction.editReply({
       content: '✅ Kamu sudah terdaftar di whitelist VIP! Gunakan tombol **🔑 Get Key** untuk melihat key kamu.',
@@ -152,17 +174,17 @@ async function createPremiumTicket(interaction: ButtonInteraction) {
 
   // Deteksi tiket lama sebelum membuat channel baru. Ini juga menangani
   // record pending yang masih tertinggal setelah bot restart.
-  const [existingBeforeCreate] = await db
-    .select()
-    .from(pendingTickets)
-    .where(eq(pendingTickets.discordUserId, userId));
+  const [existingBeforeCreate] = await ticketStage('database pending ticket lookup', () =>
+    db.select()
+      .from(pendingTickets)
+      .where(eq(pendingTickets.discordUserId, userId)));
   if (existingBeforeCreate) {
-    const existingChannel = await interaction.guild.channels
-      .fetch(existingBeforeCreate.channelId)
-      .catch(() => null);
+    const existingChannel = await ticketStage('fetch existing Discord ticket channel', () =>
+      interaction.guild!.channels.fetch(existingBeforeCreate.channelId).catch(() => null));
     if (!existingChannel) {
       // Record lama tidak lagi punya channel Discord yang valid.
-      await db.delete(pendingTickets).where(eq(pendingTickets.discordUserId, userId));
+      await ticketStage('database stale ticket cleanup', () =>
+        db.delete(pendingTickets).where(eq(pendingTickets.discordUserId, userId)));
     } else {
       return interaction.editReply({
         content: `⚠️ Kamu sudah memiliki tiket yang sedang diproses: <#${existingBeforeCreate.channelId}>. Tunggu response admin.`,
@@ -171,7 +193,8 @@ async function createPremiumTicket(interaction: ButtonInteraction) {
   }
 
   const botMember = interaction.guild.members.me
-    ?? await interaction.guild.members.fetch(interaction.client.user!.id);
+    ?? await ticketStage('fetch bot member permissions', () =>
+      interaction.guild!.members.fetch(interaction.client.user!.id));
   if (!botMember?.permissions.has(PermissionFlagsBits.ManageChannels)) {
     const error = new Error('Bot lacks Manage Channels permission');
     (error as any).code = 50013;
@@ -185,33 +208,44 @@ async function createPremiumTicket(interaction: ButtonInteraction) {
   ) as CategoryChannel | undefined;
 
   if (!category) {
-    category = (await interaction.guild.channels.create({
-      name: 'Tickets',
-      type: ChannelType.GuildCategory,
-    })) as CategoryChannel;
+    category = await ticketStage('create Tickets category', () =>
+      interaction.guild!.channels.create({
+        name: 'Tickets',
+        type: ChannelType.GuildCategory,
+      })) as CategoryChannel;
   }
 
-  const staffRoleId = process.env.TICKET_STAFF_ROLE_ID;
-  const ticketChannel = await interaction.guild.channels.create({
-    name: `ticket-${interaction.user.username}`,
-    type: ChannelType.GuildText,
-    parent: category.id,
-    permissionOverwrites: [
-      { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-      { id: userId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
-      { id: interaction.client.user!.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] },
-      ...(staffRoleId ? [{ id: staffRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }] : []),
-    ],
-  }) as TextChannel;
+  let staffRoleId = process.env.TICKET_STAFF_ROLE_ID?.trim();
+  if (staffRoleId) {
+    const staffRole = await ticketStage('validate ticket staff role', () =>
+      interaction.guild!.roles.fetch(staffRoleId!).catch(() => null));
+    if (!staffRole) {
+      log.warn({ staffRoleId }, 'TICKET_STAFF_ROLE_ID was not found; creating ticket without staff overwrite');
+      staffRoleId = undefined;
+    }
+  }
+
+  const ticketChannel = await ticketStage('create ticket channel', () =>
+    interaction.guild!.channels.create({
+      name: `ticket-${interaction.user.username}`,
+      type: ChannelType.GuildText,
+      parent: category!.id,
+      permissionOverwrites: [
+        { id: interaction.guild!.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: userId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+        { id: interaction.client.user!.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] },
+        ...(staffRoleId ? [{ id: staffRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }] : []),
+      ],
+    })) as TextChannel;
 
   // Insert atomik — onConflictDoNothing mencegah duplikat meski klik bersamaan
   let inserted;
   try {
-    inserted = await db
-      .insert(pendingTickets)
-      .values({ discordUserId: userId, channelId: ticketChannel.id })
-      .onConflictDoNothing()
-      .returning({ id: pendingTickets.discordUserId });
+    inserted = await ticketStage('database pending ticket insert', () =>
+      db.insert(pendingTickets)
+        .values({ discordUserId: userId, channelId: ticketChannel.id })
+        .onConflictDoNothing()
+        .returning({ id: pendingTickets.discordUserId }));
   } catch (error) {
     await ticketChannel.delete().catch(() => {});
     throw error;
@@ -220,14 +254,16 @@ async function createPremiumTicket(interaction: ButtonInteraction) {
   if (inserted.length === 0) {
     // Tiket sudah ada (race condition) — hapus channel yang baru dibuat & beri tahu user
     await ticketChannel.delete().catch(() => {});
-    const [existing] = await db.select().from(pendingTickets).where(eq(pendingTickets.discordUserId, userId));
+    const [existing] = await ticketStage('database pending ticket lookup', () =>
+      db.select().from(pendingTickets).where(eq(pendingTickets.discordUserId, userId)));
     return interaction.editReply({
       content: `⚠️ Kamu sudah memiliki tiket yang sedang diproses${existing ? `: <#${existing.channelId}>` : ''}. Tunggu response admin.`,
     });
   }
 
   // Cek apakah user pernah klaim trial
-  const [trial] = await db.select().from(trialClaims).where(eq(trialClaims.discordUserId, userId));
+  const [trial] = await ticketStage('database trial lookup', () =>
+    db.select().from(trialClaims).where(eq(trialClaims.discordUserId, userId)));
 
   const adminEmbed = new EmbedBuilder()
     .setColor(0x9b59b6)
@@ -247,11 +283,12 @@ async function createPremiumTicket(interaction: ButtonInteraction) {
   );
 
   try {
-    await ticketChannel.send({
-      content: `<@${userId}> Tiket berhasil dibuat. Admin akan segera membantu kamu.`,
-      embeds: [adminEmbed],
-      components: [adminRow],
-    });
+    await ticketStage('send ticket message', () =>
+      ticketChannel.send({
+        content: `<@${userId}> Tiket berhasil dibuat. Admin akan segera membantu kamu.`,
+        embeds: [adminEmbed],
+        components: [adminRow],
+      }));
   } catch (error) {
     await db.delete(pendingTickets).where(eq(pendingTickets.discordUserId, userId)).catch(() => {});
     await ticketChannel.delete().catch(() => {});
