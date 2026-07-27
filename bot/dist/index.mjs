@@ -92338,7 +92338,7 @@ async function handleVipRole(interaction) {
   let hasPermanent = false;
   for (const o of owned) {
     const [lic] = await db.select().from(licenses).where(eq(licenses.key, o.licenseKey));
-    if (lic && lic.type === "PERMANENT" && getEffectiveStatus(lic.status, lic.expiresAt) === "ACTIVE") {
+    if (lic && lic.type === "PERMANENT" && lic.status !== "REVOKED") {
       hasPermanent = true;
       break;
     }
