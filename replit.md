@@ -14,7 +14,7 @@ workflow runtime di Replit.
 
 1. Hubungkan repository ke Railway dan gunakan `railway.toml` yang tersedia.
 2. Set variable di Railway: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`,
-   `DISCORD_GUILD_ID`, dan `DATABASE_URL` dari Neon.
+   `DISCORD_GUILD_ID`, dan `NEON_DATABASE_URL` dari Neon.
 3. Railway akan menjalankan install dependency dari npm publik dan `npm run build`,
    lalu menjalankan `cd bot && npm start`. Build sengaja tidak memakai lockfile hasil
    import yang menunjuk ke registry internal Replit.

@@ -231,7 +231,7 @@ git -c credential.helper= -c "http.extraheader=AUTHORIZATION: Basic ${basic}" pu
 - Runtime: Node.js ESM, TypeScript dikompilasi ke `dist/` via esbuild
 - Deployment Railway: build `cd bot && npm run build`, start `cd bot && npm start`
 - Rebuild: `cd bot && npm run build`
-- Variable Railway yang dibutuhkan: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`, `DATABASE_URL`
+- Variable Railway yang dibutuhkan: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`, `NEON_DATABASE_URL`
 - Database: PostgreSQL (Neon) via Drizzle ORM
 
 ---
