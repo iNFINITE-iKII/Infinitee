@@ -150,24 +150,19 @@ statusLbl.TextColor3 = EngineConfig.RoomMode<=5 and Color3.fromRGB(0,255,127) or
 -- ── ROOM SETTINGS: FRIEND ONLY ──
 -- ON → panggil ChangeFriendOnly 1x; OFF → panggil ChangeFriendOnly 1x lagi
 CreateSection(RoomPage, "Room Settings", "secRoomSettings")
--- _friendOnlyReady : cegah fire saat inisialisasi / SyncAllVisualUI
--- _friendOnlyWasOn  : true setelah user pernah menyalakan toggle secara manual
-local _friendOnlyReady  = false
-local _friendOnlyWasOn  = false
+-- _friendOnlyReady: cegah fire saat inisialisasi / SyncAllVisualUI.
+-- Setelah ready, setiap perubahan manual user (ON atau OFF) fire 1x ChangeFriendOnly.
+-- Load ON  → UI aktif; user tekan OFF → fire 1x  (poin 4 & 5)
+-- Load OFF → UI nonaktif; tidak fire otomatis    (poin 6)
+-- User tekan ON  → fire 1x                       (poin 2)
+-- User tekan OFF → fire 1x                       (poin 3)
+local _friendOnlyReady = false
 _G.FriendOnlyToggle = CreateToggleUI(RoomPage, "🔒 Friend Only Room", EngineConfig.FriendOnlyRoom, function(v)
     EngineConfig.FriendOnlyRoom = v
     if not _friendOnlyReady then return end
-    if v then
-        -- User ON → tandai, tidak fire ke server
-        _friendOnlyWasOn = true
-        CustomNotify("🔒 FRIEND ONLY","Aktif",2)
-    else
-        -- User OFF → fire hanya jika sebelumnya user pernah menyalakan
-        if _friendOnlyWasOn then
-            pcall(function() GameMatchRE:FireServer("ChangeFriendOnly") end)
-        end
-        CustomNotify("🔒 FRIEND ONLY","Nonaktif",2)
-    end
+    pcall(function() GameMatchRE:FireServer("ChangeFriendOnly") end)
+    if v then CustomNotify("🔒 FRIEND ONLY","Aktif",2)
+    else      CustomNotify("🔒 FRIEND ONLY","Nonaktif",2) end
 end, "lblFriendOnly")
 _friendOnlyReady = true
 
