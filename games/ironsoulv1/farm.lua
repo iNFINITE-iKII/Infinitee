@@ -345,6 +345,8 @@ local function startFarmLoop()
     _G._world2RoomIdx = 1
     -- [WORLD4 GROUND] Counter indeks posisi berurutan untuk World 4 (Tartarus).
     _G._world4GroundIdx = 1
+    -- [WORLD5 GROUND] Counter indeks posisi berurutan untuk World 5 (Endless Tower).
+    _G._world5GroundIdx = 1
     -- [TARTARUS Y-LOCK] State per-session
     _G._tartarusFixedY      = nil  -- Y terkunci saat farm monster Tartarus
     _G._tartarusLastPart    = nil  -- Instance target terakhir; reset Y lock saat target ganti
@@ -905,6 +907,7 @@ local function startFarmLoop()
                 elseif worldIdx==2 then Navigation.SearchWorld2(myHRP,myHum)
                 elseif worldIdx==3 then Navigation.SearchWorld3(myHRP,myHum)
                 elseif worldIdx==4 then Navigation.SearchWorld4(myHRP,myHum)
+                elseif worldIdx==5 then Navigation.SearchWorld5(myHRP,myHum)
                 end
             elseif noTargetTimer>=3 then
                 noTargetTimer=0  -- reset timer meski tidak search, agar tidak numpuk

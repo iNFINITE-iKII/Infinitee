@@ -372,6 +372,48 @@ function Navigation.SearchWorld4(myHRP, myHum)
 end
 
 
+-- ── World 5 (Endless Tower): hardcoded CFrame positions ──
+-- [HARDCODED POSITIONS] 4 titik koordinat tetap Endless Tower diiterasi berurutan.
+-- Indeks dikelola lewat _G._world5GroundIdx (direset ke 1 di awal setiap sesi farm).
+-- [AUTO-SKIP] Kalau di titik tersebut tidak ada monster, langsung lanjut ke titik
+-- berikutnya — terus maju sampai ketemu monster, farm dimatikan, atau world berubah.
+function Navigation.SearchWorld5(myHRP, myHum)
+    if WORLD_INDEX[EngineConfig.SelectedWorld] ~= 5 then return end
+
+    EngineConfig.IsLockDelay = true
+    myHum.PlatformStand = true
+
+    local function globalBreakCondition()
+        return not EngineConfig.AutoFarmActive or anyActiveTargetExists() or checkVictoryUi() or WORLD_INDEX[EngineConfig.SelectedWorld] ~= 5
+    end
+
+    local positions = {
+        Vector3.new(8560, 273, -3742),
+        Vector3.new(8516, 268, -6333),
+        Vector3.new(8549, 264, -9902),
+        Vector3.new(8551, 274,  -762),
+    }
+    local total = #positions
+
+    local idx = _G._world5GroundIdx or 1
+    if idx > total then idx = 1 end
+
+    while not globalBreakCondition() do
+        CombatEngine.ResetPhysics(myHRP)
+        myHRP.CFrame = CFrame.new(positions[idx])
+
+        _G._world5GroundIdx = (idx % total) + 1
+        idx = _G._world5GroundIdx
+
+        if CombatEngine.InterruptableStall(0.001, globalBreakCondition) then break end
+        if anyActiveTargetExists() then break end
+    end
+
+    EngineConfig.IsLockDelay = false
+    myHum.PlatformStand = false
+end
+
+
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
