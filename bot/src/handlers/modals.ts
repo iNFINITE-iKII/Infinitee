@@ -130,7 +130,8 @@ async function handleApprove(interaction: ModalSubmitInteraction, targetUserId: 
     try {
       const member = await interaction.guild.members.fetch(targetUserId);
       const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? 'PREMIUM';
-      const role = interaction.guild.roles.cache.find((r) => r.name === premiumRoleName);
+      const allRoles = await interaction.guild.roles.fetch();
+      const role = allRoles.find((r) => r.name === premiumRoleName);
       if (role) await member.roles.add(role);
       await db.update(whitelist).set({ claimedVip: true }).where(eq(whitelist.discordUserId, targetUserId));
     } catch {}
