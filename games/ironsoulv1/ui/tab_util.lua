@@ -287,22 +287,23 @@ end, "btnUtilClaimReward")
 -- ════════════════════════════════════════════════════════════════════════════
 CreateSection(UtilPage, "Auto Reroll Race", "secUtilRace")
 
--- Dropdown pilih slot (hanya 2 opsi: Free_1 dan 1)
-local SLOT_LIST        = {"Free 1", "Slot 1"}
-local SLOT_KEY_MAP     = { ["Free 1"]="Free_1", ["Slot 1"]="1" }
-local SLOT_DISPLAY_MAP = { ["Free_1"]="Free 1", ["1"]="Slot 1" }
--- Konversi default lama (integer) ke display string jika diperlukan
-local _slotDefault = (EngineConfig.UtilRaceSlot == "1") and "Slot 1" or "Free 1"
--- Guard: cegah FireServer saat dropdown baru dibuat / di-sync oleh SyncAllVisualUI.
--- Remote hanya dikirim setelah flag ini true (diset tepat setelah CreateDropdownUI selesai).
+-- Dropdown pilih slot — tidak disimpan ke profil (lokal per sesi)
+-- Slot 2-4 tersedia jika player sudah unlock via ResRollingAscend; server akan menolak jika belum.
+local SLOT_LIST    = {"Free 1", "Slot 1", "Slot 2", "Slot 3", "Slot 4"}
+local SLOT_KEY_MAP = {
+    ["Free 1"]="Free_1", ["Slot 1"]="1",
+    ["Slot 2"]="2",      ["Slot 3"]="3", ["Slot 4"]="4",
+}
+-- State lokal slot — selalu mulai dari Free_1 setiap sesi, tidak ikut save/load profil
+local _raceSlot = "Free_1"
+-- Guard: cegah FireServer saat dropdown baru dibuat
 local _raceSlotReady = false
 _G.UtilRaceSlotDropdown = CreateDropdownUI(
     UtilPage, "🎰 Race Slot", SLOT_LIST,
-    _slotDefault,
+    "Free 1",
     function(val)
         local sk = SLOT_KEY_MAP[val] or "Free_1"
-        EngineConfig.UtilRaceSlot = sk
-        -- FireServer SelectSlot HANYA jika user yang memilih (bukan inisialisasi / sync profil)
+        _raceSlot = sk
         if not _raceSlotReady then return end
         local re = getRaceRE()
         if re then pcall(function() re:FireServer("SelectSlot", sk) end) end
@@ -390,10 +391,8 @@ task.spawn(function()
                 CustomNotify("🎉 RACE DIDAPAT!", doubleRace..detail.." — target tercapai!", 10)
             end
         else
-            -- Belum cocok → fire Rolling pada slot yang dipilih
-            local slotKey = EngineConfig.UtilRaceSlot
-            if slotKey ~= "Free_1" and slotKey ~= "1" then slotKey = "Free_1" end
-            pcall(function() re:FireServer("Rolling", slotKey) end)
+            -- Belum cocok → fire Rolling pada slot yang dipilih (lokal, tidak dari EngineConfig)
+            pcall(function() re:FireServer("Rolling", _raceSlot) end)
         end
     end
 end)

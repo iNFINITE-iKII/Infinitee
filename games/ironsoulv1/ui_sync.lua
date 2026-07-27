@@ -149,14 +149,7 @@ function SyncAllVisualUI()
         if _G.AutoPotionToggle      then _G.AutoPotionToggle:SetValue(EngineConfig.AutoPotionActive) end
         -- ── Utilitas Tab sync ──────────────────────────────────────────────
         if _G.UtilLotteryCountInput  then _G.UtilLotteryCountInput:SetValue(tostring(EngineConfig.UtilLotteryCount or 15)) end
-        if _G.UtilRaceSlotDropdown   then
-            -- Map kunci string ke label display (2 slot saja)
-            local _slotDisplayMap = { ["Free_1"]="Free 1", ["1"]="Slot 1" }
-            local _raw = EngineConfig.UtilRaceSlot
-            -- Normalisasi: nilai lama (integer) → default "Free 1"
-            local _display = _slotDisplayMap[tostring(_raw) or ""] or "Free 1"
-            _G.UtilRaceSlotDropdown:SetValue(_display)
-        end
+        -- UtilRaceSlotDropdown tidak di-sync dari profil (slot tidak disimpan/load)
         if _G.UtilAutoRerollToggle   then _G.UtilAutoRerollToggle:SetValue(EngineConfig.UtilAutoRerollActive == true) end
         if _G.UtilCodeChecks then
             local _codes = H.UtilCodeList or {}

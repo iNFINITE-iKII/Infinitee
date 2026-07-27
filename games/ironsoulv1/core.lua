@@ -150,7 +150,7 @@ local EngineConfig = {
     AntiPausedActive = false,
     AutoExecuteOnRejoin   = false,
     AutoReturnLobbyActive = false,
-    FriendOnlyRoom        = true,
+    FriendOnlyRoom        = false,
     AutoJoinRoomActive    = false,
     SellByRarityActive   = false,
     SellByRarityInterval = 0,   -- 0 = jual secepat inventory terdeteksi
@@ -161,7 +161,7 @@ local EngineConfig = {
     UtilSelectedCodes    = {},   -- map: codeName → bool (kode mana yang dipilih)
     UtilLotteryCount     = 15,   -- jumlah reroll lottery sekaligus
     UtilAutoRerollActive = false, -- toggle auto reroll race
-    UtilRaceSlot         = "Free_1",  -- slot race yang di-reroll ("Free_1" atau "1")
+    -- UtilRaceSlot tidak disimpan — dikelola sebagai variabel lokal di tab_util.lua
     UtilTargetRaces      = {},   -- map: raceName → bool (target race yg dicari)
     -- ── GUI Start Behavior ────────────────────────────────────────────────────
     GuiStartHidden = false,  -- true = GUI tidak muncul otomatis; harus klik Floating Button
