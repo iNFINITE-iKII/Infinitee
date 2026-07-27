@@ -7,11 +7,17 @@ Repo ini berisi dua komponen utama:
 | **Script Hub Roblox** | `games/ironsoulv1/` | Luau (Roblox) | Script automation untuk game IronSoul v1 |
 | **Discord Bot** | `bot/` | TypeScript + Discord.js v14 | Manajemen lisensi, HWID, tiket |
 
-## Cara menjalankan Discord Bot
+## Deployment Discord Bot
 
-1. Set secrets: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`, `NEON_DATABASE_URL`
-2. Build (jika perlu): `cd bot && npm run build`
-3. Jalankan workflow **Discord Bot**: `cd bot && node dist/index.mjs`
+Bot ini ditujukan untuk dijalankan di **Railway** dengan database **Neon**, bukan sebagai
+workflow runtime di Replit.
+
+1. Hubungkan repository ke Railway dan gunakan `railway.toml` yang tersedia.
+2. Set variable di Railway: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`,
+   `DISCORD_GUILD_ID`, dan `DATABASE_URL` dari Neon.
+3. Railway akan menjalankan install dependency dari npm publik dan `npm run build`,
+   lalu menjalankan `cd bot && npm start`. Build sengaja tidak memakai lockfile hasil
+   import yang menunjuk ke registry internal Replit.
 
 ## Struktur IronSoul v1
 

@@ -121,6 +121,22 @@ async function handleTrial(interaction: ButtonInteraction) {
 // ─── Buy PREMIUM (buka tiket) ─────────────────────────────────────────────────
 async function handleBuy(interaction: ButtonInteraction) {
   await interaction.deferReply({ ephemeral: true });
+  try {
+    await createPremiumTicket(interaction);
+  } catch (error: any) {
+    log.error({ err: error, userId: interaction.user.id }, 'Buy PREMIUM ticket creation failed');
+
+    const message = error?.code === 50013
+      ? '❌ Bot tidak memiliki permission **Manage Channels**. Minta admin mengaktifkan permission tersebut.'
+      : error?.code === 50001
+        ? '❌ Bot tidak memiliki akses ke server atau category tiket.'
+        : '❌ Tiket belum dapat dibuat. Pastikan database dan permission bot sudah aktif, lalu coba lagi.';
+
+    await interaction.editReply({ content: message }).catch(() => {});
+  }
+}
+
+async function createPremiumTicket(interaction: ButtonInteraction) {
   const db = getDb();
   const userId = interaction.user.id;
 
@@ -133,6 +149,34 @@ async function handleBuy(interaction: ButtonInteraction) {
   }
 
   if (!interaction.guild) return interaction.editReply({ content: '❌ Error: guild tidak ditemukan.' });
+
+  // Deteksi tiket lama sebelum membuat channel baru. Ini juga menangani
+  // record pending yang masih tertinggal setelah bot restart.
+  const [existingBeforeCreate] = await db
+    .select()
+    .from(pendingTickets)
+    .where(eq(pendingTickets.discordUserId, userId));
+  if (existingBeforeCreate) {
+    const existingChannel = await interaction.guild.channels
+      .fetch(existingBeforeCreate.channelId)
+      .catch(() => null);
+    if (!existingChannel) {
+      // Record lama tidak lagi punya channel Discord yang valid.
+      await db.delete(pendingTickets).where(eq(pendingTickets.discordUserId, userId));
+    } else {
+      return interaction.editReply({
+        content: `⚠️ Kamu sudah memiliki tiket yang sedang diproses: <#${existingBeforeCreate.channelId}>. Tunggu response admin.`,
+      });
+    }
+  }
+
+  const botMember = interaction.guild.members.me
+    ?? await interaction.guild.members.fetch(interaction.client.user!.id);
+  if (!botMember?.permissions.has(PermissionFlagsBits.ManageChannels)) {
+    const error = new Error('Bot lacks Manage Channels permission');
+    (error as any).code = 50013;
+    throw error;
+  }
 
   // Buat channel tiket terlebih dahulu (sementara pakai placeholder channelId)
   // lalu insert ke DB secara atomik — jika conflict (tiket sudah ada), hapus channel & abort.
@@ -161,11 +205,17 @@ async function handleBuy(interaction: ButtonInteraction) {
   }) as TextChannel;
 
   // Insert atomik — onConflictDoNothing mencegah duplikat meski klik bersamaan
-  const inserted = await db
-    .insert(pendingTickets)
-    .values({ discordUserId: userId, channelId: ticketChannel.id })
-    .onConflictDoNothing()
-    .returning({ id: pendingTickets.discordUserId });
+  let inserted;
+  try {
+    inserted = await db
+      .insert(pendingTickets)
+      .values({ discordUserId: userId, channelId: ticketChannel.id })
+      .onConflictDoNothing()
+      .returning({ id: pendingTickets.discordUserId });
+  } catch (error) {
+    await ticketChannel.delete().catch(() => {});
+    throw error;
+  }
 
   if (inserted.length === 0) {
     // Tiket sudah ada (race condition) — hapus channel yang baru dibuat & beri tahu user
@@ -196,11 +246,17 @@ async function handleBuy(interaction: ButtonInteraction) {
     new ButtonBuilder().setCustomId(`tkt_close_${ticketChannel.id}`).setLabel('🔒 Tutup Ticket').setStyle(ButtonStyle.Secondary),
   );
 
-  await ticketChannel.send({
-    content: `<@${userId}> Tiket berhasil dibuat. Admin akan segera membantu kamu.`,
-    embeds: [adminEmbed],
-    components: [adminRow],
-  });
+  try {
+    await ticketChannel.send({
+      content: `<@${userId}> Tiket berhasil dibuat. Admin akan segera membantu kamu.`,
+      embeds: [adminEmbed],
+      components: [adminRow],
+    });
+  } catch (error) {
+    await db.delete(pendingTickets).where(eq(pendingTickets.discordUserId, userId)).catch(() => {});
+    await ticketChannel.delete().catch(() => {});
+    throw error;
+  }
 
   // Log ke ticket channel
   const logChannelId = process.env.TICKET_CHANNEL_ID;

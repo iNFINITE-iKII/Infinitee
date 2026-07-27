@@ -12,8 +12,10 @@ export function getDb() {
 }
 
 export async function initDb() {
-  const url = process.env.NEON_DATABASE_URL;
-  if (!url) throw new Error('NEON_DATABASE_URL is not set');
+  // Railway/Neon menyediakan koneksi PostgreSQL sebagai DATABASE_URL. Tetap
+  // dukung nama lama agar deployment yang sudah memakainya tidak rusak.
+  const url = process.env.NEON_DATABASE_URL ?? process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL or NEON_DATABASE_URL is not set');
 
   _sql = postgres(url, { ssl: 'require', max: 5, prepare: false });
   _db = drizzle(_sql, { schema });

@@ -1,6 +1,6 @@
 [build]
-buildCommand = "echo 'dist already bundled, skipping install'"
+buildCommand = "cd bot && npm install --include=dev --package-lock=false --registry=https://registry.npmjs.org && npm run build"
 
 [deploy]
-startCommand = "cd bot && node dist/index.mjs"
+startCommand = "cd bot && npm start"
 restartPolicyType = "always"

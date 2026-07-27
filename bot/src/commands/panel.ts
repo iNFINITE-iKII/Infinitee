@@ -5,6 +5,7 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   SlashCommandBuilder,
+  TextChannel,
 } from 'discord.js';
 import { isAdmin, adminDeniedEmbed } from '../utils/admin.js';
 
@@ -79,5 +80,9 @@ export async function panel(interaction: ChatInputCommandInteraction) {
   );
 
   await interaction.reply({ content: '✅ Panel dikirim.', ephemeral: true });
-  await interaction.channel!.send({ embeds: [embed], components: [row1, row2] });
+  const channel = interaction.channel;
+  if (!channel?.isTextBased() || !('send' in channel)) {
+    return interaction.editReply({ content: '❌ Channel ini tidak mendukung pengiriman panel.' });
+  }
+  await (channel as TextChannel).send({ embeds: [embed], components: [row1, row2] });
 }

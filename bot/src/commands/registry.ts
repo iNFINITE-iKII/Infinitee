@@ -6,9 +6,9 @@ import {
 } from 'discord.js';
 import { log } from '../utils/log.js';
 
-export const commandHandlers = new Map<string, (i: any) => Promise<void>>();
+export const commandHandlers = new Map<string, (i: any) => Promise<unknown>>();
 
-export function registerHandler(name: string, handler: (i: any) => Promise<void>) {
+export function registerHandler(name: string, handler: (i: any) => Promise<unknown>) {
   commandHandlers.set(name, handler);
 }
 

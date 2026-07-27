@@ -2351,7 +2351,11 @@ var require_request = __commonJS({
           } else if (typeof val[i] === "object") {
             throw new InvalidArgumentError(`invalid ${key} header`);
           } else {
-            arr.push(`${val[i]}`);
+            const str = `${val[i]}`;
+            if (!isValidHeaderValue(str)) {
+              throw new InvalidArgumentError(`invalid ${key} header`);
+            }
+            arr.push(str);
           }
         }
         val = arr;
@@ -2363,6 +2367,9 @@ var require_request = __commonJS({
         val = "";
       } else {
         val = `${val}`;
+        if (!isValidHeaderValue(val)) {
+          throw new InvalidArgumentError(`invalid ${key} header`);
+        }
       }
       if (headerName === "host") {
         if (request.host !== null) {
@@ -6093,6 +6100,7 @@ var require_client_h1 = __commonJS({
       RequestContentLengthMismatchError,
       ResponseContentLengthMismatchError,
       RequestAbortedError,
+      InvalidArgumentError,
       HeadersTimeoutError,
       HeadersOverflowError,
       SocketError,
@@ -6819,8 +6827,16 @@ var require_client_h1 = __commonJS({
         }
         body = bodyStream.stream;
         contentLength = bodyStream.length;
-      } else if (util.isBlobLike(body) && request.contentType == null && body.type) {
-        headers.push("content-type", body.type);
+      } else if (util.isBlobLike(body) && request.contentType == null) {
+        const contentType = body.type;
+        if (contentType) {
+          const contentTypeValue = `${contentType}`;
+          if (!util.isValidHeaderValue(contentTypeValue)) {
+            util.errorRequest(client2, request, new InvalidArgumentError("invalid content-type header"));
+            return false;
+          }
+          headers.push("content-type", contentTypeValue);
+        }
       }
       if (body && typeof body.read === "function") {
         body.read(0);
@@ -9372,6 +9388,24 @@ var require_retry_handler = __commonJS({
       const current = Date.now();
       return new Date(retryAfter).getTime() - current;
     }
+    function validatePartialResponseContentLength(headers, range, statusCode, retryCount) {
+      const contentLength = headers["content-length"];
+      if (contentLength == null) {
+        return null;
+      }
+      if (!Number.isFinite(range.start) || !Number.isFinite(range.end)) {
+        return null;
+      }
+      const length = Number(contentLength);
+      const expectedLength = range.end - range.start + 1;
+      if (!Number.isFinite(length) || length !== expectedLength) {
+        return new RequestRetryError("Content-Length mismatch", statusCode, {
+          headers,
+          data: { count: retryCount }
+        });
+      }
+      return null;
+    }
     var RetryHandler = class _RetryHandler {
       constructor(opts, handlers) {
         const { retryOptions, ...dispatchOpts } = opts;
@@ -9544,6 +9578,11 @@ var require_retry_handler = __commonJS({
             );
             return false;
           }
+          const contentLengthError = validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount);
+          if (contentLengthError != null) {
+            this.abort(contentLengthError);
+            return false;
+          }
           const { start, size: size2, end = size2 - 1 } = contentRange;
           assert(this.start === start, "content-range mismatch");
           assert(this.end == null || this.end === end, "content-range mismatch");
@@ -9560,6 +9599,11 @@ var require_retry_handler = __commonJS({
                 resume,
                 statusMessage
               );
+            }
+            const contentLengthError = validatePartialResponseContentLength(headers, range, statusCode, this.retryCount);
+            if (contentLengthError != null) {
+              this.abort(contentLengthError);
+              return false;
             }
             const { start, size: size2, end = size2 - 1 } = range;
             assert(
@@ -16406,14 +16450,48 @@ var require_util6 = __commonJS({
       for (let i = 0; i < path2.length; ++i) {
         const code = path2.charCodeAt(i);
         if (code < 32 || // exclude CTLs (0-31)
-        code === 127 || // DEL
+        code > 126 || // exclude DEL and non-ascii
         code === 59) {
           throw new Error("Invalid cookie path");
         }
       }
     }
+    function isLetterOrDigit(code) {
+      return code >= 48 && code <= 57 || // 0-9
+      code >= 65 && code <= 90 || // A-Z
+      code >= 97 && code <= 122;
+    }
     function validateCookieDomain(domain) {
-      if (domain.startsWith("-") || domain.endsWith(".") || domain.endsWith("-")) {
+      if (domain === " ") {
+        return;
+      }
+      if (domain.length > 255) {
+        throw new Error("Invalid cookie domain");
+      }
+      let labelLength = 0;
+      for (let i = 0; i < domain.length; ++i) {
+        const code = domain.charCodeAt(i);
+        if (code === 46) {
+          if (labelLength === 0) {
+            throw new Error("Invalid cookie domain");
+          }
+          if (domain.charCodeAt(i - 1) === 45) {
+            throw new Error("Invalid cookie domain");
+          }
+          labelLength = 0;
+          continue;
+        }
+        if (labelLength === 0 && !isLetterOrDigit(code)) {
+          throw new Error("Invalid cookie domain");
+        }
+        if (!isLetterOrDigit(code) && code !== 45) {
+          throw new Error("Invalid cookie domain");
+        }
+        if (++labelLength > 63) {
+          throw new Error("Invalid cookie domain");
+        }
+      }
+      if (labelLength === 0 || domain.charCodeAt(domain.length - 1) === 45) {
         throw new Error("Invalid cookie domain");
       }
     }
@@ -16496,7 +16574,11 @@ var require_util6 = __commonJS({
           throw new Error("Invalid unparsed");
         }
         const [key, ...value] = part.split("=");
-        out.push(`${key.trim()}=${value.join("=")}`);
+        const trimmedKey = key.trim();
+        const joinedValue = value.join("=");
+        validateCookieName(trimmedKey);
+        validateCookieValue(joinedValue);
+        out.push(`${trimmedKey}=${joinedValue}`);
       }
       return out.join("; ");
     }
@@ -21126,6 +21208,7 @@ var require_common2 = __commonJS({
       RESTJSONErrorCodes2[RESTJSONErrorCodes2["RequestEntityTooLarge"] = 40005] = "RequestEntityTooLarge";
       RESTJSONErrorCodes2[RESTJSONErrorCodes2["FeatureTemporarilyDisabledServerSide"] = 40006] = "FeatureTemporarilyDisabledServerSide";
       RESTJSONErrorCodes2[RESTJSONErrorCodes2["UserBannedFromThisGuild"] = 40007] = "UserBannedFromThisGuild";
+      RESTJSONErrorCodes2[RESTJSONErrorCodes2["OnlyOneChannelCanHaveAParentIdModifiedAtATime"] = 40009] = "OnlyOneChannelCanHaveAParentIdModifiedAtATime";
       RESTJSONErrorCodes2[RESTJSONErrorCodes2["ConnectionHasBeenRevoked"] = 40012] = "ConnectionHasBeenRevoked";
       RESTJSONErrorCodes2[RESTJSONErrorCodes2["OnlyConsumableSKUsCanBeConsumed"] = 40018] = "OnlyConsumableSKUsCanBeConsumed";
       RESTJSONErrorCodes2[RESTJSONErrorCodes2["YouCanOnlyDeleteSandboxEntitlements"] = 40019] = "YouCanOnlyDeleteSandboxEntitlements";
@@ -27106,10 +27189,6 @@ var require_pattern_tree = __commonJS({
       mime: "application/vnd.rar",
       extension: "rar"
     });
-    exports2.add("rar", ["0x7F", "0x45", "0x4C", "0x46"], {
-      mime: "application/vnd.rar",
-      extension: "rar"
-    });
     exports2.add("png", ["0x89", "0x50", "0x4E", "0x47", "0x0D", "0x0A", "0x1A", "0x0A"], {
       mime: "image/png",
       extension: "png"
@@ -27132,6 +27211,10 @@ var require_pattern_tree = __commonJS({
       extension: ".ps"
     });
     exports2.add("pdf", ["0x25", "0x50", "0x44", "0x46"], {
+      mime: "application/pdf",
+      extension: "pdf"
+    });
+    exports2.add("pdf", ["0xEF", "0xBB", "0xBF", "0x25", "0x50", "0x44", "0x46"], {
       mime: "application/pdf",
       extension: "pdf"
     });
@@ -27800,29 +27883,43 @@ var require_dist4 = __commonJS({
     var toHex_1 = require_toHex();
     var patternTree = pattern_tree_1.createTree();
     var filetypeinfo = (bytes) => {
-      let tree = patternTree;
+      const tree = patternTree;
+      const found = [];
       for (const k of Object.keys(tree.offset)) {
         const offset = toHex_1.fromHex(k);
         const offsetExceedsFile = offset >= bytes.length;
         if (offsetExceedsFile) {
           continue;
         }
-        const node = patternTree.offset[k];
-        const guessed = walkTree(offset, bytes, node);
-        if (guessed.length > 0) {
-          return guessed;
-        }
+        const node = tree.offset[k];
+        found.push(...walkTree(offset, bytes, node));
       }
-      if (tree.noOffset === null) {
-        return [];
+      if (tree.noOffset !== null) {
+        found.push(...walkTree(0, bytes, tree.noOffset));
       }
-      return walkTree(0, bytes, tree.noOffset);
+      return unique(found);
     };
     exports2.filetypeinfo = filetypeinfo;
+    var unique = (found) => {
+      const seen = /* @__PURE__ */ new Set();
+      const result = [];
+      for (const guess of found) {
+        const key = JSON.stringify([guess.typename, guess.mime, guess.extension]);
+        if (seen.has(key)) {
+          continue;
+        }
+        seen.add(key);
+        result.push({ ...guess });
+      }
+      return result;
+    };
     var walkTree = (index, bytes, node) => {
       let step = node;
       let guessFile = [];
       while (true) {
+        if (index >= bytes.length) {
+          return guessFile;
+        }
         const currentByte = toHex_1.toHex(bytes[index]);
         if (step.bytes["?"] && !step.bytes[currentByte]) {
           step = step.bytes["?"];
@@ -55568,7 +55665,7 @@ var require_TextChannel = __commonJS({
   "node_modules/discord.js/src/structures/TextChannel.js"(exports2, module2) {
     "use strict";
     var BaseGuildTextChannel = require_BaseGuildTextChannel();
-    var TextChannel4 = class extends BaseGuildTextChannel {
+    var TextChannel5 = class extends BaseGuildTextChannel {
       _patch(data) {
         super._patch(data);
         if ("rate_limit_per_user" in data) {
@@ -55585,7 +55682,7 @@ var require_TextChannel = __commonJS({
         return this.edit({ rateLimitPerUser, reason });
       }
     };
-    module2.exports = TextChannel4;
+    module2.exports = TextChannel5;
   }
 });
 
@@ -90793,8 +90890,8 @@ function getDb() {
   return _db;
 }
 async function initDb() {
-  const url = process.env.NEON_DATABASE_URL;
-  if (!url) throw new Error("NEON_DATABASE_URL is not set");
+  const url = process.env.NEON_DATABASE_URL ?? process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL or NEON_DATABASE_URL is not set");
   _sql = src_default(url, { ssl: "require", max: 5, prepare: false });
   _db = drizzle(_sql, { schema: schema_exports });
   const stmts = [
@@ -91973,7 +92070,11 @@ async function panel(interaction) {
     new import_discord20.ButtonBuilder().setCustomId("panel_cek_hwid").setLabel("\u{1F50D} Cek HWID").setStyle(import_discord20.ButtonStyle.Secondary)
   );
   await interaction.reply({ content: "\u2705 Panel dikirim.", ephemeral: true });
-  await interaction.channel.send({ embeds: [embed], components: [row1, row2] });
+  const channel = interaction.channel;
+  if (!channel?.isTextBased() || !("send" in channel)) {
+    return interaction.editReply({ content: "\u274C Channel ini tidak mendukung pengiriman panel." });
+  }
+  await channel.send({ embeds: [embed], components: [row1, row2] });
 }
 var import_discord20, PANEL_DEF;
 var init_panel = __esm({
@@ -92245,6 +92346,16 @@ async function handleTrial(interaction) {
 }
 async function handleBuy(interaction) {
   await interaction.deferReply({ ephemeral: true });
+  try {
+    await createPremiumTicket(interaction);
+  } catch (error) {
+    log.error({ err: error, userId: interaction.user.id }, "Buy PREMIUM ticket creation failed");
+    const message = error?.code === 50013 ? "\u274C Bot tidak memiliki permission **Manage Channels**. Minta admin mengaktifkan permission tersebut." : error?.code === 50001 ? "\u274C Bot tidak memiliki akses ke server atau category tiket." : "\u274C Tiket belum dapat dibuat. Pastikan database dan permission bot sudah aktif, lalu coba lagi.";
+    await interaction.editReply({ content: message }).catch(() => {
+    });
+  }
+}
+async function createPremiumTicket(interaction) {
   const db = getDb();
   const userId = interaction.user.id;
   const [wl] = await db.select().from(whitelist).where(eq(whitelist.discordUserId, userId));
@@ -92254,6 +92365,23 @@ async function handleBuy(interaction) {
     });
   }
   if (!interaction.guild) return interaction.editReply({ content: "\u274C Error: guild tidak ditemukan." });
+  const [existingBeforeCreate] = await db.select().from(pendingTickets).where(eq(pendingTickets.discordUserId, userId));
+  if (existingBeforeCreate) {
+    const existingChannel = await interaction.guild.channels.fetch(existingBeforeCreate.channelId).catch(() => null);
+    if (!existingChannel) {
+      await db.delete(pendingTickets).where(eq(pendingTickets.discordUserId, userId));
+    } else {
+      return interaction.editReply({
+        content: `\u26A0\uFE0F Kamu sudah memiliki tiket yang sedang diproses: <#${existingBeforeCreate.channelId}>. Tunggu response admin.`
+      });
+    }
+  }
+  const botMember = interaction.guild.members.me ?? await interaction.guild.members.fetch(interaction.client.user.id);
+  if (!botMember?.permissions.has(import_discord24.PermissionFlagsBits.ManageChannels)) {
+    const error = new Error("Bot lacks Manage Channels permission");
+    error.code = 50013;
+    throw error;
+  }
   let category = interaction.guild.channels.cache.find(
     (c) => c.type === import_discord24.ChannelType.GuildCategory && c.name === "Tickets"
   );
@@ -92275,7 +92403,14 @@ async function handleBuy(interaction) {
       ...staffRoleId ? [{ id: staffRoleId, allow: [import_discord24.PermissionFlagsBits.ViewChannel, import_discord24.PermissionFlagsBits.SendMessages] }] : []
     ]
   });
-  const inserted = await db.insert(pendingTickets).values({ discordUserId: userId, channelId: ticketChannel.id }).onConflictDoNothing().returning({ id: pendingTickets.discordUserId });
+  let inserted;
+  try {
+    inserted = await db.insert(pendingTickets).values({ discordUserId: userId, channelId: ticketChannel.id }).onConflictDoNothing().returning({ id: pendingTickets.discordUserId });
+  } catch (error) {
+    await ticketChannel.delete().catch(() => {
+    });
+    throw error;
+  }
   if (inserted.length === 0) {
     await ticketChannel.delete().catch(() => {
     });
@@ -92296,11 +92431,19 @@ async function handleBuy(interaction) {
     new import_discord24.ButtonBuilder().setCustomId(`tkt_reject_${userId}`).setLabel("\u274C Tolak").setStyle(import_discord24.ButtonStyle.Danger),
     new import_discord24.ButtonBuilder().setCustomId(`tkt_close_${ticketChannel.id}`).setLabel("\u{1F512} Tutup Ticket").setStyle(import_discord24.ButtonStyle.Secondary)
   );
-  await ticketChannel.send({
-    content: `<@${userId}> Tiket berhasil dibuat. Admin akan segera membantu kamu.`,
-    embeds: [adminEmbed],
-    components: [adminRow]
-  });
+  try {
+    await ticketChannel.send({
+      content: `<@${userId}> Tiket berhasil dibuat. Admin akan segera membantu kamu.`,
+      embeds: [adminEmbed],
+      components: [adminRow]
+    });
+  } catch (error) {
+    await db.delete(pendingTickets).where(eq(pendingTickets.discordUserId, userId)).catch(() => {
+    });
+    await ticketChannel.delete().catch(() => {
+    });
+    throw error;
+  }
   const logChannelId = process.env.TICKET_CHANNEL_ID;
   if (logChannelId) {
     try {
