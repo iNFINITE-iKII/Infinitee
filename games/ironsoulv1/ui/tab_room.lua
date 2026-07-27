@@ -152,9 +152,14 @@ statusLbl.TextColor3 = EngineConfig.RoomMode<=5 and Color3.fromRGB(0,255,127) or
 CreateSection(RoomPage, "Room Settings", "secRoomSettings")
 _G.FriendOnlyToggle = CreateToggleUI(RoomPage, "🔒 Friend Only Room", EngineConfig.FriendOnlyRoom, function(v)
     EngineConfig.FriendOnlyRoom = v
-    pcall(function() GameMatchRE:FireServer("ChangeFriendOnly") end)
-    if v then CustomNotify("🔒 FRIEND ONLY","Aktif",2)
-    else      CustomNotify("🔒 FRIEND ONLY","Nonaktif",2) end
+    -- OFF → tidak fire apapun ke server
+    -- ON  → fire 1x ChangeFriendOnly
+    if v then
+        pcall(function() GameMatchRE:FireServer("ChangeFriendOnly") end)
+        CustomNotify("🔒 FRIEND ONLY","Aktif",2)
+    else
+        CustomNotify("🔒 FRIEND ONLY","Nonaktif",2)
+    end
 end, "lblFriendOnly")
 
 -- ── MATCH ACTIONS ──
