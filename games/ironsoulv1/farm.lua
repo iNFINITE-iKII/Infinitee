@@ -1609,6 +1609,57 @@ end)
 
 --------------------------------------------------------------------------------
 
+-- [S10-LOCKPOS] BACKGROUND LOOP: Lock Position
+-- Saat LockPositionActive = true, capture CFrame pertama kali toggle ON,
+-- lalu paksa karakter ke CFrame tersebut setiap Heartbeat.
+-- Karakter tidak jatuh, tidak bisa bergerak ke segala arah.
+--------------------------------------------------------------------------------
+task.spawn(function()
+    local _lockedCF   = nil
+    local _prevLock   = false
+    local _prevHRPLk  = nil
+
+    while true do
+        Services.RunService.Heartbeat:Wait()
+
+        if EngineConfig.LockPositionActive then
+            local char = LocalPlayer.Character
+            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+            local hum  = char and char:FindFirstChildOfClass("Humanoid")
+
+            if hrp and hum then
+                -- Pertama kali toggle ON atau setelah respawn: ambil CFrame saat itu
+                if not _prevLock or hrp ~= _prevHRPLk then
+                    _lockedCF  = hrp.CFrame
+                    _prevLock  = true
+                    _prevHRPLk = hrp
+                    hum.PlatformStand = true
+                end
+
+                -- Paksa ke posisi terkunci setiap frame
+                hrp.CFrame = _lockedCF
+                hrp.AssemblyLinearVelocity  = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
+            end
+
+        elseif _prevLock then
+            -- Cleanup saat dimatikan
+            _prevLock  = false
+            _lockedCF  = nil
+
+            local char = _prevHRPLk and _prevHRPLk.Parent
+            local hum  = char and char:FindFirstChildOfClass("Humanoid")
+            -- Jangan reset PlatformStand jika Fly masih aktif
+            if hum and not EngineConfig.FlyActive then
+                hum.PlatformStand = false
+            end
+            _prevHRPLk = nil
+        end
+    end
+end)
+
+--------------------------------------------------------------------------------
+
 --------------------------------------------------------------------------------
 -- Export ke Hub
 --------------------------------------------------------------------------------

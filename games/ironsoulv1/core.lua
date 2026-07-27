@@ -167,6 +167,8 @@ local EngineConfig = {
     GuiStartHidden = false,  -- true = GUI tidak muncul otomatis; harus klik Floating Button
     -- ── Dodge Dragon ───────────────────────────────────────────────────────────
     DodgeDragonActive = false,  -- toggle auto-dodge skill Bom (BombRed)
+    -- ── Lock Position ──────────────────────────────────────────────────────────
+    LockPositionActive = false,  -- toggle freeze posisi — CFrame karakter dikunci ke titik saat toggle ON
     -- ── Discord Webhook ────────────────────────────────────────────────────────
     WebhookActive = false,   -- toggle on/off notifikasi ke Discord
     WebhookUrl    = "",      -- URL webhook Discord yang diisi user

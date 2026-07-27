@@ -79,6 +79,18 @@ if #_bossNames > 0 then
     )
 end
 
+-- ── Lock Position ─────────────────────────────────────────────────────────────
+CreateSection(VectorPage, "🔒 Lock Position", "secLockPosition")
+
+_G.LockPositionToggle = CreateToggleUI(VectorPage, "🔒 Lock Posisi", EngineConfig.LockPositionActive, function(v)
+    EngineConfig.LockPositionActive = v
+    if v then
+        CustomNotify("🔒 LOCK", "Lock Posisi aktif — karakter dikunci di titik ini.", 3)
+    else
+        CustomNotify("🔒 LOCK", "Lock Posisi dimatikan.", 2)
+    end
+end, "lblLockPosition")
+
 -- ── Dodge Dragon ──────────────────────────────────────────────────────────────
 CreateSection(VectorPage, "🐉 Dodge Dragon", "secDodgeDragon")
 

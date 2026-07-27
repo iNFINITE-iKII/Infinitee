@@ -51,6 +51,7 @@ function SyncAllVisualUI()
         if _G.SkillCooldownInput    then _G.SkillCooldownInput:SetValue(EngineConfig.SkillCooldownDelay) end
         if _G.AutoSwitchToggle      then _G.AutoSwitchToggle:SetValue(EngineConfig.AutoWeaponSwitchActive) end
         if _G.FlyToggle             then _G.FlyToggle:SetValue(EngineConfig.FlyActive) end
+        if _G.LockPositionToggle    then _G.LockPositionToggle:SetValue(EngineConfig.LockPositionActive) end
         if _G.BuffCardToggle        then _G.BuffCardToggle:SetValue(EngineConfig.BuffCardActive) end
         if _G.BuffCardMultiSelect then
             local _names = H.BuffCardNames or {}
