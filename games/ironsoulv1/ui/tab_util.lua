@@ -293,17 +293,22 @@ local SLOT_KEY_MAP     = { ["Free 1"]="Free_1", ["Slot 1"]="1" }
 local SLOT_DISPLAY_MAP = { ["Free_1"]="Free 1", ["1"]="Slot 1" }
 -- Konversi default lama (integer) ke display string jika diperlukan
 local _slotDefault = (EngineConfig.UtilRaceSlot == "1") and "Slot 1" or "Free 1"
+-- Guard: cegah FireServer saat dropdown baru dibuat / di-sync oleh SyncAllVisualUI.
+-- Remote hanya dikirim setelah flag ini true (diset tepat setelah CreateDropdownUI selesai).
+local _raceSlotReady = false
 _G.UtilRaceSlotDropdown = CreateDropdownUI(
     UtilPage, "🎰 Race Slot", SLOT_LIST,
     _slotDefault,
     function(val)
         local sk = SLOT_KEY_MAP[val] or "Free_1"
         EngineConfig.UtilRaceSlot = sk
-        -- FireServer SelectSlot HANYA dari sini — saat user memilih dari dropdown
+        -- FireServer SelectSlot HANYA jika user yang memilih (bukan inisialisasi / sync profil)
+        if not _raceSlotReady then return end
         local re = getRaceRE()
         if re then pcall(function() re:FireServer("SelectSlot", sk) end) end
     end, "lblUtilRaceSlot"
 )
+_raceSlotReady = true
 
 -- Dropdown multi-select (scrollable) — tampilkan RACE_DISPLAY (ada %)
 -- tapi simpan state lewat RACE_LIST (nama asli)
