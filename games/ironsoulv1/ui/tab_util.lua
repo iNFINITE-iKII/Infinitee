@@ -304,7 +304,10 @@ _G.UtilRaceSlotDropdown = CreateDropdownUI(
     function(val)
         local sk = SLOT_KEY_MAP[val] or "Free_1"
         _raceSlot = sk
-        -- Tidak fire SelectSlot — slot dikirim via argumen Rolling saat reroll
+        -- Fire SelectSlot hanya saat user memilih manual (bukan inisialisasi)
+        if not _raceSlotReady then return end
+        local re = getRaceRE()
+        if re then pcall(function() re:FireServer("SelectSlot", sk) end) end
     end, "lblUtilRaceSlot"
 )
 _raceSlotReady = true
