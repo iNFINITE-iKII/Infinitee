@@ -32,6 +32,7 @@ import {
   typeLabel,
 } from '../utils/time.js';
 import { sendLog, logEmbed } from '../utils/discord-logger.js';
+import { log } from '../utils/log.js';
 
 /** Cek apakah user adalah admin atau punya role staff (TICKET_STAFF_ROLE_ID). */
 function isStaff(interaction: ButtonInteraction): boolean {
@@ -269,23 +270,45 @@ async function handleVipRole(interaction: ButtonInteraction) {
     });
   }
 
-  const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? 'PREMIUM';
-  const allRoles = await interaction.guild!.roles.fetch();
-  const role = allRoles.find((r) => r.name === premiumRoleName);
-
-  if (!role) {
-    return interaction.editReply({ content: `❌ Role "${premiumRoleName}" tidak ditemukan di server.` });
+  if (!interaction.guild) {
+    return interaction.editReply({ content: '❌ Error: interaksi ini harus dilakukan di dalam server.' });
   }
 
-  const member = await interaction.guild!.members.fetch(userId);
+  const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? 'PREMIUM';
+
+  let allRoles;
+  try {
+    allRoles = await interaction.guild.roles.fetch();
+  } catch (e) {
+    log.error({ e }, 'handleVipRole: gagal fetch roles');
+    return interaction.editReply({ content: '❌ Gagal mengambil daftar role dari server. Coba lagi nanti.' });
+  }
+
+  const role = allRoles.find((r) => r.name === premiumRoleName);
+  if (!role) {
+    return interaction.editReply({ content: `❌ Role "${premiumRoleName}" tidak ditemukan di server. Hubungi admin.` });
+  }
+
+  let member;
+  try {
+    member = await interaction.guild.members.fetch(userId);
+  } catch (e) {
+    log.error({ e }, 'handleVipRole: gagal fetch member');
+    return interaction.editReply({ content: '❌ Gagal mengambil data member. Pastikan kamu masih di server.' });
+  }
 
   if (member.roles.cache.has(role.id)) {
     return interaction.editReply({ content: `✅ Role **${premiumRoleName}** sudah aktif di akunmu.` });
   }
 
-  await member.roles.add(role);
-  await db.update(whitelist).set({ claimedVip: true }).where(eq(whitelist.discordUserId, userId));
+  try {
+    await member.roles.add(role);
+  } catch (e) {
+    log.error({ e }, 'handleVipRole: gagal add role');
+    return interaction.editReply({ content: '❌ Gagal memberikan role. Pastikan bot punya permission **Manage Roles** dan posisi role bot lebih tinggi dari role PREMIUM.' });
+  }
 
+  await db.update(whitelist).set({ claimedVip: true }).where(eq(whitelist.discordUserId, userId));
   await interaction.editReply({ content: `🎖️ Role **${premiumRoleName}** berhasil diberikan!` });
 }
 
