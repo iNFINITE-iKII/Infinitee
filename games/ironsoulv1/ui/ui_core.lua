@@ -143,7 +143,7 @@ local function RebuildTitleText(priHex)
         '<font size="15" color="'..priHex..'">XIFIL</font>'..
         '<font size="15" color="#ffffff"> HUB</font>'..
         '   <font size="15" color="#808099">//</font>   '..
-        '<font size="7" color="#ffffff">IRON SOUL V6</font>'
+        '<font size="7" color="#ffffff">IRON SOUL V7</font>'
 end
 
 local function ApplyTheme()
