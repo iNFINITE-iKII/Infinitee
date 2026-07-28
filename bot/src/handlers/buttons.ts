@@ -44,6 +44,18 @@ function isStaff(interaction: ButtonInteraction): boolean {
   return false;
 }
 
+/** Cek apakah user punya role PREMIUM (nama dari PREMIUM_ROLE_NAME env). */
+async function hasPremiumRole(interaction: ButtonInteraction): Promise<boolean> {
+  if (!interaction.guild) return false;
+  try {
+    const member = await interaction.guild.members.fetch(interaction.user.id);
+    const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? 'PREMIUM';
+    return member.roles.cache.some((r) => r.name === premiumRoleName);
+  } catch {
+    return false;
+  }
+}
+
 export async function handleButton(interaction: ButtonInteraction) {
   const id = interaction.customId;
 
@@ -441,6 +453,13 @@ async function handleGetKey(interaction: ButtonInteraction) {
 
 // ─── Reset HWID (buka modal) ──────────────────────────────────────────────────
 async function handleResetHwidModal(interaction: ButtonInteraction) {
+  if (!await hasPremiumRole(interaction)) {
+    return interaction.reply({
+      content: '❌ Fitur ini hanya tersedia untuk member dengan role **PREMIUM**.',
+      ephemeral: true,
+    });
+  }
+
   const modal = new ModalBuilder().setCustomId('modal_reset_hwid').setTitle('🔄 Reset HWID');
   const input = new TextInputBuilder()
     .setCustomId('hwid_key')

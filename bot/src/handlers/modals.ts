@@ -25,6 +25,21 @@ async function handleResetHwid(interaction: ModalSubmitInteraction) {
   await interaction.deferReply({ ephemeral: true });
   const db = getDb();
   const userId = interaction.user.id;
+
+  // Guard: hanya member dengan role PREMIUM yang bisa reset HWID
+  if (interaction.guild) {
+    try {
+      const member = await interaction.guild.members.fetch(userId);
+      const premiumRoleName = process.env.PREMIUM_ROLE_NAME ?? 'PREMIUM';
+      const hasPremium = member.roles.cache.some((r) => r.name === premiumRoleName);
+      if (!hasPremium) {
+        return interaction.editReply({ content: '❌ Fitur ini hanya tersedia untuk member dengan role **PREMIUM**.' });
+      }
+    } catch {
+      return interaction.editReply({ content: '❌ Gagal memverifikasi role. Coba lagi nanti.' });
+    }
+  }
+
   const rawKey = interaction.fields.getTextInputValue('hwid_key');
   const key = normalizeKey(rawKey);
 
