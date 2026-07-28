@@ -607,8 +607,9 @@ local function startFarmLoop()
                         _G._endlessTowerYLockSetAt = nil
                     end
                 end
-                if worldIdx==5 and _endlessTowerFollowing then
+                if worldIdx==5 and _endlessTowerFollowing and not EngineConfig.LockPositionActive then
                     -- [ENDLESS TOWER] Fase 1 — 4 detik: 1s ikut → 2s diam → 1s ikut
+                    -- (dilewati jika Lock Position aktif — karakter tetap di posisi terkunci)
                     local elapsed = tick() - (_G._endlessTowerFollowStartAt or 0)
                     CombatEngine.ResetPhysics(myHRP)
                     if elapsed < 1 or elapsed >= 3 then
@@ -627,8 +628,9 @@ local function startFarmLoop()
                         if dir.Magnitude < 0.01 then dir = Vector3.new(1,0,0) end
                         myHRP.CFrame = CFrame.new(fpos, fpos + dir.Unit)
                     end
-                elseif worldIdx==5 then
+                elseif worldIdx==5 and not EngineConfig.LockPositionActive then
                     -- [ENDLESS TOWER] Fase 2 — Y-Locked Follow (setelah fase follow selesai):
+                    -- (dilewati jika Lock Position aktif — karakter tetap di posisi terkunci)
                     -- Y dikunci di ketinggian sesuai FarmPosition (Orbit Atas/Bawah/Diam Atas/dll),
                     -- sedangkan X dan Z tetap mengikuti monster yang bergerak.
                     -- Frame pertama: snap langsung ke posisi benar agar tidak ada artefak naik dari bawah.
@@ -643,6 +645,7 @@ local function startFarmLoop()
                         -- Spawn Heartbeat koreksi Y: jika drift > 2 stud dari Y terkunci → snap kembali
                         if _G._endlessTowerYLockConn then pcall(function() _G._endlessTowerYLockConn:Disconnect() end) end
                         _G._endlessTowerYLockConn = Services.RunService.Heartbeat:Connect(function()
+                            if EngineConfig.LockPositionActive then return end  -- Lock Position aktif → skip
                             if EngineConfig.FarmTargetEgg then return end  -- egg aktif → skip lock Y
                             local lockedY = _G._endlessTowerFixedY
                             if not lockedY then
@@ -823,6 +826,7 @@ local function startFarmLoop()
                             _G._endlessTowerHoverConn = nil
                             return
                         end
+                        if EngineConfig.LockPositionActive then return end  -- Lock Position aktif → skip hover
                         local c   = LocalPlayer.Character
                         local hrp = c and c:FindFirstChild("HumanoidRootPart")
                         local hum = c and c:FindFirstChildOfClass("Humanoid")
@@ -837,9 +841,11 @@ local function startFarmLoop()
                 -- Selama hitung mundur 10 detik: Heartbeat connection sudah mengurus CFrame.
                 -- Blok ini hanya sebagai fallback jika connection belum spawn (frame pertama).
                 if tick() < (_G._endlessTowerWaitUntil or 0) then
+                    if not EngineConfig.LockPositionActive then
                     local center = _G._endlessTowerLastPos or myHRP.Position
                     CombatEngine.ResetPhysics(myHRP)
                     myHRP.CFrame = CFrame.new(center.X, center.Y + EngineConfig.EndlessTowerHoverY, center.Z)
+                    end
                 else
                     -- Countdown selesai → pastikan done=true supaya wave berikutnya dapat Fase 1
                     -- (menangani kasus monster mati di dalam window fase1Active sehingga
@@ -847,7 +853,8 @@ local function startFarmLoop()
                     _G._endlessTowerDone = true
                     -- Setelah delay 10 detik: CFrame ke Portal setiap 7 detik
                     local now = tick()
-                    if now - (_G._endlessTowerPortalAt or 0) >= 7 then
+                    if not EngineConfig.LockPositionActive
+                    and now - (_G._endlessTowerPortalAt or 0) >= 7 then
                         pcall(function()
                             local fxPart = Workspace.World.Start.Portal.EnemySpawnPortal.FX_SlowAOE
                             CombatEngine.ResetPhysics(myHRP)
