@@ -1,56 +1,45 @@
-# Infinitee Script Hub
+# [Project name]
 
-Repo ini berisi dua komponen utama:
+_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
 
-| Komponen | Lokasi | Bahasa | Tujuan |
-|---|---|---|---|
-| **Script Hub Roblox** | `games/ironsoulv1/` | Luau (Roblox) | Script automation untuk game IronSoul v1 |
-| **Discord Bot** | `bot/` | TypeScript + Discord.js v14 | Manajemen lisensi, HWID, tiket |
+## Run & Operate
 
-## Deployment Discord Bot
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- Required env: `DATABASE_URL` — Postgres connection string
 
-Bot ini ditujukan untuk dijalankan di **Railway** dengan database **Neon**, bukan sebagai
-workflow runtime di Replit.
+## Stack
 
-1. Hubungkan repository ke Railway dan gunakan `railway.toml` yang tersedia.
-2. Set variable di Railway: `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`,
-   `DISCORD_GUILD_ID`, dan `NEON_DATABASE_URL` dari Neon.
-3. Railway akan menjalankan install dependency dari npm publik dan `npm run build`,
-   lalu menjalankan `cd bot && npm start`. Build sengaja tidak memakai lockfile hasil
-   import yang menunjuk ke registry internal Replit.
+- pnpm workspaces, Node.js 24, TypeScript 5.9
+- API: Express 5
+- DB: PostgreSQL + Drizzle ORM
+- Validation: Zod (`zod/v4`), `drizzle-zod`
+- API codegen: Orval (from OpenAPI spec)
+- Build: esbuild (CJS bundle)
 
-## Struktur IronSoul v1
+## Where things live
 
-```
-games/ironsoulv1/
-├── core.lua          — Services, EngineConfig, konstanta global
-├── loader.lua        — Entry point, urutan load semua modul
-├── init.lua          — Inisialisasi Hub (getgenv().Hub)
-├── farm.lua          — Auto Farm loop (Egg / Chest / Monster)
-├── combat.lua        — GetPositionCFrame(), CombatEngine
-├── navigation.lua    — Navigasi antar room/world
-├── auto_potion.lua   — Sistem Auto Buff Potion
-├── auto_forge.lua    — Auto Forge
-├── buff_card.lua     — Auto Buff Card
-├── config_system.lua — Save/Load profil ke JSON
-├── ui_sync.lua       — SyncAllVisualUI()
-├── notify.lua        — CustomNotify()
-├── maid.lua          — Lifecycle / cleanup connections
-├── npc_scanner.lua   — Scanner NPC/monster
-├── translate.lua     — Sistem terjemahan label UI
-└── ui/               — Semua tab UI (farm, potion, sell, dll.)
-```
+_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
 
-## Catatan Penting
+## Architecture decisions
 
-- File `.lua` di `games/` adalah **Luau** (Roblox) — jangan validasi dengan `luac` standar
-- Semua modul berbagi data lewat `getgenv().Hub` (disingkat `H`)
-- Saat menambah toggle baru: wajib tambahkan key di `EngineConfig` (core.lua) DAN `SetValue` di `SyncAllVisualUI` (ui_sync.lua)
-- Panduan lengkap ada di `AGENT_PROMPT.md`
+_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
 
-## User Preferences
+## Product
 
-- Fokus utama: IronSoul v1 (`games/ironsoulv1/`)
-- Komunikasi dalam Bahasa Indonesia
-- Nada profesional, langsung ke inti
-- Baca `AGENT_PROMPT.md` sebelum mengerjakan IronSoul
+_Describe the high-level user-facing capabilities of this app once they exist._
+
+## User preferences
+
+_Populate as you build — explicit user instructions worth remembering across sessions._
+
+## Gotchas
+
+_Populate as you build — sharp edges, "always run X before Y" rules._
+
+## Pointers
+
+- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
