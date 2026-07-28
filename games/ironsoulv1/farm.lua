@@ -607,9 +607,10 @@ local function startFarmLoop()
                         _G._endlessTowerYLockSetAt = nil
                     end
                 end
-                if worldIdx==5 and _endlessTowerFollowing and not EngineConfig.LockPositionActive then
+                if worldIdx==5 and _endlessTowerFollowing
+                and (not EngineConfig.LockPositionActive or _G._lockPositionFollowWindow) then
                     -- [ENDLESS TOWER] Fase 1 — 4 detik: 1s ikut → 2s diam → 1s ikut
-                    -- (dilewati jika Lock Position aktif — karakter tetap di posisi terkunci)
+                    -- (dilewati jika Lock Position aktif DAN bukan jendela ikut monster)
                     local elapsed = tick() - (_G._endlessTowerFollowStartAt or 0)
                     CombatEngine.ResetPhysics(myHRP)
                     if elapsed < 1 or elapsed >= 3 then
@@ -628,9 +629,9 @@ local function startFarmLoop()
                         if dir.Magnitude < 0.01 then dir = Vector3.new(1,0,0) end
                         myHRP.CFrame = CFrame.new(fpos, fpos + dir.Unit)
                     end
-                elseif worldIdx==5 and not EngineConfig.LockPositionActive then
+                elseif worldIdx==5 and (not EngineConfig.LockPositionActive or _G._lockPositionFollowWindow) then
                     -- [ENDLESS TOWER] Fase 2 — Y-Locked Follow (setelah fase follow selesai):
-                    -- (dilewati jika Lock Position aktif — karakter tetap di posisi terkunci)
+                    -- (dilewati jika Lock Position aktif DAN bukan jendela ikut monster)
                     -- Y dikunci di ketinggian sesuai FarmPosition (Orbit Atas/Bawah/Diam Atas/dll),
                     -- sedangkan X dan Z tetap mengikuti monster yang bergerak.
                     -- Frame pertama: snap langsung ke posisi benar agar tidak ada artefak naik dari bawah.
@@ -645,7 +646,7 @@ local function startFarmLoop()
                         -- Spawn Heartbeat koreksi Y: jika drift > 2 stud dari Y terkunci → snap kembali
                         if _G._endlessTowerYLockConn then pcall(function() _G._endlessTowerYLockConn:Disconnect() end) end
                         _G._endlessTowerYLockConn = Services.RunService.Heartbeat:Connect(function()
-                            if EngineConfig.LockPositionActive then return end  -- Lock Position aktif → skip
+                            if EngineConfig.LockPositionActive and not _G._lockPositionFollowWindow then return end  -- Lock Position aktif → skip
                             if EngineConfig.FarmTargetEgg then return end  -- egg aktif → skip lock Y
                             local lockedY = _G._endlessTowerFixedY
                             if not lockedY then
@@ -826,7 +827,7 @@ local function startFarmLoop()
                             _G._endlessTowerHoverConn = nil
                             return
                         end
-                        if EngineConfig.LockPositionActive then return end  -- Lock Position aktif → skip hover
+                        if EngineConfig.LockPositionActive and not _G._lockPositionFollowWindow then return end  -- Lock Position aktif → skip hover
                         local c   = LocalPlayer.Character
                         local hrp = c and c:FindFirstChild("HumanoidRootPart")
                         local hum = c and c:FindFirstChildOfClass("Humanoid")
@@ -841,7 +842,7 @@ local function startFarmLoop()
                 -- Selama hitung mundur 10 detik: Heartbeat connection sudah mengurus CFrame.
                 -- Blok ini hanya sebagai fallback jika connection belum spawn (frame pertama).
                 if tick() < (_G._endlessTowerWaitUntil or 0) then
-                    if not EngineConfig.LockPositionActive then
+                    if not EngineConfig.LockPositionActive or _G._lockPositionFollowWindow then
                     local center = _G._endlessTowerLastPos or myHRP.Position
                     CombatEngine.ResetPhysics(myHRP)
                     myHRP.CFrame = CFrame.new(center.X, center.Y + EngineConfig.EndlessTowerHoverY, center.Z)
@@ -853,7 +854,7 @@ local function startFarmLoop()
                     _G._endlessTowerDone = true
                     -- Setelah delay 10 detik: CFrame ke Portal setiap 7 detik
                     local now = tick()
-                    if not EngineConfig.LockPositionActive
+                    if (not EngineConfig.LockPositionActive or _G._lockPositionFollowWindow)
                     and now - (_G._endlessTowerPortalAt or 0) >= 7 then
                         pcall(function()
                             local fxPart = Workspace.World.Start.Portal.EnemySpawnPortal.FX_SlowAOE
@@ -1620,11 +1621,20 @@ end)
 -- Saat LockPositionActive = true, capture CFrame pertama kali toggle ON,
 -- lalu paksa karakter ke CFrame tersebut setiap Heartbeat.
 -- Karakter tidak jatuh, tidak bisa bergerak ke segala arah.
+--
+-- Jika LockPositionInterval > 0:
+--   Setiap N detik buka "jendela ikut monster" selama 1 detik
+--   (_G._lockPositionFollowWindow = true), lalu kunci kembali ke _lockedCF.
+--   Semua guard ET di farm loop membaca flag ini agar tidak konflik.
 --------------------------------------------------------------------------------
 task.spawn(function()
-    local _lockedCF   = nil
-    local _prevLock   = false
-    local _prevHRPLk  = nil
+    local _lockedCF          = nil
+    local _prevLock          = false
+    local _prevHRPLk         = nil
+    local _lastIntervalAt    = 0   -- tick() saat interval terakhir dimulai
+    local _followWindowEnd   = 0   -- tick() akhir jendela ikut monster
+
+    _G._lockPositionFollowWindow = false  -- dibaca guard ET di farm loop
 
     while true do
         Services.RunService.Heartbeat:Wait()
@@ -1637,22 +1647,45 @@ task.spawn(function()
             if hrp and hum then
                 -- Pertama kali toggle ON atau setelah respawn: ambil CFrame saat itu
                 if not _prevLock or hrp ~= _prevHRPLk then
-                    _lockedCF  = hrp.CFrame
-                    _prevLock  = true
-                    _prevHRPLk = hrp
-                    hum.PlatformStand = true
+                    _lockedCF             = hrp.CFrame
+                    _prevLock             = true
+                    _prevHRPLk            = hrp
+                    _lastIntervalAt       = tick()
+                    _followWindowEnd      = 0
+                    _G._lockPositionFollowWindow = false
+                    hum.PlatformStand     = true
                 end
 
-                -- Paksa ke posisi terkunci setiap frame
-                hrp.CFrame = _lockedCF
-                hrp.AssemblyLinearVelocity  = Vector3.zero
-                hrp.AssemblyAngularVelocity = Vector3.zero
+                local now      = tick()
+                local interval = EngineConfig.LockPositionInterval or 0
+
+                -- Buka jendela ikut monster jika interval sudah tercapai
+                if interval > 0
+                and not _G._lockPositionFollowWindow
+                and now >= _lastIntervalAt + interval then
+                    _G._lockPositionFollowWindow = true
+                    _followWindowEnd = now + 1  -- jendela 1 detik
+                end
+
+                -- Tutup jendela setelah 1 detik: kunci kembali ke posisi semula
+                if _G._lockPositionFollowWindow and now >= _followWindowEnd then
+                    _G._lockPositionFollowWindow = false
+                    _lastIntervalAt = now
+                end
+
+                -- Selama di luar jendela: paksa ke posisi terkunci
+                if not _G._lockPositionFollowWindow then
+                    hrp.CFrame = _lockedCF
+                    hrp.AssemblyLinearVelocity  = Vector3.zero
+                    hrp.AssemblyAngularVelocity = Vector3.zero
+                end
             end
 
         elseif _prevLock then
             -- Cleanup saat dimatikan
             _prevLock  = false
             _lockedCF  = nil
+            _G._lockPositionFollowWindow = false
 
             local char = _prevHRPLk and _prevHRPLk.Parent
             local hum  = char and char:FindFirstChildOfClass("Humanoid")
