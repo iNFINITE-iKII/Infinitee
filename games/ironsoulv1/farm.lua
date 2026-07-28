@@ -607,7 +607,13 @@ local function startFarmLoop()
                         _G._endlessTowerYLockSetAt = nil
                     end
                 end
-                if worldIdx==5 and _endlessTowerFollowing
+                if EngineConfig.LockPositionActive and not _G._lockPositionFollowWindow and _G._lockedCF then
+                    -- [LOCK POSITION] Saat musuh terdeteksi → snap ke posisi terkunci
+                    CombatEngine.ResetPhysics(myHRP)
+                    myHRP.CFrame = _G._lockedCF
+                    myHRP.AssemblyLinearVelocity  = Vector3.zero
+                    myHRP.AssemblyAngularVelocity = Vector3.zero
+                elseif worldIdx==5 and _endlessTowerFollowing
                 and (not EngineConfig.LockPositionActive or _G._lockPositionFollowWindow) then
                     -- [ENDLESS TOWER] Fase 1 — 4 detik: 1s ikut → 2s diam → 1s ikut
                     -- (dilewati jika Lock Position aktif DAN bukan jendela ikut monster)
@@ -1648,6 +1654,7 @@ task.spawn(function()
                 -- Pertama kali toggle ON atau setelah respawn: ambil CFrame saat itu
                 if not _prevLock or hrp ~= _prevHRPLk then
                     _lockedCF             = hrp.CFrame
+                    _G._lockedCF          = _lockedCF  -- expose ke farm loop
                     _prevLock             = true
                     _prevHRPLk            = hrp
                     _lastIntervalAt       = tick()
@@ -1674,7 +1681,8 @@ task.spawn(function()
                 end
 
                 -- Selama di luar jendela: paksa ke posisi terkunci
-                if not _G._lockPositionFollowWindow then
+                -- KECUALI Auto Farm aktif — farm loop yang handle snap ke _lockedCF
+                if not _G._lockPositionFollowWindow and not EngineConfig.AutoFarmActive then
                     hrp.CFrame = _lockedCF
                     hrp.AssemblyLinearVelocity  = Vector3.zero
                     hrp.AssemblyAngularVelocity = Vector3.zero
@@ -1683,8 +1691,9 @@ task.spawn(function()
 
         elseif _prevLock then
             -- Cleanup saat dimatikan
-            _prevLock  = false
-            _lockedCF  = nil
+            _prevLock    = false
+            _lockedCF    = nil
+            _G._lockedCF = nil
             _G._lockPositionFollowWindow = false
 
             local char = _prevHRPLk and _prevHRPLk.Parent
