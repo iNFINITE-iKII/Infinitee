@@ -1664,7 +1664,7 @@ task.spawn(function()
                 and not _G._lockPositionFollowWindow
                 and now >= _lastIntervalAt + interval then
                     _G._lockPositionFollowWindow = true
-                    _followWindowEnd = now + 1  -- jendela 1 detik
+                    _followWindowEnd = now + math.max(EngineConfig.LockPositionFollowDur or 1, 0.1)
                 end
 
                 -- Tutup jendela setelah 1 detik: kunci kembali ke posisi semula

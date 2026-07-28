@@ -169,7 +169,8 @@ local EngineConfig = {
     DodgeDragonActive = false,  -- toggle auto-dodge skill Bom (BombRed)
     -- ── Lock Position ──────────────────────────────────────────────────────────
     LockPositionActive   = false,  -- toggle freeze posisi — CFrame karakter dikunci ke titik saat toggle ON
-    LockPositionInterval = 0,      -- interval (detik) jendela ikut monster selama 1 detik; 0 = nonaktif
+    LockPositionInterval  = 0,      -- interval (detik) antar jendela ikut monster; 0 = nonaktif
+    LockPositionFollowDur = 1,      -- durasi (detik) jendela ikut monster setiap interval
     -- ── Discord Webhook ────────────────────────────────────────────────────────
     WebhookActive = false,   -- toggle on/off notifikasi ke Discord
     WebhookUrl    = "",      -- URL webhook Discord yang diisi user

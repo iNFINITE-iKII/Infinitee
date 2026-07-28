@@ -96,6 +96,11 @@ _G.LockPositionIntervalInput = CreateInputUI(VectorPage, "⏱ Interval Ikut Mons
         EngineConfig.LockPositionInterval = math.max(tonumber(v) or 0, 0)
     end, "lblLockPositionInterval")
 
+_G.LockPositionFollowDurInput = CreateInputUI(VectorPage, "⏱ Durasi Ikut Monster (detik)",
+    EngineConfig.LockPositionFollowDur, false, function(v)
+        EngineConfig.LockPositionFollowDur = math.max(tonumber(v) or 1, 0.1)
+    end, "lblLockPositionFollowDur")
+
 -- ── Dodge Dragon ──────────────────────────────────────────────────────────────
 CreateSection(VectorPage, "🐉 Dodge Dragon", "secDodgeDragon")
 
