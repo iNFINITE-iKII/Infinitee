@@ -4,7 +4,7 @@
 --
 --// Scanner ini:
 --//   1. mencatat semua object Res* beserta path dan class-nya;
---//   2. hanya me-require ModuleScript yang masuk whitelist;
+--//   2. membaca semua Res* ModuleScript dengan pcall;
 --//   3. menyimpan error per module tanpa menghentikan script utama.
 --
 --// Scanner ini TIDAK:
@@ -18,19 +18,6 @@ local Services = H.Services
 local ReplicatedStorage = Services.ReplicatedStorage
 
 local ConfigScanner = {}
-
--- Mulai dari config yang paling relevan dan formatnya paling berguna untuk
--- reader/farm. Tambahkan nama baru setelah formatnya diverifikasi.
-local MODULE_WHITELIST = {
-    ResEnemy       = true,
-    ResDropLoot    = true,
-    ResChestLoot   = true,
-    ResDragonEggLoot = true,
-    ResOres        = true,
-    ResWeapon      = true,
-    ResArmor       = true,
-    ResSkill       = true,
-}
 
 local function getFullName(instance)
     local ok, result = pcall(function()
@@ -72,13 +59,7 @@ local function addError(registry, name, path, message)
     })
 end
 
-local function readWhitelistedModule(instance, record, registry)
-    if not MODULE_WHITELIST[instance.Name] then
-        record.Read = false
-        record.ReadReason = "not_whitelisted"
-        return
-    end
-
+local function readModule(instance, record, registry)
     local ok, result = pcall(require, instance)
     record.Read = ok
     if not ok then
@@ -92,9 +73,14 @@ local function readWhitelistedModule(instance, record, registry)
     record.Value = result
 end
 
-function ConfigScanner.Scan()
+function ConfigScanner.Scan(options)
+    options = options or {}
+    -- Default true: baca semua Res* ModuleScript. Set ReadModules=false jika
+    -- hanya ingin daftar metadata tanpa menjalankan require pada module.
+    local readModules = options.ReadModules ~= false
     local registry = makeRegistry()
     registry.Root = getFullName(ReplicatedStorage)
+    registry.ReadModules = readModules
 
     local ok, descendants = pcall(function()
         return ReplicatedStorage:GetDescendants()
@@ -120,7 +106,12 @@ function ConfigScanner.Scan()
 
             if instance:IsA("ModuleScript") then
                 table.insert(registry.Modules, record)
-                readWhitelistedModule(instance, record, registry)
+                if readModules then
+                    readModule(instance, record, registry)
+                else
+                    record.Read = false
+                    record.ReadReason = "module_read_disabled"
+                end
             elseif instance:IsA("Folder") then
                 table.insert(registry.Folders, record)
                 record.Read = false
