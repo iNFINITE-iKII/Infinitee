@@ -11,6 +11,8 @@ local allSkillKeys  = H.allSkillKeys
 local TargetService = H.TargetService
 local CustomNotify  = H.CustomNotify
 local UpdateLists   = H.UpdateLists
+local ScanConfigs   = H.ScanConfigs
+local ConfigScanner = H.ConfigScanner
 
 local CreateTab                     = H.CreateTab
 local CreateSection                 = H.CreateSection
@@ -84,6 +86,26 @@ end, "togAutoFarm")
 
 --------------------------------------------------------------------------------
 CreateSection(FarmPage, "Refresh Daftar", "secRefresh")
+
+CreateButton(FarmPage, "🔍 Scan Res Config", function()
+    local registry = ScanConfigs and ScanConfigs() or nil
+    if not registry then
+        CustomNotify("Scanner", "Scanner config tidak tersedia.", 3)
+        return
+    end
+
+    local summary = ConfigScanner.GetSummary()
+    CustomNotify(
+        "Scanner",
+        string.format(
+            "%d object Res ditemukan | %d module dibaca | %d error",
+            summary.Objects,
+            summary.Readable,
+            summary.Errors
+        ),
+        4
+    )
+end, "btnScanResConfig")
 
 CreateButton(FarmPage, "🔄 Refresh Monster & Quest", function()
     TargetService.UpdateCache()

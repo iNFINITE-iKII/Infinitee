@@ -684,6 +684,7 @@ startWithDRM(function(key, hwid)
     end
 
     load(BASE_CO .. "core.lua")
+    load(BASE_CO .. "config_scanner.lua")
     load(BASE_V1 .. "maid.lua")
     load(BASE_V1 .. "notify.lua")
     load(BASE_V1 .. "config_system.lua")
