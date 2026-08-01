@@ -674,6 +674,7 @@ startWithDRM(function(key, hwid)
 
     local BASE_V1 = "https://xifil-hub-production.up.railway.app/api/lua/module/ironsoulv1/"
     local BASE_CO = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/cloverorigins/"
+    local BASE_V1_REPO = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/ironsoulv1/"
 
     local function load(url)
         local ok, err = pcall(function()
@@ -690,7 +691,9 @@ startWithDRM(function(key, hwid)
     load(BASE_CO .. "farm.lua")
     load(BASE_CO .. "grimoire.lua")
     load(BASE_CO .. "stats.lua")
-    load(BASE_V1 .. "ui/ui_core.lua")
+    -- Keep the UI implementation in sync with this repository. The hosted
+    -- IronSoul copy can lag behind and recreate the one-row dropdown bug.
+    load(BASE_V1_REPO .. "ui/ui_core.lua")
     load(BASE_CO .. "ui/tab_farm.lua")
     load(BASE_CO .. "ui/tab_grimoire.lua")
     load(BASE_CO .. "ui/tab_stats.lua")

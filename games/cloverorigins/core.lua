@@ -128,10 +128,12 @@ local TargetService = {}
 
 function TargetService.UpdateCache()
     table.clear(CachedFolders)
-    local names = {"Npcs", "Monsters", "Enemies"}
+    local names = {"Npcs", "NPCs", "Monsters", "Enemies", "Mobs"}
     for _, name in ipairs(names) do
-        local folder = workspace:FindFirstChild(name)
-        if folder then table.insert(CachedFolders, folder) end
+        local folder = workspace:FindFirstChild(name, true)
+        if folder and not table.find(CachedFolders, folder) then
+            table.insert(CachedFolders, folder)
+        end
     end
 end
 
@@ -162,6 +164,19 @@ SetupCharacter(State.Character)
 
 -- Referensi dropdown (diisi oleh tab_farm.lua setelah UI dibuat)
 -- Disimpan di H agar UpdateLists bisa memperbarui dropdown
+local function appendNPCName(list, seen, instance)
+    if not instance:IsA("Model")
+       or not instance:FindFirstChildOfClass("Humanoid") then
+        return
+    end
+
+    local name = instance.Name
+    if name ~= "" and not seen[name] then
+        seen[name] = true
+        table.insert(list, name)
+    end
+end
+
 local function UpdateLists()
     -- Weapons di Backpack + Character
     local foundWeapons = {}
@@ -185,16 +200,16 @@ local function UpdateLists()
 
     -- NPCs
     local currentNPCs = {}
-    local npcFolder   = workspace:FindFirstChild("Npcs")
-    if npcFolder then
-        for _, v in pairs(npcFolder:GetChildren()) do
-            if v:IsA("Model") and v:FindFirstChild("Humanoid") then
-                if not table.find(currentNPCs, v.Name) then
-                    table.insert(currentNPCs, v.Name)
-                end
+    local seenNPCs = {}
+    for _, npcFolder in ipairs(CachedFolders) do
+        if npcFolder and npcFolder.Parent then
+            appendNPCName(currentNPCs, seenNPCs, npcFolder)
+            for _, v in ipairs(npcFolder:GetDescendants()) do
+                appendNPCName(currentNPCs, seenNPCs, v)
             end
         end
     end
+    table.sort(currentNPCs)
     State.Lists.NPCs = currentNPCs
 
     -- Quests
@@ -215,6 +230,7 @@ local function UpdateLists()
     for _, p in pairs(Services.Players:GetPlayers()) do
         if p ~= LocalPlayer then table.insert(currentPlayers, p.Name) end
     end
+    table.sort(currentPlayers)
     State.Lists.Players = currentPlayers
 
     -- Update dropdown UI jika sudah ada
@@ -227,6 +243,26 @@ local function UpdateLists()
     if H.CO_QuestDropdown  then H.CO_QuestDropdown:SetValues(State.Lists.Quests) end
     if H.CO_WeaponV1       then H.CO_WeaponV1:SetValues(State.Lists.Weapons) end
 end
+
+-- Refresh shortly after players/mobs change so the dropdown does not need a
+-- manual refresh and does not rebuild once for every streamed-in descendant.
+local refreshPending = false
+local function ScheduleListRefresh()
+    if refreshPending then return end
+    refreshPending = true
+    task.delay(0.25, function()
+        refreshPending = false
+        pcall(function()
+            TargetService.UpdateCache()
+            UpdateLists()
+        end)
+    end)
+end
+
+Services.Players.PlayerAdded:Connect(ScheduleListRefresh)
+Services.Players.PlayerRemoving:Connect(ScheduleListRefresh)
+workspace.DescendantAdded:Connect(ScheduleListRefresh)
+workspace.DescendantRemoving:Connect(ScheduleListRefresh)
 
 -- Auto-refresh lists setiap 120 detik
 task.spawn(function()

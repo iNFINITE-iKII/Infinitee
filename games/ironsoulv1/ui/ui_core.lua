@@ -931,7 +931,18 @@ local function CreateScrollableMultiSelectUI(parent, labelText, items, states, c
 
     -- Dynamic refresh: rebuild rows with a new item list + per-row callbacks
     function apis:SetValues(newItems, newCallbacks)
+        newItems = newItems or {}
         newCallbacks = newCallbacks or {}
+        -- Keep selected rows by item name when the source list is refreshed.
+        -- Index-based state would select the wrong entity when Roblox streams
+        -- an item in/out or changes the order returned by GetChildren().
+        local selectedByName = {}
+        for oldIndex, oldItem in ipairs(items) do
+            if currentStates[oldIndex] then
+                selectedByName[oldItem] = true
+            end
+        end
+
         -- Destroy existing row buttons
         for _, child in ipairs(panel:GetChildren()) do
             if child:IsA("TextButton") then child:Destroy() end
@@ -944,9 +955,10 @@ local function CreateScrollableMultiSelectUI(parent, labelText, items, states, c
         currentStates = {}
         panelH = math.min(#newItems * 34 + 4, 200)
         for ri, rItem in ipairs(newItems) do
-            currentStates[ri] = false
+            currentStates[ri] = selectedByName[rItem] == true
             local rBtn = Instance.new("TextButton", panel)
-            rBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 35)
+            rBtn.BackgroundColor3 = currentStates[ri] and _rowActiveBg()
+                or Color3.fromRGB(22, 22, 35)
             rBtn.Size = UDim2.new(1, 0, 0, 32)
             rBtn.Font = Enum.Font.GothamMedium
             rBtn.Text = "   " .. rItem
@@ -958,10 +970,11 @@ local function CreateScrollableMultiSelectUI(parent, labelText, items, states, c
             local rAccent = Instance.new("Frame", rBtn)
             rAccent.BackgroundColor3 = GetThemeColor("Primary")
             rAccent.Size = UDim2.new(0, 3, 1, -6); rAccent.Position = UDim2.new(0, 0, 0, 3)
-            rAccent.BorderSizePixel = 0; rAccent.ZIndex = rBtn.ZIndex + 1; rAccent.Visible = false
+            rAccent.BorderSizePixel = 0; rAccent.ZIndex = rBtn.ZIndex + 1
+            rAccent.Visible = currentStates[ri]
             Instance.new("UICorner", rAccent).CornerRadius = UDim.new(0, 3)
             RegisterThemeElement("Indicators", rAccent)
-            local rApi = { state = false }
+            local rApi = { state = currentStates[ri] }
             local function applyR(val)
                 rApi.state = val; currentStates[ri] = val
                 TweenService:Create(rBtn, TweenInfo.new(0.14), {
