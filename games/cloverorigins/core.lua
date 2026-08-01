@@ -218,8 +218,12 @@ local function UpdateLists()
     State.Lists.Players = currentPlayers
 
     -- Update dropdown UI jika sudah ada
-    if H.CO_NPCDropdown    then H.CO_NPCDropdown:SetValues(State.Lists.NPCs) end
-    if H.CO_PlayerDropdown then H.CO_PlayerDropdown:SetValues(State.Lists.Players) end
+    if H.CO_NPCDropdown and H.CO_NPCDropdown.SetValues then
+        H.CO_NPCDropdown:SetValues(State.Lists.NPCs, H.makeNPCCallbacks(State.Lists.NPCs))
+    end
+    if H.CO_PlayerDropdown and H.CO_PlayerDropdown.SetValues then
+        H.CO_PlayerDropdown:SetValues(State.Lists.Players, H.makePlayerCallbacks(State.Lists.Players))
+    end
     if H.CO_QuestDropdown  then H.CO_QuestDropdown:SetValues(State.Lists.Quests) end
     if H.CO_WeaponV1       then H.CO_WeaponV1:SetValues(State.Lists.Weapons) end
 end
@@ -228,6 +232,40 @@ end
 task.spawn(function()
     while task.wait(120) do UpdateLists() end
 end)
+
+-- Helper: bangun per-row callbacks untuk NPC multi-select
+local function makeNPCCallbacks(list)
+    local cbs = {}
+    for i, name in ipairs(list) do
+        local n = name
+        cbs[i] = function(val)
+            if val then
+                if not table.find(State.TargetList, n) then table.insert(State.TargetList, n) end
+            else
+                local idx = table.find(State.TargetList, n)
+                if idx then table.remove(State.TargetList, idx) end
+            end
+        end
+    end
+    return cbs
+end
+
+-- Helper: bangun per-row callbacks untuk Player multi-select
+local function makePlayerCallbacks(list)
+    local cbs = {}
+    for i, name in ipairs(list) do
+        local n = name
+        cbs[i] = function(val)
+            if val then
+                if not table.find(State.TargetList, n) then table.insert(State.TargetList, n) end
+            else
+                local idx = table.find(State.TargetList, n)
+                if idx then table.remove(State.TargetList, idx) end
+            end
+        end
+    end
+    return cbs
+end
 
 -- Translation stubs (diperlukan oleh ui_core.lua)
 local function noop(...) end
@@ -254,7 +292,13 @@ H.TargetService   = TargetService
 H.CachedFolders   = CachedFolders
 H.allGrimoire     = allGrimoire
 H.allSkillKeys    = allSkillKeys
-H.UpdateLists     = UpdateLists
+H.UpdateLists        = UpdateLists
+H.makeNPCCallbacks   = makeNPCCallbacks
+H.makePlayerCallbacks= makePlayerCallbacks
+
+-- Populate lists sebelum UI dibangun
+TargetService.UpdateCache()
+UpdateLists()
 
 -- Konstanta dummy yang mungkin dibutuhkan ui_core.lua
 H.WORLD_NAMES     = {}

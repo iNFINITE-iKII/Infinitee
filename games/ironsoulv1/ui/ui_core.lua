@@ -929,6 +929,72 @@ local function CreateScrollableMultiSelectUI(parent, labelText, items, states, c
         end
     end)
 
+    -- Dynamic refresh: rebuild rows with a new item list + per-row callbacks
+    function apis:SetValues(newItems, newCallbacks)
+        newCallbacks = newCallbacks or {}
+        -- Destroy existing row buttons
+        for _, child in ipairs(panel:GetChildren()) do
+            if child:IsA("TextButton") then child:Destroy() end
+        end
+        -- Wipe numeric entries in apis
+        for k in pairs(apis) do
+            if type(k) == "number" then apis[k] = nil end
+        end
+        items = newItems
+        currentStates = {}
+        panelH = math.min(#newItems * 34 + 4, 200)
+        for ri, rItem in ipairs(newItems) do
+            currentStates[ri] = false
+            local rBtn = Instance.new("TextButton", panel)
+            rBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 35)
+            rBtn.Size = UDim2.new(1, 0, 0, 32)
+            rBtn.Font = Enum.Font.GothamMedium
+            rBtn.Text = "   " .. rItem
+            rBtn.TextColor3 = Color3.fromRGB(210, 210, 228)
+            rBtn.TextSize = 11; rBtn.TextXAlignment = Enum.TextXAlignment.Left
+            rBtn.ZIndex = 10001; rBtn.BorderSizePixel = 0
+            Instance.new("UICorner", rBtn).CornerRadius = UDim.new(0, 6)
+            table.insert(ThemeRegistry.AllLabels, rBtn)
+            local rAccent = Instance.new("Frame", rBtn)
+            rAccent.BackgroundColor3 = GetThemeColor("Primary")
+            rAccent.Size = UDim2.new(0, 3, 1, -6); rAccent.Position = UDim2.new(0, 0, 0, 3)
+            rAccent.BorderSizePixel = 0; rAccent.ZIndex = rBtn.ZIndex + 1; rAccent.Visible = false
+            Instance.new("UICorner", rAccent).CornerRadius = UDim.new(0, 3)
+            RegisterThemeElement("Indicators", rAccent)
+            local rApi = { state = false }
+            local function applyR(val)
+                rApi.state = val; currentStates[ri] = val
+                TweenService:Create(rBtn, TweenInfo.new(0.14), {
+                    BackgroundColor3 = val and _rowActiveBg() or Color3.fromRGB(22, 22, 35)
+                }):Play()
+                rBtn.Text = "   " .. rItem; rAccent.Visible = val; updateSummary()
+            end
+            function rApi:SetValue(val) applyR(val) end
+            local rCb = newCallbacks[ri]
+            rBtn.MouseButton1Click:Connect(function()
+                TweenService:Create(rBtn, TweenInfo.new(0.07), { BackgroundTransparency = 0.3 }):Play()
+                task.delay(0.07, function()
+                    TweenService:Create(rBtn, TweenInfo.new(0.12), { BackgroundTransparency = 0 }):Play()
+                end)
+                applyR(not rApi.state)
+                if rCb then pcall(rCb, rApi.state) end
+            end)
+            rBtn.MouseEnter:Connect(function()
+                if not rApi.state then
+                    TweenService:Create(rBtn, TweenInfo.new(0.12), { BackgroundColor3 = Color3.fromRGB(30, 30, 48) }):Play()
+                end
+            end)
+            rBtn.MouseLeave:Connect(function()
+                TweenService:Create(rBtn, TweenInfo.new(0.12), {
+                    BackgroundColor3 = rApi.state and _rowActiveBg() or Color3.fromRGB(22, 22, 35)
+                }):Play()
+            end)
+            table.insert(ThemeRegistry.MultiSelectRows, { btn = rBtn, api = rApi })
+            apis[ri] = rApi
+        end
+        updateSummary()
+    end
+
     return apis
 end
 

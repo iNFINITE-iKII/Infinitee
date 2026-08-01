@@ -47,21 +47,7 @@ CreateSection(FarmPage, "Target Mob", "secMob")
 H.CO_NPCDropdown = CreateScrollableMultiSelectUI(FarmPage, "👹 Pilih Mob",
     State.Lists.NPCs,
     {},
-    function(selectedMap)
-        -- Hapus entry NPC lama dari TargetList
-        for i = #State.TargetList, 1, -1 do
-            local name = State.TargetList[i]
-            if not game.Players:FindFirstChild(name) then
-                table.remove(State.TargetList, i)
-            end
-        end
-        -- Tambahkan yang baru
-        for name, active in pairs(selectedMap) do
-            if active and not table.find(State.TargetList, name) then
-                table.insert(State.TargetList, name)
-            end
-        end
-    end,
+    H.makeNPCCallbacks(State.Lists.NPCs),
     "dropNPC"
 )
 
@@ -71,20 +57,7 @@ CreateSection(FarmPage, "Target Player", "secPlayer")
 H.CO_PlayerDropdown = CreateScrollableMultiSelectUI(FarmPage, "🧑 Pilih Player",
     State.Lists.Players,
     {},
-    function(selectedMap)
-        -- Hapus entry player lama dari TargetList
-        for i = #State.TargetList, 1, -1 do
-            local name = State.TargetList[i]
-            if game.Players:FindFirstChild(name) then
-                table.remove(State.TargetList, i)
-            end
-        end
-        for name, active in pairs(selectedMap) do
-            if active and not table.find(State.TargetList, name) then
-                table.insert(State.TargetList, name)
-            end
-        end
-    end,
+    H.makePlayerCallbacks(State.Lists.Players),
     "dropPlayer"
 )
 
