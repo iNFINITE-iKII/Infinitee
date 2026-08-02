@@ -677,6 +677,15 @@ end
 
 -- INPUT BOX
 local function CreateInputUI(parent, text, default, numeric, callback, langKey)
+    -- Backward-compatible call form:
+    -- CreateInputUI(parent, text, default, callback, langKey)
+    -- Beberapa tab memakai format ini tanpa argumen numeric eksplisit.
+    if type(numeric) == "function" then
+        langKey = callback
+        callback = numeric
+        numeric = false
+    end
+
     local container = Instance.new("Frame", parent)
     container.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     container.BackgroundTransparency = 0.2

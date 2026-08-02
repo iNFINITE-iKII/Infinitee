@@ -3,3 +3,4 @@
 - [IronSoul config map](ironsoul-config-map.md) — 66 configs are data, not remotes; use the verified remote map and staged upgrade order.
 - [Premium ticket diagnostics](premium-ticket-diagnostics.md) — ticket failures need a stage label because the generic interaction fallback hides Discord-vs-database causes.
 - [Live config scanner](live-config-scanner.md) — discover Res* objects read-only; whitelist ModuleScripts and report Folder/PackageLink or require failures explicitly.
+- [UI input compatibility](ui-input-compatibility.md) — normalize legacy and explicit CreateInputUI argument forms at the shared UI boundary.
