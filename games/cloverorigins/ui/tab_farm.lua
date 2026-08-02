@@ -98,7 +98,7 @@ CreateButton(FarmPage, "🔍 Scan Res Config", function()
     CustomNotify(
         "Scanner",
         string.format(
-            "%d object Res ditemukan | %d module dibaca | %d error",
+            "%d object Config ditemukan | %d module dibaca | %d error (lihat console)",
             summary.Objects,
             summary.Readable,
             summary.Errors

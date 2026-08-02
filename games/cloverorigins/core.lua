@@ -21,6 +21,7 @@ local Services = setmetatable({}, {
 local LocalPlayer  = Services.Players.LocalPlayer
 local TweenService = Services.TweenService
 local HttpService  = Services.HttpService
+local ReplicatedStorage = Services.ReplicatedStorage
 
 -- Matikan pause notification
 pcall(function()
@@ -123,6 +124,8 @@ local State = {
 -- [S03] TARGET SERVICE
 --------------------------------------------------------------------------------
 local CachedFolders = {}
+local MobCatalogFolder = nil
+local MobCatalogConnections = {}
 
 local TargetService = {}
 
@@ -135,6 +138,14 @@ function TargetService.UpdateCache()
             table.insert(CachedFolders, folder)
         end
     end
+end
+
+function TargetService.GetMobCatalogFolder()
+    local folder = ReplicatedStorage:FindFirstChild("Mobs")
+    if folder and (folder:IsA("Folder") or folder:IsA("Model")) then
+        return folder
+    end
+    return nil
 end
 
 function TargetService.IsAttackable(entity, targetList)
@@ -177,6 +188,21 @@ local function appendNPCName(list, seen, instance)
     end
 end
 
+-- ReplicatedStorage.Mobs berisi template/config mob. Hanya child langsung yang
+-- dipakai, sehingga property seperti Animate.walk atau Weight tidak masuk ke
+-- dropdown sebagai pilihan terpisah.
+local function appendMobCatalogName(list, seen, instance)
+    -- Template di folder Mobs tidak selalu sudah memiliki Humanoid; sebagian
+    -- game menyimpan model sebagai Folder/Model data terlebih dahulu.
+    if not instance:IsA("Model") and not instance:IsA("Folder") then return end
+
+    local name = instance.Name
+    if name ~= "" and not seen[name] then
+        seen[name] = true
+        table.insert(list, name)
+    end
+end
+
 local function UpdateLists()
     -- Weapons di Backpack + Character
     local foundWeapons = {}
@@ -201,6 +227,18 @@ local function UpdateLists()
     -- NPCs
     local currentNPCs = {}
     local seenNPCs = {}
+
+    -- Sumber utama: daftar template mob live dari ReplicatedStorage.Mobs.
+    -- GetChildren() sengaja digunakan, bukan GetDescendants(), agar 679+
+    -- property/config di dalam setiap model tidak menjadi item dropdown.
+    local mobCatalog = TargetService.GetMobCatalogFolder()
+    if mobCatalog then
+        for _, mobTemplate in ipairs(mobCatalog:GetChildren()) do
+            appendMobCatalogName(currentNPCs, seenNPCs, mobTemplate)
+        end
+    end
+
+    -- Sumber kedua: model mob yang sedang aktif/ter-stream di Workspace.
     for _, npcFolder in ipairs(CachedFolders) do
         if npcFolder and npcFolder.Parent then
             appendNPCName(currentNPCs, seenNPCs, npcFolder)
@@ -247,12 +285,33 @@ end
 -- Refresh shortly after players/mobs change so the dropdown does not need a
 -- manual refresh and does not rebuild once for every streamed-in descendant.
 local refreshPending = false
-local function ScheduleListRefresh()
+local ScheduleListRefresh
+local function clearMobCatalogConnections()
+    for _, connection in ipairs(MobCatalogConnections) do
+        pcall(function() connection:Disconnect() end)
+    end
+    table.clear(MobCatalogConnections)
+end
+
+local function watchMobCatalog()
+    local folder = TargetService.GetMobCatalogFolder()
+    if folder == MobCatalogFolder then return end
+
+    clearMobCatalogConnections()
+    MobCatalogFolder = folder
+    if not folder then return end
+
+    table.insert(MobCatalogConnections, folder.ChildAdded:Connect(ScheduleListRefresh))
+    table.insert(MobCatalogConnections, folder.ChildRemoved:Connect(ScheduleListRefresh))
+end
+
+ScheduleListRefresh = function()
     if refreshPending then return end
     refreshPending = true
     task.delay(0.25, function()
         refreshPending = false
         pcall(function()
+            watchMobCatalog()
             TargetService.UpdateCache()
             UpdateLists()
         end)
@@ -263,6 +322,18 @@ Services.Players.PlayerAdded:Connect(ScheduleListRefresh)
 Services.Players.PlayerRemoving:Connect(ScheduleListRefresh)
 workspace.DescendantAdded:Connect(ScheduleListRefresh)
 workspace.DescendantRemoving:Connect(ScheduleListRefresh)
+ReplicatedStorage.ChildAdded:Connect(function(child)
+    if child.Name == "Mobs" then
+        watchMobCatalog()
+        ScheduleListRefresh()
+    end
+end)
+ReplicatedStorage.ChildRemoved:Connect(function(child)
+    if child == MobCatalogFolder or child.Name == "Mobs" then
+        watchMobCatalog()
+        ScheduleListRefresh()
+    end
+end)
 
 -- Auto-refresh lists setiap 120 detik
 task.spawn(function()
@@ -326,6 +397,7 @@ H.EngineConfig    = EngineConfig
 H.State           = State
 H.TargetService   = TargetService
 H.CachedFolders   = CachedFolders
+H.LiveMobFolder   = function() return MobCatalogFolder end
 H.allGrimoire     = allGrimoire
 H.allSkillKeys    = allSkillKeys
 H.UpdateLists        = UpdateLists
@@ -333,6 +405,7 @@ H.makeNPCCallbacks   = makeNPCCallbacks
 H.makePlayerCallbacks= makePlayerCallbacks
 
 -- Populate lists sebelum UI dibangun
+watchMobCatalog()
 TargetService.UpdateCache()
 UpdateLists()
 
