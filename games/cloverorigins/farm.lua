@@ -113,16 +113,14 @@ Services.RunService.Heartbeat:Connect(function()
             targetRoot.Position
         )
 
+        -- Pindahkan langsung dengan CFrame. Lerp membuat karakter masih
+        -- beberapa frame berada di luar range Burst Attack.
+        State.Root.CFrame = goalCF
+        State.LastTarget  = State.CurrentTarget
+
+        -- Hitung ulang setelah perpindahan agar Burst Attack tidak menunggu
+        -- Heartbeat berikutnya hanya karena jarak sebelum teleport masih jauh.
         local dist = (State.Root.Position - targetRoot.Position).Magnitude
-        if dist > 50 or State.CurrentTarget ~= State.LastTarget then
-            State.Root.CFrame  = goalCF
-            State.LastTarget   = State.CurrentTarget
-        else
-            State.Root.CFrame = State.Root.CFrame:Lerp(
-                goalCF,
-                math.clamp(EngineConfig.LerpSpeed * 1.5, 0.1, 1)
-            )
-        end
 
         -- Serang jika sudah cukup dekat
         if dist <= 15 then
