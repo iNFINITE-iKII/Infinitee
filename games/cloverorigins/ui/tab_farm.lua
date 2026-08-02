@@ -54,6 +54,16 @@ H.CO_NPCDropdown = CreateScrollableMultiSelectUI(FarmPage, "👹 Pilih Mob",
 )
 
 --------------------------------------------------------------------------------
+CreateSection(FarmPage, "Target Boss", "secBoss")
+
+H.CO_BossDropdown = CreateScrollableMultiSelectUI(FarmPage, "👑 Pilih Boss",
+    State.Lists.Bosses,
+    {},
+    H.makeBossCallbacks(State.Lists.Bosses),
+    "dropBoss"
+)
+
+--------------------------------------------------------------------------------
 CreateSection(FarmPage, "Target Player", "secPlayer")
 
 H.CO_PlayerDropdown = CreateScrollableMultiSelectUI(FarmPage, "🧑 Pilih Player",

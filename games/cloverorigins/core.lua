@@ -114,6 +114,7 @@ local State = {
     TargetList   = {},
     Lists = {
         NPCs    = {},
+        Bosses  = {},
         Quests  = {},
         Weapons = {},
         WeaponsV2 = allGrimoire,
@@ -126,12 +127,17 @@ local State = {
 local CachedFolders = {}
 local MobCatalogFolder = nil
 local MobCatalogConnections = {}
+local BossCatalogFolder = nil
+local BossCatalogConnections = {}
 
 local TargetService = {}
 
 function TargetService.UpdateCache()
     table.clear(CachedFolders)
-    local names = {"Npcs", "NPCs", "Monsters", "Enemies", "Mobs"}
+    local names = {
+        "Npcs", "NPCs", "Monsters", "Enemies", "Mobs",
+        "SuperBosses", "Bosses", "Boss",
+    }
     for _, name in ipairs(names) do
         local folder = workspace:FindFirstChild(name, true)
         if folder and not table.find(CachedFolders, folder) then
@@ -142,6 +148,15 @@ end
 
 function TargetService.GetMobCatalogFolder()
     local folder = ReplicatedStorage:FindFirstChild("Mobs")
+    if folder and (folder:IsA("Folder") or folder:IsA("Model")) then
+        return folder
+    end
+    return nil
+end
+
+function TargetService.GetBossCatalogFolder()
+    local mobsFolder = TargetService.GetMobCatalogFolder()
+    local folder = mobsFolder and mobsFolder:FindFirstChild("SuperBosses")
     if folder and (folder:IsA("Folder") or folder:IsA("Model")) then
         return folder
     end
@@ -175,11 +190,24 @@ SetupCharacter(State.Character)
 
 -- Referensi dropdown (diisi oleh tab_farm.lua setelah UI dibuat)
 -- Disimpan di H agar UpdateLists bisa memperbarui dropdown
-local function appendNPCName(list, seen, instance)
+local function isUnderBossFolder(instance)
+    local node = instance
+    while node and node ~= workspace do
+        local name = string.lower(node.Name)
+        if name == "superbosses" or name == "bosses" or name == "boss" then
+            return true
+        end
+        node = node.Parent
+    end
+    return false
+end
+
+local function appendNPCName(list, seen, instance, excludeBoss)
     if not instance:IsA("Model")
        or not instance:FindFirstChildOfClass("Humanoid") then
         return
     end
+    if excludeBoss and isUnderBossFolder(instance) then return end
 
     local name = instance.Name
     if name ~= "" and not seen[name] then
@@ -194,6 +222,18 @@ end
 local function appendMobCatalogName(list, seen, instance)
     -- Template di folder Mobs tidak selalu sudah memiliki Humanoid; sebagian
     -- game menyimpan model sebagai Folder/Model data terlebih dahulu.
+    if not instance:IsA("Model") and not instance:IsA("Folder") then return end
+
+    local name = instance.Name
+    if name ~= "" and not seen[name] then
+        seen[name] = true
+        table.insert(list, name)
+    end
+end
+
+-- ReplicatedStorage.Mobs.SuperBosses menyimpan template boss. Seperti mob
+-- biasa, hanya child langsung yang digunakan sebagai nama pilihan.
+local function appendBossCatalogName(list, seen, instance)
     if not instance:IsA("Model") and not instance:IsA("Folder") then return end
 
     local name = instance.Name
@@ -243,12 +283,38 @@ local function UpdateLists()
         if npcFolder and npcFolder.Parent then
             appendNPCName(currentNPCs, seenNPCs, npcFolder)
             for _, v in ipairs(npcFolder:GetDescendants()) do
-                appendNPCName(currentNPCs, seenNPCs, v)
+                appendNPCName(currentNPCs, seenNPCs, v, true)
             end
         end
     end
     table.sort(currentNPCs)
     State.Lists.NPCs = currentNPCs
+
+    -- Bosses: sumber utama adalah ReplicatedStorage.Mobs.SuperBosses.
+    local currentBosses = {}
+    local seenBosses = {}
+    local bossCatalog = TargetService.GetBossCatalogFolder()
+    if bossCatalog then
+        for _, bossTemplate in ipairs(bossCatalog:GetChildren()) do
+            appendBossCatalogName(currentBosses, seenBosses, bossTemplate)
+        end
+    end
+
+    -- Tambahkan boss runtime dari Workspace jika foldernya tersedia.
+    for _, bossFolder in ipairs(CachedFolders) do
+        if bossFolder and bossFolder.Parent then
+            local folderName = string.lower(bossFolder.Name)
+            if folderName == "superbosses"
+                or folderName == "bosses"
+                or folderName == "boss" then
+                for _, value in ipairs(bossFolder:GetChildren()) do
+                    appendNPCName(currentBosses, seenBosses, value, false)
+                end
+            end
+        end
+    end
+    table.sort(currentBosses)
+    State.Lists.Bosses = currentBosses
 
     -- Quests
     local foundQuests = {}
@@ -275,6 +341,9 @@ local function UpdateLists()
     if H.CO_NPCDropdown and H.CO_NPCDropdown.SetValues then
         H.CO_NPCDropdown:SetValues(State.Lists.NPCs, H.makeNPCCallbacks(State.Lists.NPCs))
     end
+    if H.CO_BossDropdown and H.CO_BossDropdown.SetValues then
+        H.CO_BossDropdown:SetValues(State.Lists.Bosses, H.makeBossCallbacks(State.Lists.Bosses))
+    end
     if H.CO_PlayerDropdown and H.CO_PlayerDropdown.SetValues then
         H.CO_PlayerDropdown:SetValues(State.Lists.Players, H.makePlayerCallbacks(State.Lists.Players))
     end
@@ -293,6 +362,13 @@ local function clearMobCatalogConnections()
     table.clear(MobCatalogConnections)
 end
 
+local function clearBossCatalogConnections()
+    for _, connection in ipairs(BossCatalogConnections) do
+        pcall(function() connection:Disconnect() end)
+    end
+    table.clear(BossCatalogConnections)
+end
+
 local function watchMobCatalog()
     local folder = TargetService.GetMobCatalogFolder()
     if folder == MobCatalogFolder then return end
@@ -305,6 +381,18 @@ local function watchMobCatalog()
     table.insert(MobCatalogConnections, folder.ChildRemoved:Connect(ScheduleListRefresh))
 end
 
+local function watchBossCatalog()
+    local folder = TargetService.GetBossCatalogFolder()
+    if folder == BossCatalogFolder then return end
+
+    clearBossCatalogConnections()
+    BossCatalogFolder = folder
+    if not folder then return end
+
+    table.insert(BossCatalogConnections, folder.ChildAdded:Connect(ScheduleListRefresh))
+    table.insert(BossCatalogConnections, folder.ChildRemoved:Connect(ScheduleListRefresh))
+end
+
 ScheduleListRefresh = function()
     if refreshPending then return end
     refreshPending = true
@@ -312,6 +400,7 @@ ScheduleListRefresh = function()
         refreshPending = false
         pcall(function()
             watchMobCatalog()
+            watchBossCatalog()
             TargetService.UpdateCache()
             UpdateLists()
         end)
@@ -325,12 +414,14 @@ workspace.DescendantRemoving:Connect(ScheduleListRefresh)
 ReplicatedStorage.ChildAdded:Connect(function(child)
     if child.Name == "Mobs" then
         watchMobCatalog()
+        watchBossCatalog()
         ScheduleListRefresh()
     end
 end)
 ReplicatedStorage.ChildRemoved:Connect(function(child)
     if child == MobCatalogFolder or child.Name == "Mobs" then
         watchMobCatalog()
+        watchBossCatalog()
         ScheduleListRefresh()
     end
 end)
@@ -374,6 +465,25 @@ local function makePlayerCallbacks(list)
     return cbs
 end
 
+-- Helper: bangun per-row callbacks untuk boss multi-select.
+-- Boss dan mob memakai State.TargetList yang sama agar auto farm dapat memilih
+-- keduanya sekaligus.
+local function makeBossCallbacks(list)
+    local cbs = {}
+    for i, name in ipairs(list) do
+        local n = name
+        cbs[i] = function(val)
+            if val then
+                if not table.find(State.TargetList, n) then table.insert(State.TargetList, n) end
+            else
+                local idx = table.find(State.TargetList, n)
+                if idx then table.remove(State.TargetList, idx) end
+            end
+        end
+    end
+    return cbs
+end
+
 -- Translation stubs (diperlukan oleh ui_core.lua)
 local function noop(...) end
 H.RegisterTranslation   = noop
@@ -398,14 +508,17 @@ H.State           = State
 H.TargetService   = TargetService
 H.CachedFolders   = CachedFolders
 H.LiveMobFolder   = function() return MobCatalogFolder end
+H.LiveBossFolder  = function() return BossCatalogFolder end
 H.allGrimoire     = allGrimoire
 H.allSkillKeys    = allSkillKeys
 H.UpdateLists        = UpdateLists
 H.makeNPCCallbacks   = makeNPCCallbacks
+H.makeBossCallbacks  = makeBossCallbacks
 H.makePlayerCallbacks= makePlayerCallbacks
 
 -- Populate lists sebelum UI dibangun
 watchMobCatalog()
+watchBossCatalog()
 TargetService.UpdateCache()
 UpdateLists()
 

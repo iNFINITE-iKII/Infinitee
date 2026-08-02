@@ -7,4 +7,4 @@ The live config scanner treats `ReplicatedStorage.Configs` discovery as a read-o
 
 **Why:** Configs can contain ModuleScripts, Folders, or PackageLinks. Full discovery is useful for adapting to game updates, but blindly requiring arbitrary modules without `pcall` makes updates fragile and can trigger unintended module behavior.
 
-**How to apply:** Keep scanner output separate from remote/action logic; use the registry for readers and UI, retain Workspace scanning as a fallback, and use `Scan({ReadModules=false})` when only object metadata is needed. Use `MaxDepth` and `MaxEntries` to keep console output manageable.
+**How to apply:** Keep scanner output separate from remote/action logic; use the registry for readers and UI, retain Workspace scanning as a fallback, and use `Scan({ReadModules=false})` when only object metadata is needed. Use `MaxDepth` and `MaxEntries` to keep console output manageable. Keep `Mobs.SuperBosses` as a separate catalog and exclude its runtime models from the regular mob list.
