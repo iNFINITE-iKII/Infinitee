@@ -4,3 +4,4 @@
 - [Premium ticket diagnostics](premium-ticket-diagnostics.md) — ticket failures need a stage label because the generic interaction fallback hides Discord-vs-database causes.
 - [Live config scanner](live-config-scanner.md) — discover Res* objects read-only; whitelist ModuleScripts and report Folder/PackageLink or require failures explicitly.
 - [UI input compatibility](ui-input-compatibility.md) — normalize legacy and explicit CreateInputUI argument forms at the shared UI boundary.
+- [Railway npm registry](railway-npm-registry.md) — lockfiles generated in Replit can contain unreachable internal registry URLs; verify clean public-registry builds before pushing.
