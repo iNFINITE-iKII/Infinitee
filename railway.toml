@@ -1,5 +1,5 @@
 [build]
-buildCommand = "cd bot && npm install --include=dev --package-lock=false --registry=https://registry.npmjs.org && npm run build"
+buildCommand = "cd bot && npm install --include=dev --registry=https://registry.npmjs.org && npm run build"
 
 [deploy]
 startCommand = "cd bot && npm start"
