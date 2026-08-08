@@ -696,11 +696,13 @@ startWithDRM(function(key, hwid)
     load("core.lua")             -- Services dan preferensi startup GUI
     load("maid.lua")             -- Maid & RuntimeMaid
     load("notify.lua")           -- CustomNotify
+    load("config_system.lua")    -- Simpan/muat profile visual
     load("translate.lua")        -- Sistem translate multi-bahasa
 
     -- UI — hanya tiga tab visual yang dipertahankan
     load("ui/ui_core.lua")       -- S11-S16: VisualConfig, builder, window, tab system, BG effects
     load("ui/tab_visual.lua")    -- Tab: Tampilan, Font, Efek + Translate
+    load("ui/tab_profile.lua")   -- Tab: Profil
 
     load("ui_sync.lua")          -- Sinkronisasi kontrol visual
     load("init.lua")             -- Intro animation, RGB loop, inisialisasi akhir

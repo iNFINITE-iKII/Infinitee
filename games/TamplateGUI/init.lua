@@ -302,6 +302,10 @@ task.defer(function()
     end)
 end)
 
+H.ConfigSystem.ExecuteAutoLoad(function()
+    SyncAllVisualUI()
+end)
+
 -- Export ke Hub (opsional, untuk akses eksternal jika dibutuhkan)
 --------------------------------------------------------------------------------
 H.ToggleGUI         = ToggleGUI
