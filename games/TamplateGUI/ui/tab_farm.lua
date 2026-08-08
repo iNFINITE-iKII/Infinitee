@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// ui/tab_farm.lua — S17 Tab 1: Main Farm
 --------------------------------------------------------------------------------
-local H               = getgenv().Hub
+local H               = getgenv().XiFilTemplateGUI_Hub
+local _G              = getgenv().XiFilTemplateGUI_G
 local EngineConfig    = H.EngineConfig
 local WORLD_NAMES     = H.WORLD_NAMES
 local POSITION_MODES  = H.POSITION_MODES

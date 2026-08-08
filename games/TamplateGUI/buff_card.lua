@@ -13,7 +13,8 @@
 --      & "Base Attack V") → pilih numeral tertinggi
 --   4. Numeral sama → pilih yang pertama di-toggle (urutan di CARD_NAMES)
 --------------------------------------------------------------------------------
-local H                = getgenv().Hub
+local H                = getgenv().XiFilTemplateGUI_Hub
+local _G               = getgenv().XiFilTemplateGUI_G
 local EngineConfig     = H.EngineConfig
 local WorldBonusCardRE = H.WorldBonusCardRE
 local Services         = H.Services

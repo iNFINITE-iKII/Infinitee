@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// ui/tab_profile.lua — S19 Tab 3: Profile / Config System
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local EngineConfig = H.EngineConfig
 local ConfigSystem = H.ConfigSystem
 local Services     = H.Services
@@ -73,8 +74,8 @@ _G.AntiAFKToggle = CreateToggleUI(ProfilePage, "🛡️ Anti-AFK", EngineConfig.
     if state then
         -- Proaktif: simulasi input tiap 14 menit (sebelum batas idle 20 menit)
         -- Cek setiap 1 detik agar bisa berhenti cepat saat dimatikan
-        if not getgenv().AntiAFK_Loop then
-            getgenv().AntiAFK_Loop = task.spawn(function()
+        if not getgenv().XiFilTemplateGUI_AntiAFK_Loop then
+            getgenv().XiFilTemplateGUI_AntiAFK_Loop = task.spawn(function()
                 local elapsed = 0
                 while EngineConfig.AntiAFKActive do
                     task.wait(1)
@@ -84,13 +85,13 @@ _G.AntiAFKToggle = CreateToggleUI(ProfilePage, "🛡️ Anti-AFK", EngineConfig.
                         pcall(function() VU:CaptureController(); VU:ClickButton2(Vector2.new()) end)
                     end
                 end
-                getgenv().AntiAFK_Loop = nil
+                getgenv().XiFilTemplateGUI_AntiAFK_Loop = nil
             end)
         end
         CustomNotify("GUARD","Anti-AFK aktif.",2)
     else
         -- Stop loop (flag cukup; loop cek tiap 1d)
-        getgenv().AntiAFK_Loop = nil
+        getgenv().XiFilTemplateGUI_AntiAFK_Loop = nil
         CustomNotify("GUARD","Anti-AFK nonaktif.",2)
     end
 end, "lblAntiAFK")

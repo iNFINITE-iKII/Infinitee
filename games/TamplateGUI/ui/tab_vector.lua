@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// ui/tab_vector.lua — S18 Tab 2: Vector Config
 --------------------------------------------------------------------------------
-local H              = getgenv().Hub
+local H              = getgenv().XiFilTemplateGUI_Hub
+local _G             = getgenv().XiFilTemplateGUI_G
 local EngineConfig   = H.EngineConfig
 local GameLists      = H.GameLists
 local CustomNotify   = H.CustomNotify

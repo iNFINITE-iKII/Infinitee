@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// ui/tab_util.lua — Tab Utilitas: Redeem Code, Lottery, Reward, Race Reroll
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local EngineConfig = H.EngineConfig
 local Services     = H.Services
 local LocalPlayer  = H.LocalPlayer

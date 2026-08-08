@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// navigation.lua — S07 Navigation Engine
 --------------------------------------------------------------------------------
-local H               = getgenv().Hub
+local H               = getgenv().XiFilTemplateGUI_Hub
+local _G              = getgenv().XiFilTemplateGUI_G
 local EngineConfig    = H.EngineConfig
 local WORLD_INDEX     = H.WORLD_INDEX
 local Workspace       = H.Workspace

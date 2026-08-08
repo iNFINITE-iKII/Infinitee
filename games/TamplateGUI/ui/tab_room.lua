@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// ui/tab_room.lua — S21 Tab 5: Room Hub
 --------------------------------------------------------------------------------
-local H                   = getgenv().Hub
+local H                   = getgenv().XiFilTemplateGUI_Hub
+local _G                  = getgenv().XiFilTemplateGUI_G
 local EngineConfig        = H.EngineConfig
 local Services            = H.Services
 local LocalPlayer         = H.LocalPlayer

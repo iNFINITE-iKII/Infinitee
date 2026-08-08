@@ -1,10 +1,11 @@
 --------------------------------------------------------------------------------
 --// auto_forge.lua — Auto Forge V6 Engine
--- Ported dari V6 monolithic script ke arsitektur modul ironsoulv1.
+-- Ported dari V6 monolithic script ke arsitektur modul TemplateGUI.
 -- Menyediakan sistem forge otomatis: pilih resep, komposisi ore, jalankan batch.
 -- Mendukung Target Mode: simpan hasil yang cocok dengan profil, buang yang tidak.
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local EngineConfig = H.EngineConfig
 local Services     = H.Services
 local LocalPlayer  = H.LocalPlayer

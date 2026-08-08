@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// ui/tab_visual.lua — S24 Tampilan + S25 Font & Bentuk + S26 Efek & Animasi
 --------------------------------------------------------------------------------
-local H               = getgenv().Hub
+local H               = getgenv().XiFilTemplateGUI_Hub
+local _G              = getgenv().XiFilTemplateGUI_G
 local EngineConfig    = H.EngineConfig
 local VisualConfig    = H.VisualConfig
 local Services        = H.Services

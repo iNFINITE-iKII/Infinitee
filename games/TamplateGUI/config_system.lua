@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 --// config_system.lua — S05 Config System
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
 local Services     = H.Services
 local EngineConfig = H.EngineConfig
 local CustomNotify = H.CustomNotify
@@ -9,7 +9,7 @@ local CustomNotify = H.CustomNotify
 -- [S05] CONFIG SYSTEM
 --------------------------------------------------------------------------------
 local HttpService = Services.HttpService
-local FOLDER_NAME = "XiFilHub_Configs"
+local FOLDER_NAME = "XiFilTemplateGUI_Configs"
 if not isfolder(FOLDER_NAME) then pcall(makefolder,FOLDER_NAME) end
 
 local ConfigSystem = {}

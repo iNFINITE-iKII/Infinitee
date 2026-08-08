@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// ui/tab_autobuy.lua — S22 Tab 6: Auto Buy
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local EngineConfig = H.EngineConfig
 local Services     = H.Services
 local LocalPlayer  = H.LocalPlayer
@@ -14,7 +15,7 @@ local GetBondShopCatalog           = H.GetBondShopCatalog    -- catalog Bond via
 local GetSeasonShopCatalog         = H.GetSeasonShopCatalog  -- catalog Season via config module
 local GetItemDisplayName           = H.GetItemDisplayName    -- nama visual dari ItemId
 local HttpService  = H.HttpService
-local FOLDER_NAME  = H.FOLDER_NAME or "XiFilHub_Configs"
+local FOLDER_NAME  = H.FOLDER_NAME or "XiFilTemplateGUI_Configs"
 local CreateTab      = H.CreateTab
 local CreateSection  = H.CreateSection
 local CreateToggleUI = H.CreateToggleUI

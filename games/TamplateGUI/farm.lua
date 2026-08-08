@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// farm.lua — S08 Farm Loop + S09 Background Loops
 --------------------------------------------------------------------------------
-local H                     = getgenv().Hub
+local H                     = getgenv().XiFilTemplateGUI_Hub
+local _G                    = getgenv().XiFilTemplateGUI_G
 local EngineConfig          = H.EngineConfig
 local LocalPlayer           = H.LocalPlayer
 local Workspace             = H.Workspace

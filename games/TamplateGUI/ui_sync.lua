@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// ui_sync.lua — S27 Sync All Visual UI
 --------------------------------------------------------------------------------
-local H              = getgenv().Hub
+local H              = getgenv().XiFilTemplateGUI_Hub
+local _G             = getgenv().XiFilTemplateGUI_G
 local VisualConfig   = H.VisualConfig
 local EngineConfig   = H.EngineConfig
 local ThemeRegistry  = H.ThemeRegistry

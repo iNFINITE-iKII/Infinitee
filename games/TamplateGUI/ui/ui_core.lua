@@ -6,7 +6,8 @@
 --//                  S15 Tab System
 --//                  S16 Background Effects + Config Patch (S16b)
 --------------------------------------------------------------------------------
-local H                  = getgenv().Hub
+local H                  = getgenv().XiFilTemplateGUI_Hub
+local _G                 = getgenv().XiFilTemplateGUI_G
 local LocalPlayer        = H.LocalPlayer
 local TweenService       = H.TweenService
 local Services           = H.Services
@@ -309,7 +310,7 @@ end
 local SafeParent = GetSafeParent()
 
 local GuiRoot = Instance.new("ScreenGui", SafeParent)
-GuiRoot.Name="XiFilHub_Modern"; GuiRoot.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+GuiRoot.Name="XiFilTemplateGUI_Modern"; GuiRoot.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 GuiRoot.ResetOnSpawn=false; GuiRoot.DisplayOrder=999990
 GuiRoot.IgnoreGuiInset = true
 RuntimeMaid:GiveTask(GuiRoot)

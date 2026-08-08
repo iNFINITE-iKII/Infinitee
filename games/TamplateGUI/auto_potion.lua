@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 --// auto_potion.lua — Auto Potion System
--- Ported dari V6 script, disesuaikan dengan arsitektur ironsoulv1.
+-- Ported dari V6 script, disesuaikan dengan arsitektur TemplateGUI.
 -- Secara otomatis menggunakan potion buff yang dipilih user saat buff habis.
 --
 -- Alur:
@@ -9,7 +9,8 @@
 --   3. StartScanner   — loop 15 detik sebagai fallback
 --   4. Saat buff habis / masuk dungeon → Scan → Enqueue → UseOne
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local EngineConfig = H.EngineConfig
 local Services     = H.Services
 local LocalPlayer  = H.LocalPlayer

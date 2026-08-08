@@ -2,9 +2,10 @@
 --// ui/tab_forge.lua — Tab: Auto Forge V6
 -- Menampilkan kontrol Auto Forge: resep, komposisi ore, craft count,
 -- start/stop, dan Target Mode dengan manajemen profil.
--- Engine: games/ironsoulv1/auto_forge.lua
+-- Engine: games/TamplateGUI/auto_forge.lua
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local EngineConfig = H.EngineConfig
 local AutoForge    = H.AutoForge
 local CustomNotify = H.CustomNotify

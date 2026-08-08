@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// ui/tab_sell.lua — S20 Tab 4: Sell
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local EngineConfig = H.EngineConfig
 local Services     = H.Services
 local LocalPlayer  = H.LocalPlayer

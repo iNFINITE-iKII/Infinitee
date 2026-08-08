@@ -3,7 +3,8 @@
 -- Menampilkan daftar buff potion yang bisa dipilih user untuk dipakai otomatis.
 -- Bergantung pada auto_potion.lua yang sudah di-load lebih dulu.
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local EngineConfig = H.EngineConfig
 local AutoPotion   = H.AutoPotion
 local CustomNotify = H.CustomNotify

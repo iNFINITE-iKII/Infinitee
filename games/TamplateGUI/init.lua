@@ -4,7 +4,8 @@
 --//            S30 RGB Rainbow Loop
 --//            S31 Inisialisasi Akhir
 --------------------------------------------------------------------------------
-local H               = getgenv().Hub
+local H               = getgenv().XiFilTemplateGUI_Hub
+local _G              = getgenv().XiFilTemplateGUI_G
 local VisualConfig    = H.VisualConfig
 local EngineConfig    = H.EngineConfig
 local ThemeRegistry   = H.ThemeRegistry
@@ -35,7 +36,7 @@ local function setRgbHue(v) H.SetRgbHue(v) end
 -- [S28] FLOATING TOGGLE BUTTON (Premium)
 --------------------------------------------------------------------------------
 local ToggleGuiBtn = Instance.new("ScreenGui", SafeParent)
-ToggleGuiBtn.Name = "XiFil_Toggle"; ToggleGuiBtn.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ToggleGuiBtn.Name = "XiFilTemplateGUI_Toggle"; ToggleGuiBtn.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ToggleGuiBtn.ResetOnSpawn = false; ToggleGuiBtn.DisplayOrder = 999988
 RuntimeMaid:GiveTask(ToggleGuiBtn)
 
@@ -198,7 +199,7 @@ end)
 --------------------------------------------------------------------------------
 local function PlayIntroAnimation()
     local IntroGui = Instance.new("ScreenGui", SafeParent)
-    IntroGui.Name = "XiFil_Intro"; IntroGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    IntroGui.Name = "XiFilTemplateGUI_Intro"; IntroGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     IntroGui.ResetOnSpawn = false; IntroGui.DisplayOrder = 9999999; IntroGui.IgnoreGuiInset = true
 
     local Overlay = Instance.new("Frame", IntroGui)

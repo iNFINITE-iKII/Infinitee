@@ -4,7 +4,8 @@
 -- Menggunakan ProximityPrompt bypass (fireproximityprompt).
 -- NPC list berdasarkan scan: Sec Island 1 & Sec Island 2
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local Services     = H.Services
 local LocalPlayer  = H.LocalPlayer
 local CombatEngine = H.CombatEngine

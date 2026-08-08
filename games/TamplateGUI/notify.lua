@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 --// notify.lua — S04 Notification Engine
 --------------------------------------------------------------------------------
-local H           = getgenv().Hub
+local H           = getgenv().XiFilTemplateGUI_Hub
 local LocalPlayer = H.LocalPlayer
 local TweenService = H.TweenService
 local RuntimeMaid  = H.RuntimeMaid
@@ -13,7 +13,7 @@ local RuntimeMaid  = H.RuntimeMaid
 local NotifPlayerGui = LocalPlayer:WaitForChild("PlayerGui", 15) or LocalPlayer:FindFirstChild("PlayerGui")
 
 local NotifGui = Instance.new("ScreenGui")
-NotifGui.Name="XiFil_Notif"; NotifGui.Parent=NotifPlayerGui
+NotifGui.Name="XiFilTemplateGUI_Notif"; NotifGui.Parent=NotifPlayerGui
 NotifGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; NotifGui.ResetOnSpawn=false
 RuntimeMaid:GiveTask(NotifGui)
 
@@ -67,4 +67,4 @@ end
 --------------------------------------------------------------------------------
 H.CustomNotify = CustomNotify
 H.NC           = NC    -- notification container (dibutuhkan ui_core S16b patch)
-getgenv().XiFil_CustomNotify = CustomNotify   -- backward-compat
+getgenv().XiFilTemplateGUI_Notify = CustomNotify

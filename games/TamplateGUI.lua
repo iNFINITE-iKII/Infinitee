@@ -5,8 +5,8 @@
 --------------------------------------------------------------------------------
 
 local SERVER_URL  = "https://xifil-hub-production.up.railway.app"
-local KEY_FILE    = "XiFilPro_Configs/license.key"
-local FOLDER_NAME = "XiFilPro_Configs"
+local KEY_FILE    = "XiFilTemplateGUI_Configs/license.key"
+local FOLDER_NAME = "XiFilTemplateGUI_Configs"
 
 --------------------------------------------------------------------------------
 --// HWID
@@ -109,11 +109,11 @@ end
 local function promptKey(callback)
     local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-    local existing = PlayerGui:FindFirstChild("XiFil_KeyPrompt")
+    local existing = PlayerGui:FindFirstChild("XiFilTemplateGUI_KeyPrompt")
     if existing then existing:Destroy() end
 
     local gui = Instance.new("ScreenGui")
-    gui.Name            = "XiFil_KeyPrompt"
+    gui.Name            = "XiFilTemplateGUI_KeyPrompt"
     gui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
     gui.ResetOnSpawn    = false
     gui.IgnoreGuiInset  = true
@@ -648,16 +648,17 @@ end
 startWithDRM(function(key, hwid)
 
     -- Anti-duplicate guard
-    if getgenv().XiFilHub_Executed then
-        if getgenv().XiFil_CustomNotify then
-            getgenv().XiFil_CustomNotify("⚠️ XIFIL HUB", "Script sudah berjalan!", 4)
+    if getgenv().XiFilTemplateGUI_Executed then
+        if getgenv().XiFilTemplateGUI_Notify then
+            getgenv().XiFilTemplateGUI_Notify("⚠️ XIFIL HUB", "Script sudah berjalan!", 4)
         end
         return
     end
-    getgenv().XiFilHub_Executed = true
+    getgenv().XiFilTemplateGUI_Executed = true
 
-    -- Inisialisasi shared state container
-    getgenv().Hub = {}
+    -- Inisialisasi state container khusus TemplateGUI
+    getgenv().XiFilTemplateGUI_Hub = {}
+    getgenv().XiFilTemplateGUI_G = {}
 
     ----------------------------------------------------------------------------
     -- URL base modul (ambil langsung dari repo Beta)

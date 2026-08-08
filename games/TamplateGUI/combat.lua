@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 --// combat.lua — S06 Combat Engine & Helper Posisi
 --------------------------------------------------------------------------------
-local H            = getgenv().Hub
+local H            = getgenv().XiFilTemplateGUI_Hub
+local _G           = getgenv().XiFilTemplateGUI_G
 local EngineConfig = H.EngineConfig
 local LocalPlayer  = H.LocalPlayer
 local Workspace    = H.Workspace
