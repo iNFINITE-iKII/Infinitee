@@ -1,8 +1,8 @@
 --[[
     IronSoul GUI Template
-    Layout mengikuti GUI IronSoul V1 pada screenshot:
-    panel tengah compact, header XIFIL HUB, tab horizontal,
-    section cyan, toggle gelap, serta Floating Button.
+    Copied structure from IronSoul V1 / Clover Origins UI:
+    MainWindow, TopBar, macOS controls, vertical SideBar,
+    ContentFrame, tab buttons with cyan pills, and XIFIL HUB toggle.
 ]]
 
 local Players = game:GetService("Players")
@@ -17,462 +17,439 @@ local playerGui = player:WaitForChild("PlayerGui")
 local oldGui = playerGui:FindFirstChild(GUI_NAME)
 if oldGui then oldGui:Destroy() end
 
-local state = {
-    activeTab = "Tampilan",
-    visible = true,
-    theme = "Cyan",
-    font = "Gotham",
-    fontSize = 11,
-    transparency = 0.04,
-    rounded = true,
-    glow = true,
-    particles = false,
-    animations = true,
-    backgroundEffect = "None",
+local VisualConfig = {
+    GuiWidth = 720,
+    GuiHeight = 470,
+    GuiMinWidth = 520,
+    GuiMinHeight = 360,
+    Font = Enum.Font.Gotham,
+    FontSize = 10,
+    Animations = true,
 }
 
-local themes = {
-    Cyan = {
-        accent = Color3.fromRGB(0, 220, 255),
-        accentDark = Color3.fromRGB(0, 92, 112),
-        background = Color3.fromRGB(9, 10, 16),
-        panel = Color3.fromRGB(15, 16, 24),
-        surface = Color3.fromRGB(20, 21, 31),
-        row = Color3.fromRGB(24, 25, 36),
-        muted = Color3.fromRGB(126, 133, 151),
-    },
-    Violet = {
-        accent = Color3.fromRGB(168, 112, 255),
-        accentDark = Color3.fromRGB(88, 48, 145),
-        background = Color3.fromRGB(12, 9, 20),
-        panel = Color3.fromRGB(23, 17, 34),
-        surface = Color3.fromRGB(31, 23, 46),
-        row = Color3.fromRGB(42, 29, 59),
-        muted = Color3.fromRGB(145, 132, 167),
-    },
-    Ember = {
-        accent = Color3.fromRGB(255, 148, 64),
-        accentDark = Color3.fromRGB(145, 65, 25),
-        background = Color3.fromRGB(20, 10, 7),
-        panel = Color3.fromRGB(34, 18, 13),
-        surface = Color3.fromRGB(45, 24, 17),
-        row = Color3.fromRGB(58, 29, 19),
-        muted = Color3.fromRGB(169, 139, 122),
-    },
+local Theme = {
+    Primary = Color3.fromRGB(0, 220, 255),
+    Main = Color3.fromRGB(13, 13, 20),
+    Top = Color3.fromRGB(18, 18, 30),
+    Side = Color3.fromRGB(16, 16, 26),
+    SideButton = Color3.fromRGB(22, 22, 36),
+    SideActive = Color3.fromRGB(28, 28, 48),
+    Text = Color3.fromRGB(255, 255, 255),
+    Muted = Color3.fromRGB(140, 140, 165),
 }
 
-local fonts = {
-    Gotham = Enum.Font.Gotham,
-    SourceSans = Enum.Font.SourceSans,
-    Code = Enum.Font.Code,
-    Arcade = Enum.Font.Arcade,
-    Fantasy = Enum.Font.Fantasy,
-}
+local GuiRoot = Instance.new("ScreenGui")
+GuiRoot.Name = GUI_NAME
+GuiRoot.ResetOnSpawn = false
+GuiRoot.IgnoreGuiInset = true
+GuiRoot.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+GuiRoot.Parent = playerGui
 
-local function theme()
-    return themes[state.theme] or themes.Cyan
-end
-
-local gui = Instance.new("ScreenGui")
-gui.Name = GUI_NAME
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = playerGui
-
-local refs = {
+local ThemeRegistry = {
     panels = {},
-    surfaces = {},
-    accentObjects = {},
-    accentTexts = {},
-    labels = {},
-    buttons = {},
-    corners = {},
+    fills = {},
+    texts = {},
     strokes = {},
+    indicators = {},
+    allLabels = {},
+    corners = {},
 }
 
-local function remember(list, object)
+local function register(list, object)
     table.insert(list, object)
     return object
 end
 
-local function rounded(object, radius)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or 6)
-    corner.Parent = object
-    remember(refs.corners, corner)
-    return corner
+local function corner(parent, radius)
+    local object = Instance.new("UICorner")
+    object.CornerRadius = UDim.new(0, radius)
+    object.Parent = parent
+    register(ThemeRegistry.corners, object)
+    return object
 end
 
-local function outline(object, color, transparency, thickness)
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = color or Color3.new(1, 1, 1)
-    stroke.Transparency = transparency or 0
-    stroke.Thickness = thickness or 1
-    stroke.Parent = object
-    remember(refs.strokes, stroke)
-    return stroke
-end
-
-local function makeFrame(parent, name, size, position)
+local function frame(parent, size, position, color, zIndex)
     local object = Instance.new("Frame")
-    object.Name = name
     object.Size = size
     object.Position = position or UDim2.fromOffset(0, 0)
+    object.BackgroundColor3 = color or Color3.new(1, 1, 1)
     object.BorderSizePixel = 0
+    object.ZIndex = zIndex or 1
     object.Parent = parent
     return object
 end
 
-local function makeLabel(parent, text, size, position, textSize, color)
+local function label(parent, text, size, position, textSize, color, zIndex)
     local object = Instance.new("TextLabel")
-    object.Name = "Label"
     object.BackgroundTransparency = 1
     object.Size = size
     object.Position = position or UDim2.fromOffset(0, 0)
     object.Text = text
-    object.TextSize = textSize or state.fontSize
-    object.TextColor3 = color or Color3.fromRGB(230, 233, 241)
+    object.TextColor3 = color or Theme.Text
+    object.TextSize = textSize or VisualConfig.FontSize
+    object.Font = VisualConfig.Font
     object.TextXAlignment = Enum.TextXAlignment.Left
     object.TextYAlignment = Enum.TextYAlignment.Center
-    object.Font = fonts[state.font]
+    object.ZIndex = zIndex or 4
     object.Parent = parent
-    remember(refs.labels, object)
+    register(ThemeRegistry.texts, object)
+    register(ThemeRegistry.allLabels, object)
     return object
 end
 
-local function makeButton(parent, text, size, position)
+local function button(parent, text, size, position, zIndex)
     local object = Instance.new("TextButton")
-    object.Name = "Button"
+    object.BackgroundColor3 = Theme.SideButton
     object.Size = size
     object.Position = position or UDim2.fromOffset(0, 0)
-    object.BorderSizePixel = 0
-    object.AutoButtonColor = false
     object.Text = text
-    object.TextSize = state.fontSize
-    object.TextColor3 = Color3.fromRGB(220, 225, 235)
-    object.Font = fonts[state.font]
+    object.TextColor3 = Theme.Muted
+    object.TextSize = VisualConfig.FontSize
+    object.Font = VisualConfig.Font
+    object.AutoButtonColor = false
+    object.BorderSizePixel = 0
+    object.ZIndex = zIndex or 4
     object.Parent = parent
-    remember(refs.buttons, object)
+    register(ThemeRegistry.allLabels, object)
+    return object
+end
+
+local function stroke(parent, color, transparency, thickness)
+    local object = Instance.new("UIStroke")
+    object.Color = color
+    object.Transparency = transparency or 0
+    object.Thickness = thickness or 1
+    object.Parent = parent
+    register(ThemeRegistry.strokes, object)
     return object
 end
 
 local function animate(object, properties, duration)
-    if not state.animations then
+    if not VisualConfig.Animations then
         for property, value in pairs(properties) do object[property] = value end
         return
     end
-    TweenService:Create(object, TweenInfo.new(duration or 0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), properties):Play()
+    TweenService:Create(object, TweenInfo.new(duration or 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), properties):Play()
 end
 
-local background = makeFrame(gui, "Background", UDim2.fromScale(1, 1))
-background.BackgroundTransparency = 1
-background.ZIndex = 0
+local MainWindow = frame(GuiRoot, UDim2.fromOffset(VisualConfig.GuiWidth, VisualConfig.GuiHeight), UDim2.new(0.5, -VisualConfig.GuiWidth / 2, 0.5, -VisualConfig.GuiHeight / 2), Theme.Main, 2)
+MainWindow.Visible = true
+MainWindow.ClipsDescendants = true
+register(ThemeRegistry.panels, MainWindow)
+corner(MainWindow, 12)
+stroke(MainWindow, Theme.Primary, 0.78, 1)
 
-local main = makeFrame(gui, "MainWindow", UDim2.fromOffset(394, 310), UDim2.new(0.5, -197, 0.5, -155))
-main.BackgroundColor3 = theme().background
-main.BackgroundTransparency = state.transparency
-main.ZIndex = 5
-remember(refs.panels, main)
-rounded(main, 10)
-outline(main, theme().accentDark, 0.12, 1)
+local TopBar = frame(MainWindow, UDim2.new(1, 0, 0, 46), nil, Theme.Top, 3)
+register(ThemeRegistry.panels, TopBar)
+corner(TopBar, 12)
+local topFix = frame(TopBar, UDim2.new(1, 0, 0, 12), UDim2.new(0, 0, 1, -12), Theme.Top, 3)
+local topAccent = frame(TopBar, UDim2.new(1, 0, 0, 1), UDim2.new(0, 0, 1, -1), Theme.Primary, 4)
+topAccent.BackgroundTransparency = 0.6
+register(ThemeRegistry.fills, topAccent)
 
-local header = makeFrame(main, "Header", UDim2.new(1, 0, 0, 45))
-header.BackgroundColor3 = theme().panel
-header.ZIndex = 6
-remember(refs.panels, header)
-rounded(header, 10)
+local Title = label(TopBar, "XIFIL HUB  //  IRON SOUL V7", UDim2.new(0.6, 0, 1, 0), UDim2.fromOffset(16, 0), 13, Theme.Text, 4)
+Title.Font = Enum.Font.GothamBlack
+Title.TextColor3 = Theme.Primary
 
-local title = makeLabel(header, "XIFIL HUB", UDim2.fromOffset(100, 22), UDim2.fromOffset(14, 7), 14, theme().accent)
-title.Font = Enum.Font.GothamBold
-remember(refs.accentTexts, title)
-local version = makeLabel(header, "// IRON SOUL V7", UDim2.fromOffset(95, 15), UDim2.fromOffset(83, 12), 7, Color3.fromRGB(135, 145, 164))
-version.Font = Enum.Font.Code
-
-local trafficColors = {
-    Color3.fromRGB(255, 83, 97),
-    Color3.fromRGB(255, 184, 30),
-    Color3.fromRGB(0, 220, 72),
-}
-for index, color in ipairs(trafficColors) do
-    local dot = makeButton(header, "", UDim2.fromOffset(15, 15), UDim2.new(1, -18 - ((index - 1) * 24), 0, 14))
-    dot.BackgroundColor3 = color
-    dot.ZIndex = 8
-    rounded(dot, 9)
+local WindowControls = frame(TopBar, UDim2.fromOffset(84, 46), UDim2.new(1, -90, 0, 0), nil, 5)
+WindowControls.BackgroundTransparency = 1
+local controlButtons = {}
+local function createMacButton(xOffset, color, text)
+    local wrap = button(WindowControls, "", UDim2.fromOffset(22, 22), UDim2.new(0, xOffset, 0.5, 0), 6)
+    wrap.AnchorPoint = Vector2.new(0, 0.5)
+    wrap.BackgroundTransparency = 1
+    local dot = frame(wrap, UDim2.fromOffset(15, 15), UDim2.new(0.5, 0, 0.5, 0), color, 7)
+    dot.AnchorPoint = Vector2.new(0.5, 0.5)
+    corner(dot, 8)
+    local icon = label(wrap, text, UDim2.fromScale(1, 1), nil, 12, Color3.fromRGB(18, 18, 25), 8)
+    icon.TextXAlignment = Enum.TextXAlignment.Center
+    icon.Visible = false
+    wrap.MouseEnter:Connect(function() icon.Visible = true end)
+    wrap.MouseLeave:Connect(function() icon.Visible = false end)
+    table.insert(controlButtons, wrap)
+    return wrap
 end
+local BtnClose = createMacButton(4, Color3.fromRGB(255, 96, 88), "×")
+local BtnMin = createMacButton(30, Color3.fromRGB(255, 189, 68), "−")
+local BtnMax = createMacButton(56, Color3.fromRGB(40, 200, 64), "+")
 
-local tabsBar = makeFrame(main, "TabsBar", UDim2.new(1, -16, 0, 40), UDim2.fromOffset(8, 49))
-tabsBar.BackgroundColor3 = theme().panel
-tabsBar.ZIndex = 6
-rounded(tabsBar, 6)
-local tabs = {"Tampilan", "Font", "Efek"}
-local tabButtons = {}
-local pages = {}
+local isMinimized = false
+local normalSize = MainWindow.Size
+BtnClose.MouseButton1Click:Connect(function() MainWindow.Visible = false end)
+BtnMin.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        normalSize = MainWindow.Size
+        animate(MainWindow, {Size = UDim2.new(0, VisualConfig.GuiWidth, 0, 46)}, 0.25)
+    else
+        animate(MainWindow, {Size = normalSize}, 0.25)
+    end
+end)
+BtnMax.MouseButton1Click:Connect(function()
+    local maximized = MainWindow:GetAttribute("Maximized")
+    if maximized then
+        MainWindow:SetAttribute("Maximized", false)
+        animate(MainWindow, {Size = normalSize, Position = UDim2.new(0.5, -VisualConfig.GuiWidth / 2, 0.5, -VisualConfig.GuiHeight / 2)}, 0.25)
+    else
+        normalSize = MainWindow.Size
+        MainWindow:SetAttribute("Maximized", true)
+        animate(MainWindow, {Size = UDim2.new(1, -30, 1, -30), Position = UDim2.fromOffset(15, 15)}, 0.25)
+    end
+end)
 
-for index, tabName in ipairs(tabs) do
-    local tab = makeButton(tabsBar, tabName, UDim2.new(1 / #tabs, -5, 1, -8), UDim2.new((index - 1) / #tabs, 3, 0, 4))
-    tab.TextSize = 9
-    tab.TextXAlignment = Enum.TextXAlignment.Center
-    tab.ZIndex = 8
-    rounded(tab, 4)
-    tabButtons[tabName] = tab
-end
+local SideBar = Instance.new("ScrollingFrame")
+SideBar.Name = "SideBar"
+SideBar.BackgroundColor3 = Theme.Side
+SideBar.Position = UDim2.new(0, 0, 0, 46)
+SideBar.Size = UDim2.new(0, 184, 1, -46)
+SideBar.BorderSizePixel = 0
+SideBar.ZIndex = 3
+SideBar.ScrollBarThickness = 2
+SideBar.ScrollBarImageColor3 = Theme.Primary
+SideBar.ScrollingDirection = Enum.ScrollingDirection.Y
+SideBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+SideBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+SideBar.Parent = MainWindow
+register(ThemeRegistry.panels, SideBar)
 
-local content = makeFrame(main, "Content", UDim2.new(1, -16, 1, -98), UDim2.fromOffset(8, 94))
-content.BackgroundColor3 = theme().background
-content.ZIndex = 6
-rounded(content, 6)
+local sideLayout = Instance.new("UIListLayout")
+sideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+sideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+sideLayout.Padding = UDim.new(0, 5)
+sideLayout.Parent = SideBar
+local sidePadding = Instance.new("UIPadding")
+sidePadding.PaddingTop = UDim.new(0, 38)
+sidePadding.PaddingLeft = UDim.new(0, 10)
+sidePadding.PaddingRight = UDim.new(0, 10)
+sidePadding.Parent = SideBar
 
-local function makePage(name)
-    local page = makeFrame(content, name .. "Page", UDim2.fromScale(1, 1))
+local content = frame(MainWindow, UDim2.new(1, -194, 1, -56), UDim2.fromOffset(194, 46), Theme.Main, 3)
+content.BackgroundTransparency = 0
+
+local avatar = frame(content, UDim2.fromOffset(54, 54), UDim2.new(0, 40, 0, 18), Color3.fromRGB(25, 28, 40), 5)
+corner(avatar, 12)
+local avatarStroke = stroke(avatar, Theme.Primary, 0.1, 2)
+local avatarText = label(avatar, "IS", UDim2.fromScale(1, 1), nil, 14, Theme.Primary, 6)
+avatarText.TextXAlignment = Enum.TextXAlignment.Center
+avatarText.Font = Enum.Font.GothamBlack
+
+local tabRegistry = {}
+local activeTab = nil
+
+local function createPage(tabName)
+    local page = Instance.new("ScrollingFrame")
+    page.Name = tabName .. "Page"
     page.BackgroundTransparency = 1
+    page.Size = UDim2.new(1, -20, 1, -92)
+    page.Position = UDim2.fromOffset(10, 84)
+    page.ScrollBarThickness = 3
+    page.ScrollBarImageColor3 = Theme.Primary
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    page.BorderSizePixel = 0
+    page.ZIndex = 4
     page.Visible = false
-    page.ZIndex = 7
-    pages[name] = page
+    page.Parent = content
+    local layout = Instance.new("UIListLayout")
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 6)
+    layout.Parent = page
     return page
 end
 
-local function sectionTitle(parent, text, y)
-    local line = makeFrame(parent, "SectionLine", UDim2.new(1, -22, 0, 1), UDim2.fromOffset(11, y + 12))
-    line.BackgroundColor3 = theme().accentDark
-    remember(refs.accentObjects, line)
-    local dot = makeFrame(parent, "SectionDot", UDim2.fromOffset(5, 5), UDim2.fromOffset(9, y + 10))
-    dot.BackgroundColor3 = theme().accent
-    rounded(dot, 3)
-    remember(refs.accentObjects, dot)
-    local label = makeLabel(parent, text:upper(), UDim2.fromOffset(100, 16), UDim2.fromOffset(20, y + 3), 8, theme().accent)
-    label.Font = Enum.Font.Code
-    remember(refs.accentTexts, label)
-end
-
-local function controlRow(parent, titleText, subtitle, y)
-    local row = makeFrame(parent, "ControlRow", UDim2.new(1, -20, 0, 43), UDim2.fromOffset(10, y))
-    row.BackgroundColor3 = theme().row
-    remember(refs.surfaces, row)
-    rounded(row, 6)
-    makeLabel(row, titleText, UDim2.new(0.55, 0, 0, 18), UDim2.fromOffset(10, 5), 10, Color3.fromRGB(220, 224, 232)).Font = Enum.Font.GothamMedium
-    makeLabel(row, subtitle, UDim2.new(0.62, 0, 0, 13), UDim2.fromOffset(10, 24), 8, theme().muted)
-    return row
-end
-
-local function addSelector(parent, titleText, subtitle, options, initial, y, callback)
-    local row = controlRow(parent, titleText, subtitle, y)
-    local button = makeButton(row, tostring(initial), UDim2.fromOffset(128, 29), UDim2.new(1, -138, 0, 7))
-    button.TextSize = 8
-    button.TextXAlignment = Enum.TextXAlignment.Center
-    button.BackgroundColor3 = theme().background
-    button.TextColor3 = theme().accent
-    rounded(button, 5)
-    outline(button, theme().accentDark, 0.35, 1)
-    local selected = 1
-    for index, value in ipairs(options) do if value == initial then selected = index end end
-    button.MouseButton1Click:Connect(function()
-        selected = selected % #options + 1
-        button.Text = tostring(options[selected])
-        if callback then callback(options[selected]) end
+local function createSideTab(tabName, page)
+    local sideBtn = button(SideBar, tabName, UDim2.new(1, 0, 0, 38), nil, 4)
+    sideBtn.TextSize = 10
+    sideBtn.TextXAlignment = Enum.TextXAlignment.Left
+    sideBtn.BackgroundColor3 = Theme.SideButton
+    sideBtn.TextColor3 = Theme.Muted
+    corner(sideBtn, 7)
+    local sidePill = frame(sideBtn, UDim2.new(0, 3, 0.6, 0), UDim2.new(0, 0, 0.5, 0), Theme.Primary, 5)
+    sidePill.AnchorPoint = Vector2.new(0, 0.5)
+    sidePill.Visible = false
+    corner(sidePill, 2)
+    register(ThemeRegistry.indicators, sidePill)
+    sideBtn.MouseEnter:Connect(function()
+        if activeTab ~= tabName then animate(sideBtn, {BackgroundColor3 = Color3.fromRGB(26, 26, 44)}, 0.15) end
     end)
+    sideBtn.MouseLeave:Connect(function()
+        if activeTab ~= tabName then animate(sideBtn, {BackgroundColor3 = Theme.SideButton}, 0.15) end
+    end)
+    tabRegistry[tabName] = {Button = sideBtn, Page = page, Pill = sidePill}
+    sideBtn.MouseButton1Click:Connect(function()
+        if activeTab == tabName then return end
+        activeTab = tabName
+        for name, data in pairs(tabRegistry) do
+            local selected = name == tabName
+            data.Page.Visible = selected
+            data.Pill.Visible = selected
+            data.Button.TextColor3 = selected and Theme.Text or Theme.Muted
+            data.Button.BackgroundColor3 = selected and Theme.SideActive or Theme.SideButton
+        end
+    end)
+    return sideBtn
+end
+
+local function section(parent, text)
+    local wrapper = frame(parent, UDim2.new(1, 0, 0, 30), nil, Color3.new(1, 1, 1), 4)
+    wrapper.BackgroundTransparency = 1
+    local line = frame(wrapper, UDim2.new(1, -8, 0, 1), UDim2.fromOffset(8, 17), Theme.Primary, 5)
+    line.BackgroundTransparency = 0.65
+    local dot = frame(wrapper, UDim2.fromOffset(5, 5), UDim2.fromOffset(6, 15), Theme.Primary, 6)
+    corner(dot, 3)
+    local textLabel = label(wrapper, text:upper(), UDim2.new(1, -28, 0, 18), UDim2.fromOffset(16, 7), 8, Theme.Primary, 6)
+    textLabel.Font = Enum.Font.Code
+    return wrapper
+end
+
+local function optionRow(parent, titleText, subtitle, order)
+    local row = frame(parent, UDim2.new(1, 0, 0, 58), nil, Color3.fromRGB(19, 20, 30), 4)
+    row.LayoutOrder = order or 1
+    corner(row, 7)
+    label(row, titleText, UDim2.new(0.68, 0, 0, 20), UDim2.fromOffset(14, 7), 11, Theme.Text, 5).Font = Enum.Font.GothamMedium
+    label(row, subtitle, UDim2.new(0.68, 0, 0, 16), UDim2.fromOffset(14, 29), 9, Theme.Muted, 5)
     return row
 end
 
-local function addToggle(parent, titleText, subtitle, initial, y, callback)
-    local row = controlRow(parent, titleText, subtitle, y)
-    local track = makeButton(row, "", UDim2.fromOffset(42, 22), UDim2.new(1, -52, 0, 11))
-    rounded(track, 11)
-    local thumb = makeFrame(track, "Thumb", UDim2.fromOffset(16, 16), UDim2.fromOffset(3, 3))
-    rounded(thumb, 8)
+local function selector(parent, titleText, subtitle, values, initial, order, callback)
+    local row = optionRow(parent, titleText, subtitle, order)
+    local choose = button(row, initial, UDim2.fromOffset(118, 28), UDim2.new(1, -130, 0, 15), 6)
+    choose.TextSize = 9
+    choose.TextXAlignment = Enum.TextXAlignment.Center
+    choose.BackgroundColor3 = Theme.Main
+    choose.TextColor3 = Theme.Primary
+    corner(choose, 5)
+    stroke(choose, Theme.Primary, 0.7, 1)
+    local index = 1
+    for i, value in ipairs(values) do if value == initial then index = i end end
+    choose.MouseButton1Click:Connect(function()
+        index = index % #values + 1
+        choose.Text = values[index]
+        if callback then callback(values[index]) end
+    end)
+end
+
+local function toggle(parent, titleText, subtitle, initial, order, callback)
+    local row = optionRow(parent, titleText, subtitle, order)
+    local track = button(row, "", UDim2.fromOffset(44, 24), UDim2.new(1, -56, 0, 17), 6)
+    track.BackgroundColor3 = Color3.fromRGB(31, 33, 47)
+    corner(track, 12)
+    local knob = frame(track, UDim2.fromOffset(18, 18), UDim2.fromOffset(3, 3), initial and Theme.Primary or Color3.fromRGB(235, 237, 244), 7)
+    corner(knob, 9)
     local value = initial
     local function render()
-        track.BackgroundColor3 = value and theme().accentDark or Color3.fromRGB(43, 45, 57)
-        thumb.BackgroundColor3 = value and Color3.fromRGB(240, 242, 248) or Color3.fromRGB(119, 126, 143)
-        animate(thumb, {Position = value and UDim2.new(1, -19, 0, 3) or UDim2.fromOffset(3, 3)}, 0.16)
+        track.BackgroundColor3 = value and Theme.Primary or Color3.fromRGB(31, 33, 47)
+        knob.BackgroundColor3 = value and Color3.fromRGB(244, 246, 250) or Color3.fromRGB(125, 131, 145)
+        animate(knob, {Position = value and UDim2.new(1, -21, 0, 3) or UDim2.fromOffset(3, 3)}, 0.18)
     end
-    track.MouseButton1Click:Connect(function()
-        value = not value
-        render()
-        if callback then callback(value) end
-    end)
+    track.MouseButton1Click:Connect(function() value = not value; render(); if callback then callback(value) end end)
     render()
-    return row
 end
 
-local function addSlider(parent, titleText, subtitle, minimum, maximum, initial, y, callback)
-    local row = controlRow(parent, titleText, subtitle, y)
-    local valueText = makeLabel(row, tostring(initial), UDim2.fromOffset(32, 18), UDim2.new(1, -42, 0, 4), 9, theme().accent)
-    valueText.TextXAlignment = Enum.TextXAlignment.Right
-    local bar = makeFrame(row, "SliderBar", UDim2.new(1, -20, 0, 4), UDim2.fromOffset(10, 35))
-    bar.BackgroundColor3 = Color3.fromRGB(54, 57, 70)
-    rounded(bar, 3)
-    local ratio = (initial - minimum) / (maximum - minimum)
-    local fill = makeFrame(bar, "SliderFill", UDim2.new(ratio, 0, 1, 0))
-    fill.BackgroundColor3 = theme().accent
-    rounded(fill, 3)
-    local knob = makeFrame(bar, "SliderKnob", UDim2.fromOffset(9, 9), UDim2.new(ratio, -4, 0.5, -4))
-    knob.BackgroundColor3 = theme().accent
-    rounded(knob, 5)
-    local dragging = false
-    local function setValue(x)
-        local nextRatio = math.clamp((x - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
-        local value = math.floor(minimum + ((maximum - minimum) * nextRatio) + 0.5)
-        fill.Size = UDim2.new(nextRatio, 0, 1, 0)
-        knob.Position = UDim2.new(nextRatio, -4, 0.5, -4)
-        valueText.Text = tostring(value)
-        if callback then callback(value) end
-    end
-    bar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true; setValue(input.Position.X) end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then setValue(input.Position.X) end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
-    end)
-    return row
-end
+local displayPage = createPage("Tampilan")
+section(displayPage, "DUNIA")
+selector(displayPage, "Tema", "Warna aksen utama GUI", {"Cyan", "Violet", "Ember"}, "Cyan", 2)
+section(displayPage, "KONTROL TAMPILAN")
+toggle(displayPage, "Panel utama", "Layout vertikal IronSoul", true, 4)
+toggle(displayPage, "Rounded panel", "Radius seperti UI asli", true, 5)
 
-local displayPage = makePage("Tampilan")
-sectionTitle(displayPage, "DUNIA", 8)
-addSelector(displayPage, "Tema warna", "Cyan / Violet / Ember", {"Cyan", "Violet", "Ember"}, state.theme, 25, function(value) state.theme = value; applyAppearance() end)
-sectionTitle(displayPage, "KONTROL TAMPILAN", 78)
-addToggle(displayPage, "Panel compact", "Ukuran panel mengikuti layout IronSoul", true, 93, function(value) state.compact = value; applyAppearance() end)
-addToggle(displayPage, "Sudut membulat", "Bentuk komponen lebih lembut", state.rounded, 143, function(value) state.rounded = value; applyAppearance() end)
-
-local fontPage = makePage("Font")
-sectionTitle(fontPage, "FONT", 8)
-addSelector(fontPage, "Keluarga font", "Gotham / Code / Arcade", {"Gotham", "SourceSans", "Code", "Arcade", "Fantasy"}, state.font, 25, function(value) state.font = value; applyTypography() end)
-addSlider(fontPage, "Ukuran font", "Atur keterbacaan teks", 9, 15, state.fontSize, 78, function(value) state.fontSize = value; applyTypography() end)
-addToggle(fontPage, "Font tebal", "Perkuat label dan tombol utama", false, 128, function(value) state.bold = value; applyTypography() end)
-
-local effectsPage = makePage("Efek")
-sectionTitle(effectsPage, "EFEK LATAR", 8)
-addSelector(effectsPage, "Background", "None / Aurora / Grid", {"None", "Aurora", "Grid"}, state.backgroundEffect, 25, function(value) state.backgroundEffect = value; renderBackground() end)
-addToggle(effectsPage, "Glow aksen", "Garis cyan seperti GUI IronSoul", state.glow, 78, function(value) state.glow = value; applyAppearance() end)
-addToggle(effectsPage, "Partikel ambient", "Opsional, nonaktif sebagai default", state.particles, 128, function(value) state.particles = value; renderBackground() end)
-addToggle(effectsPage, "Animasi transisi", "Toggle dan Floating Button bergerak halus", state.animations, 178, function(value) state.animations = value end)
-
-local floating = makeButton(gui, "IS", UDim2.fromOffset(42, 42), UDim2.new(1, -58, 1, -58))
-floating.BackgroundColor3 = theme().accentDark
-floating.TextColor3 = theme().accent
-floating.TextSize = 11
-floating.ZIndex = 20
-rounded(floating, 7)
-outline(floating, theme().accent, 0.25, 1)
-
-local function setActiveTab(name)
-    state.activeTab = name
-    for tabName, button in pairs(tabButtons) do
-        local active = tabName == name
-        button.BackgroundColor3 = active and theme().accentDark or theme().surface
-        button.TextColor3 = active and theme().accent or Color3.fromRGB(145, 151, 167)
-        pages[tabName].Visible = active
-    end
-end
-
-for name, button in pairs(tabButtons) do
-    button.MouseButton1Click:Connect(function() setActiveTab(name) end)
-end
-
-floating.MouseButton1Click:Connect(function()
-    state.visible = not state.visible
-    if state.visible then
-        main.Visible = true
-        main.Size = UDim2.fromOffset(365, 285)
-        animate(main, {Size = UDim2.fromOffset(394, 310)}, 0.22)
-    else
-        main.Visible = false
-    end
+local fontPage = createPage("Font")
+section(fontPage, "FONT")
+selector(fontPage, "Jenis font", "Font komponen GUI", {"Gotham", "Code", "Arcade", "SourceSans"}, "Gotham", 2, function(value)
+    local selected = ({Gotham = Enum.Font.Gotham, Code = Enum.Font.Code, Arcade = Enum.Font.Arcade, SourceSans = Enum.Font.SourceSans})[value]
+    VisualConfig.Font = selected or Enum.Font.Gotham
+    for _, object in ipairs(ThemeRegistry.allLabels) do if object and object.Parent then object.Font = VisualConfig.Font end end
+end)
+toggle(fontPage, "Teks tebal", "Hierarki label dan tombol", false, 4, function(value)
+    for _, object in ipairs(ThemeRegistry.allLabels) do if object and object.Parent then object.Font = value and Enum.Font.GothamBold or VisualConfig.Font end end
 end)
 
-local dragStart, startPosition, dragging = nil, nil, false
-header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPosition = main.Position
+local effectPage = createPage("Efek")
+section(effectPage, "EFEK")
+selector(effectPage, "Animasi", "Transisi GUI dan Floating Button", {"On", "Off"}, "On", 2, function(value) VisualConfig.Animations = value == "On" end)
+toggle(effectPage, "Glow cyan", "Indikator mengikuti tema IronSoul", true, 4)
+toggle(effectPage, "Partikel", "Opsional, nonaktif secara default", false, 5)
+
+local ToggleGuiBtn = Instance.new("ScreenGui")
+ToggleGuiBtn.Name = "IronSoulFloatingButton"
+ToggleGuiBtn.ResetOnSpawn = false
+ToggleGuiBtn.IgnoreGuiInset = true
+ToggleGuiBtn.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ToggleGuiBtn.Parent = playerGui
+
+local BtnContainer = frame(ToggleGuiBtn, UDim2.fromOffset(110, 36), UDim2.new(0.05, 0, 0.15, 0), nil, 20)
+BtnContainer.BackgroundTransparency = 1
+local floatGlow = frame(BtnContainer, UDim2.new(1, 4, 1, 4), UDim2.new(0.5, 0, 0.5, 0), Theme.Primary, 21)
+floatGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+floatGlow.BackgroundTransparency = 0.8
+corner(floatGlow, 18)
+local floatBtn = button(BtnContainer, "", UDim2.fromScale(1, 1), UDim2.new(0.5, 0, 0.5, 0), 22)
+floatBtn.AnchorPoint = Vector2.new(0.5, 0.5)
+floatBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+floatBtn.Text = ""
+corner(floatBtn, 18)
+stroke(floatBtn, Theme.Primary, 0.35, 1)
+local statusDot = frame(floatBtn, UDim2.fromOffset(6, 6), UDim2.fromOffset(10, 15), Theme.Primary, 24)
+corner(statusDot, 3)
+local floatingText = label(floatBtn, "XIFIL  HUB", UDim2.new(1, -24, 1, 0), UDim2.fromOffset(20, 0), 12, Theme.Text, 24)
+floatingText.Font = Enum.Font.GothamBlack
+local floatingSub = label(floatBtn, "", UDim2.fromScale(1, 1), nil, 1, Theme.Primary, 24)
+floatingSub.Visible = false
+
+local guiVisible = true
+local savedSize = MainWindow.Size
+local savedPosition = MainWindow.Position
+local function toggleGui()
+    guiVisible = not guiVisible
+    if guiVisible then
+        MainWindow.Visible = true
+        MainWindow.Size = UDim2.fromOffset(0, 46)
+        MainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
+        animate(MainWindow, {Size = savedSize, Position = savedPosition}, 0.35)
+    else
+        savedSize = MainWindow.Size
+        savedPosition = MainWindow.Position
+        animate(MainWindow, {Size = UDim2.fromOffset(0, 46), Position = UDim2.new(0.5, 0, 0.5, 0)}, 0.28)
+        task.delay(0.3, function() if not guiVisible then MainWindow.Visible = false end end)
     end
+end
+floatBtn.MouseEnter:Connect(function() animate(floatGlow, {BackgroundTransparency = 0.5, Size = UDim2.new(1, 10, 1, 10)}, 0.3) end)
+floatBtn.MouseLeave:Connect(function() animate(floatGlow, {BackgroundTransparency = 0.8, Size = UDim2.new(1, 4, 1, 4)}, 0.3) end)
+floatBtn.MouseButton1Click:Connect(toggleGui)
+
+local draggingWindow, dragStart, windowStart = false, nil, nil
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingWindow = true; dragStart = input.Position; windowStart = MainWindow.Position end
 end)
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+    if draggingWindow and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
-        main.Position = UDim2.new(startPosition.X.Scale, startPosition.X.Offset + delta.X, startPosition.Y.Scale, startPosition.Y.Offset + delta.Y)
+        MainWindow.Position = UDim2.new(windowStart.X.Scale, windowStart.X.Offset + delta.X, windowStart.Y.Scale, windowStart.Y.Offset + delta.Y)
+        savedPosition = MainWindow.Position
     end
 end)
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingWindow = false end
 end)
 
-function applyTypography()
-    local selected = fonts[state.font] or Enum.Font.Gotham
-    for _, object in ipairs(refs.labels) do
-        if object and object.Parent then
-            object.Font = state.bold and Enum.Font.GothamBold or selected
-            object.TextSize = math.clamp(state.fontSize, 8, 16)
-        end
-    end
-    for _, object in ipairs(refs.buttons) do
-        if object and object.Parent then
-            object.Font = state.bold and Enum.Font.GothamBold or selected
-            object.TextSize = math.clamp(state.fontSize, 8, 16)
-        end
-    end
-    title.Font = Enum.Font.GothamBold
-    version.Font = Enum.Font.Code
-end
-
-function applyAppearance()
-    local t = theme()
-    main.BackgroundColor3 = t.background
-    main.BackgroundTransparency = state.transparency
-    header.BackgroundColor3 = t.panel
-    tabsBar.BackgroundColor3 = t.panel
-    content.BackgroundColor3 = t.background
-    floating.BackgroundColor3 = t.accentDark
-    floating.TextColor3 = t.accent
-    for _, object in ipairs(refs.panels) do if object and object.Parent then object.BackgroundColor3 = t.panel end end
-    for _, object in ipairs(refs.surfaces) do if object and object.Parent then object.BackgroundColor3 = t.row end end
-    for _, object in ipairs(refs.accentObjects) do if object and object.Parent then object.BackgroundColor3 = t.accent end end
-    for _, object in ipairs(refs.accentTexts) do if object and object.Parent then object.TextColor3 = t.accent end end
-    for _, button in pairs(tabButtons) do button.BackgroundColor3 = button == tabButtons[state.activeTab] and t.accentDark or t.surface; button.TextColor3 = button == tabButtons[state.activeTab] and t.accent or Color3.fromRGB(145,151,167) end
-    for _, stroke in ipairs(refs.strokes) do if stroke and stroke.Parent then stroke.Color = state.glow and t.accentDark or Color3.fromRGB(58,62,78); stroke.Transparency = state.glow and .25 or .78 end end
-    for _, corner in ipairs(refs.corners) do if corner and corner.Parent then corner.CornerRadius = UDim.new(0, state.rounded and 7 or 2) end end
-    applyTypography()
-    renderBackground()
-end
-
-function renderBackground()
-    for _, child in ipairs(background:GetChildren()) do child:Destroy() end
-    local t = theme()
-    if state.backgroundEffect == "Aurora" then
-        local wash = makeFrame(background, "Aurora", UDim2.fromScale(1, 1))
-        wash.BackgroundColor3 = t.accentDark
-        wash.BackgroundTransparency = .94
-        local gradient = Instance.new("UIGradient")
-        gradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, t.accent), ColorSequenceKeypoint.new(.5, t.background), ColorSequenceKeypoint.new(1, t.accentDark)})
-        gradient.Rotation = 25
-        gradient.Parent = wash
-    elseif state.backgroundEffect == "Grid" then
-        for x = 0, 22 do local line = makeFrame(background, "GridLine", UDim2.fromOffset(1, 900), UDim2.new(x / 22, 0, 0, 0)); line.BackgroundColor3 = t.accent; line.BackgroundTransparency = .96 end
-        for y = 0, 14 do local line = makeFrame(background, "GridLine", UDim2.fromOffset(1400, 1), UDim2.new(0, 0, y / 14, 0)); line.BackgroundColor3 = t.accent; line.BackgroundTransparency = .96 end
-    end
-    if state.particles then
-        for index = 1, 12 do
-            local dot = makeFrame(background, "Particle", UDim2.fromOffset(3, 3), UDim2.new(math.random(), 0, math.random(), 0))
-            dot.BackgroundColor3 = t.accent
-            dot.BackgroundTransparency = .65
-            rounded(dot, 3)
-            if state.animations then TweenService:Create(dot, TweenInfo.new(math.random(5, 9), Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Position = UDim2.new(math.random(), 0, math.random(), 0)}):Play() end
-        end
+local function switchTab(name)
+    activeTab = name
+    for tabName, data in pairs(tabRegistry) do
+        local selected = tabName == name
+        data.Page.Visible = selected
+        data.Pill.Visible = selected
+        data.Button.TextColor3 = selected and Theme.Text or Theme.Muted
+        data.Button.BackgroundColor3 = selected and Theme.SideActive or Theme.SideButton
     end
 end
 
-setActiveTab("Tampilan")
-applyTypography()
-applyAppearance()
-renderBackground()
+for _, name in ipairs({"Tampilan", "Font", "Efek"}) do
+    createSideTab(name, pages[name])
+end
+switchTab("Tampilan")
 
 _G.IronSoulTemplateGUI = {
-    Show = function() state.visible = true; main.Visible = true end,
-    Hide = function() state.visible = false; main.Visible = false end,
-    Toggle = function() state.visible = not state.visible; main.Visible = state.visible end,
-    State = state,
+    Show = function() guiVisible = true; MainWindow.Visible = true end,
+    Hide = function() guiVisible = false; MainWindow.Visible = false end,
+    Toggle = toggleGui,
+    State = VisualConfig,
 }
