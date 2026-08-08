@@ -11,6 +11,7 @@ local MainWindow      = H.MainWindow
 local ApplyAllVisuals = H.ApplyAllVisuals
 local SyncAllVisualUI = function(...) return H.SyncAllVisualUI(...) end
 local CustomNotify    = H.CustomNotify
+local RegisterThemeElement = H.RegisterThemeElement
 local SafeParent      = H.SafeParent
 local ANIM_MAP        = H.ANIM_MAP
 -- Dari ui_core.lua
@@ -49,22 +50,30 @@ local function ToggleGUI()
         MainWindow.Size = UDim2.new(0, 0, 0, 0)
         MainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
         
-        TweenService:Create(MainWindow, TweenInfo.new(0.35, easingStyle, Enum.EasingDirection.Out), {
-            Size = savedSize,
-            Position = savedPos
-        }):Play()
+        local opened = pcall(function()
+            TweenService:Create(MainWindow, TweenInfo.new(0.35, easingStyle, Enum.EasingDirection.Out), {
+                Size = savedSize,
+                Position = savedPos
+            }):Play()
+        end)
+        if not opened then
+            MainWindow.Size = savedSize
+            MainWindow.Position = savedPos
+        end
         task.wait(0.35)
     else
         -- Simpan state SAAT INI (sebelum animasi jalan)
         savedSize = MainWindow.Size
         savedPos = MainWindow.Position
         
-        TweenService:Create(MainWindow, TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-            Size = UDim2.new(0, 0, 0, 0),
-            Position = UDim2.new(0.5, 0, 0.5, 0)
-        }):Play()
+        local closed = pcall(function()
+            TweenService:Create(MainWindow, TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+                Size = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0.5, 0, 0.5, 0)
+            }):Play()
+        end)
         
-        task.wait(0.29)
+        if closed then task.wait(0.29) end
         MainWindow.Visible = false
     end
     isToggling = false
