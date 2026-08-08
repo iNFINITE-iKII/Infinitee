@@ -189,61 +189,69 @@ end)
 -- [S29] INTRO ANIMATION
 --------------------------------------------------------------------------------
 local function PlayIntroAnimation()
-    local IntroGui = Instance.new("ScreenGui", SafeParent)
-    IntroGui.Name = "XiFilTemplateGUI_Intro"; IntroGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    IntroGui.ResetOnSpawn = false; IntroGui.DisplayOrder = 9999999; IntroGui.IgnoreGuiInset = true
+    local IntroGui
+    local ok, err = pcall(function()
+        IntroGui = Instance.new("ScreenGui", SafeParent)
+        IntroGui.Name = "XiFilTemplateGUI_Intro"; IntroGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        IntroGui.ResetOnSpawn = false; IntroGui.DisplayOrder = 9999999; IntroGui.IgnoreGuiInset = true
 
-    local Overlay = Instance.new("Frame", IntroGui)
-    Overlay.BackgroundColor3 = Color3.fromRGB(6, 6, 12); Overlay.BackgroundTransparency = 1
-    Overlay.Size = UDim2.new(1, 0, 1, 0); Overlay.BorderSizePixel = 0; Overlay.ZIndex = 1
+        local Overlay = Instance.new("Frame", IntroGui)
+        Overlay.BackgroundColor3 = Color3.fromRGB(6, 6, 12); Overlay.BackgroundTransparency = 1
+        Overlay.Size = UDim2.new(1, 0, 1, 0); Overlay.BorderSizePixel = 0; Overlay.ZIndex = 1
 
-    local Container = Instance.new("Frame", Overlay)
-    Container.BackgroundTransparency = 1; Container.AnchorPoint = Vector2.new(0.5, 0.5)
-    Container.Position = UDim2.new(0.5, 0, 0.5, 0); Container.Size = UDim2.fromOffset(220, 65)
-    Container.ClipsDescendants = true; Container.ZIndex = 2
+        local Container = Instance.new("Frame", Overlay)
+        Container.BackgroundTransparency = 1; Container.AnchorPoint = Vector2.new(0.5, 0.5)
+        Container.Position = UDim2.new(0.5, 0, 0.5, 0); Container.Size = UDim2.fromOffset(220, 65)
+        Container.ClipsDescendants = true; Container.ZIndex = 2
 
-    local Line = Instance.new("Frame", Container)
-    Line.AnchorPoint = Vector2.new(0.5, 1); Line.Position = UDim2.new(0.5, 0, 0.95, 0)
-    Line.Size = UDim2.fromOffset(0, 2); Line.BackgroundColor3 = GetThemeColor("Primary")
-    Line.BorderSizePixel = 0; Line.ZIndex = 4
-    Instance.new("UICorner", Line).CornerRadius = UDim.new(1, 0)
-    local LineGlow = Instance.new("Frame", Line)
-    LineGlow.BackgroundColor3 = GetThemeColor("Primary"); LineGlow.BackgroundTransparency = 0.6
-    LineGlow.AnchorPoint = Vector2.new(0.5, 0.5); LineGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
-    LineGlow.Size = UDim2.new(1, 16, 1, 8); LineGlow.BorderSizePixel = 0; LineGlow.ZIndex = 3
-    Instance.new("UICorner", LineGlow).CornerRadius = UDim.new(1, 0)
+        local Line = Instance.new("Frame", Container)
+        Line.AnchorPoint = Vector2.new(0.5, 1); Line.Position = UDim2.new(0.5, 0, 0.95, 0)
+        Line.Size = UDim2.fromOffset(0, 2); Line.BackgroundColor3 = GetThemeColor("Primary")
+        Line.BorderSizePixel = 0; Line.ZIndex = 4
+        Instance.new("UICorner", Line).CornerRadius = UDim.new(1, 0)
+        local LineGlow = Instance.new("Frame", Line)
+        LineGlow.BackgroundColor3 = GetThemeColor("Primary"); LineGlow.BackgroundTransparency = 0.6
+        LineGlow.AnchorPoint = Vector2.new(0.5, 0.5); LineGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+        LineGlow.Size = UDim2.new(1, 16, 1, 8); LineGlow.BorderSizePixel = 0; LineGlow.ZIndex = 3
+        Instance.new("UICorner", LineGlow).CornerRadius = UDim.new(1, 0)
 
-    local MainText = Instance.new("TextLabel", Container)
-    MainText.BackgroundColor3 = Color3.fromRGB(20, 20, 30); MainText.BackgroundTransparency = 0.35
-    MainText.AnchorPoint = Vector2.new(0.5, 1); MainText.Position = UDim2.new(0.5, 0, 2, 0)
-    MainText.Size = UDim2.fromOffset(190, 44); MainText.Font = Enum.Font.GothamBlack
-    MainText.RichText = true; MainText.BorderSizePixel = 0; MainText.ZIndex = 3
-    Instance.new("UICorner", MainText).CornerRadius = UDim.new(0, 10)
-    local pColor = GetThemeColor("Primary")
-    local hexFormat = string.format("#%02X%02X%02X", math.floor(pColor.R*255), math.floor(pColor.G*255), math.floor(pColor.B*255))
-    MainText.Text = 'XIFIL <font color="'..hexFormat..'">HUB</font>'
-    MainText.TextColor3 = Color3.fromRGB(255, 255, 255); MainText.TextSize = 28
+        local MainText = Instance.new("TextLabel", Container)
+        MainText.BackgroundColor3 = Color3.fromRGB(20, 20, 30); MainText.BackgroundTransparency = 0.35
+        MainText.AnchorPoint = Vector2.new(0.5, 1); MainText.Position = UDim2.new(0.5, 0, 2, 0)
+        MainText.Size = UDim2.fromOffset(190, 44); MainText.Font = Enum.Font.GothamBlack
+        MainText.RichText = true; MainText.BorderSizePixel = 0; MainText.ZIndex = 3
+        Instance.new("UICorner", MainText).CornerRadius = UDim.new(0, 10)
+        local pColor = GetThemeColor("Primary")
+        local hexFormat = string.format("#%02X%02X%02X", math.floor(pColor.R*255), math.floor(pColor.G*255), math.floor(pColor.B*255))
+        MainText.Text = 'XIFIL <font color="'..hexFormat..'">HUB</font>'
+        MainText.TextColor3 = Color3.fromRGB(255, 255, 255); MainText.TextSize = 28
 
-    TweenService:Create(Line, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(190, 2)}):Play()
-    task.wait(0.35)
-    TweenService:Create(MainText, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.85, 0)}):Play()
-    task.wait(1.3)
-    TweenService:Create(MainText, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(0.5, 0, 2, 0)}):Play()
-    task.wait(0.35)
-    TweenService:Create(Line, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.fromOffset(0, 2)}):Play()
-    task.wait(0.4)
+        TweenService:Create(Line, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(190, 2)}):Play()
+        task.wait(0.35)
+        TweenService:Create(MainText, TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.85, 0)}):Play()
+        task.wait(1.3)
+        TweenService:Create(MainText, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(0.5, 0, 2, 0)}):Play()
+        task.wait(0.35)
+        TweenService:Create(Line, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.fromOffset(0, 2)}):Play()
+        task.wait(0.4)
 
-    BtnContainer.Visible = true
-    local finalSize = UDim2.fromOffset(110, 36); local finalPos = BtnContainer.Position
-    local centerPos = UDim2.new(finalPos.X.Scale, finalPos.X.Offset + 55, finalPos.Y.Scale, finalPos.Y.Offset + 18)
-    BtnContainer.Size = UDim2.fromOffset(0, 0); BtnContainer.Position = centerPos
-    TweenService:Create(BtnContainer, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = finalSize, Position = finalPos}):Play()
-    task.wait(0.55)
-    IntroGui:Destroy()
-    -- Jika GuiStartHidden=false (default): buka GUI otomatis seperti biasa.
-    -- Jika GuiStartHidden=true: biarkan tersembunyi — user harus klik Floating Button.
-    if not EngineConfig.GuiStartHidden then
-        ToggleGUI()
+        BtnContainer.Visible = true
+        local finalSize = UDim2.fromOffset(110, 36); local finalPos = BtnContainer.Position
+        local centerPos = UDim2.new(finalPos.X.Scale, finalPos.X.Offset + 55, finalPos.Y.Scale, finalPos.Y.Offset + 18)
+        BtnContainer.Size = UDim2.fromOffset(0, 0); BtnContainer.Position = centerPos
+        TweenService:Create(BtnContainer, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = finalSize, Position = finalPos}):Play()
+        task.wait(0.55)
+    end)
+
+    if IntroGui then pcall(function() IntroGui:Destroy() end) end
+    if not ok then warn("[XiFil] Intro animation dilewati: " .. tostring(err)) end
+
+    -- A failed intro must never leave the real controls hidden.
+    if BtnContainer.Parent then
+        BtnContainer.Visible = true
+        if not EngineConfig.GuiStartHidden and not guiVisible then
+            ToggleGUI()
+        end
     end
 end
 
@@ -252,7 +260,7 @@ end
 -- [S30] RGB RAINBOW LOOP
 --------------------------------------------------------------------------------
 task.spawn(function()
-    while true do
+    while H.RuntimeActive ~= false do
         task.wait(0.05); setRgbHue((getRgbHue() + 0.005) % 1)
         if VisualConfig.CurrentTheme == "RGB" then pcall(ApplyTheme) end
     end

@@ -7,6 +7,12 @@
 local SERVER_URL  = "https://xifil-hub-production.up.railway.app"
 local KEY_FILE    = "XiFilTemplateGUI_Configs/license.key"
 local FOLDER_NAME = "XiFilTemplateGUI_Configs"
+local RUNTIME_GUI_NAMES = {
+    "XiFilTemplateGUI_Modern",
+    "XiFilTemplateGUI_Toggle",
+    "XiFilTemplateGUI_Intro",
+    "XiFilTemplateGUI_Notif",
+}
 
 --------------------------------------------------------------------------------
 --// HWID
@@ -101,6 +107,104 @@ local function tween(obj, props, duration, style, direction)
     local t = TweenService:Create(obj, info, props)
     t:Play()
     return t
+end
+
+--------------------------------------------------------------------------------
+--// RUNTIME STATE
+--------------------------------------------------------------------------------
+local function getGlobalState()
+    return getgenv()
+end
+
+local function getGuiParents()
+    local parents = {}
+    local function add(parent)
+        if parent then table.insert(parents, parent) end
+    end
+
+    pcall(function()
+        if gethui then add(gethui()) end
+    end)
+    pcall(function() add(game:GetService("CoreGui")) end)
+    pcall(function() add(game.Players.LocalPlayer:FindFirstChild("PlayerGui")) end)
+    return parents
+end
+
+local function findRuntimeGui(name)
+    for _, parent in ipairs(getGuiParents()) do
+        local ok, gui = pcall(function()
+            return parent:FindFirstChild(name)
+        end)
+        if ok and gui then return gui end
+    end
+    return nil
+end
+
+local function destroyRuntimeGuis()
+    for _, name in ipairs(RUNTIME_GUI_NAMES) do
+        for _, parent in ipairs(getGuiParents()) do
+            pcall(function()
+                local gui = parent:FindFirstChild(name)
+                if gui then gui:Destroy() end
+            end)
+        end
+    end
+end
+
+local function clearRuntimeState()
+    destroyRuntimeGuis()
+    local globals = getGlobalState()
+    local oldHub = globals.XiFilTemplateGUI_Hub
+    if oldHub then
+        oldHub.RuntimeActive = false
+        pcall(function()
+            if oldHub.RuntimeMaid then oldHub.RuntimeMaid:DoCleaning() end
+        end)
+    end
+    globals.XiFilTemplateGUI_Executed = nil
+    globals.XiFilTemplateGUI_State = nil
+    globals.XiFilTemplateGUI_Hub = nil
+    globals.XiFilTemplateGUI_G = nil
+end
+
+local function hasLiveRuntime()
+    local globals = getGlobalState()
+    if globals.XiFilTemplateGUI_State == "loading" then
+        return true
+    end
+    if globals.XiFilTemplateGUI_State ~= "running"
+        and globals.XiFilTemplateGUI_Executed ~= true then
+        return false
+    end
+
+    local hub = globals.XiFilTemplateGUI_Hub
+    if hub and hub.GuiRoot then
+        local ok, parent = pcall(function() return hub.GuiRoot.Parent end)
+        if ok and parent then return true end
+    end
+
+    for _, name in ipairs({ "XiFilTemplateGUI_Modern", "XiFilTemplateGUI_Toggle" }) do
+        if findRuntimeGui(name) then return true end
+    end
+    return false
+end
+
+local function notifyDuplicate()
+    local notify = getGlobalState().XiFilTemplateGUI_Notify
+    if type(notify) == "function" then
+        pcall(notify, "⚠️ XIFIL HUB", "Script sudah berjalan!", 4)
+    else
+        warn("[XiFil] Script sudah berjalan.")
+    end
+end
+
+local function notifyStartupError(path, err)
+    local message = "Gagal memuat " .. tostring(path) .. ". Jalankan ulang script."
+    warn("[XiFil] " .. message .. "\n" .. tostring(err))
+    local notify = getGlobalState().XiFilTemplateGUI_Notify
+    if type(notify) == "function" then
+        pcall(notify, "XIFIL HUB", message, 6)
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -624,6 +728,11 @@ end
 --// ENTRY POINT
 --------------------------------------------------------------------------------
 local function startWithDRM(mainScript)
+    if hasLiveRuntime() then
+        notifyDuplicate()
+        return
+    end
+
     local hwid = getHWID()
     local savedKey = readKey()
 
@@ -645,20 +754,34 @@ end
 --------------------------------------------------------------------------------
 --// MAIN SCRIPT — LOADER IRONSOUL V1
 --------------------------------------------------------------------------------
+-- Tunggu lifecycle Roblox selesai sebelum mengakses LocalPlayer/PlayerGui.
+-- Ini mencegah cold start executor gagal diam-diam sebelum prompt key dibuat.
+if not game:IsLoaded() then
+    pcall(function() game.Loaded:Wait() end)
+end
+if not game.Players.LocalPlayer then
+    repeat task.wait(0.5) until game.Players.LocalPlayer
+end
+
 startWithDRM(function(key, hwid)
 
     -- Anti-duplicate guard
-    if getgenv().XiFilTemplateGUI_Executed then
-        if getgenv().XiFilTemplateGUI_Notify then
-            getgenv().XiFilTemplateGUI_Notify("⚠️ XIFIL HUB", "Script sudah berjalan!", 4)
-        end
+    if hasLiveRuntime() then
+        notifyDuplicate()
         return
     end
+
+    -- A previous failed load may have left the old marker behind. It is safe
+    -- to reset only when no real TemplateGUI instance is still alive.
+    clearRuntimeState()
+
     getgenv().XiFilTemplateGUI_Executed = true
+    getgenv().XiFilTemplateGUI_State = "loading"
 
     -- Inisialisasi state container khusus TemplateGUI
     getgenv().XiFilTemplateGUI_Hub = {}
     getgenv().XiFilTemplateGUI_G = {}
+    getgenv().XiFilTemplateGUI_Hub.RuntimeActive = true
 
     ----------------------------------------------------------------------------
     -- URL base modul (ambil langsung dari repo Beta)
@@ -667,28 +790,45 @@ startWithDRM(function(key, hwid)
 
     local function load(path)
         local ok, err = pcall(function()
-            loadstring(game:HttpGet(BASE .. path, true))()
+            local source = game:HttpGet(BASE .. path, true)
+            local chunk, compileErr = loadstring(source, "@XiFilTemplateGUI/" .. path)
+            if type(chunk) ~= "function" then
+                error(compileErr or "modul tidak bisa dikompilasi")
+            end
+            chunk()
         end)
         if not ok then
-            warn("[XiFil] Gagal load: " .. path .. "\n" .. tostring(err))
+            return false, err
         end
+        return true
     end
 
     ----------------------------------------------------------------------------
     -- Load modul visual secara berurutan (urutan PENTING)
     ----------------------------------------------------------------------------
-    load("core.lua")             -- Services dan preferensi startup GUI
-    load("maid.lua")             -- Maid & RuntimeMaid
-    load("notify.lua")           -- CustomNotify
-    load("config_system.lua")    -- Simpan/muat profile visual
-    load("translate.lua")        -- Sistem translate multi-bahasa
+    local modules = {
+        "core.lua",             -- Services dan preferensi startup GUI
+        "maid.lua",             -- Maid & RuntimeMaid
+        "notify.lua",           -- CustomNotify
+        "config_system.lua",    -- Simpan/muat profile visual
+        "translate.lua",        -- Sistem translate multi-bahasa
+        "ui/ui_core.lua",       -- VisualConfig, builder, window, tab system, BG effects
+        "ui/tab_visual.lua",    -- Tab: Tampilan, Font, Efek + Translate
+        "ui/tab_profile.lua",   -- Tab: Profil
+        "ui_sync.lua",          -- Sinkronisasi kontrol visual
+        "init.lua",             -- Intro animation, RGB loop, inisialisasi akhir
+    }
 
-    -- UI — hanya tiga tab visual yang dipertahankan
-    load("ui/ui_core.lua")       -- VisualConfig, builder, window, tab system, BG effects
-    load("ui/tab_visual.lua")    -- Tab: Tampilan, Font, Efek + Translate
-    load("ui/tab_profile.lua")   -- Tab: Profil
+    for _, path in ipairs(modules) do
+        local ok, err = load(path)
+        if not ok then
+            clearRuntimeState()
+            notifyStartupError(path, err)
+            return
+        end
+    end
 
-    load("ui_sync.lua")          -- Sinkronisasi kontrol visual
-    load("init.lua")             -- Intro animation, RGB loop, inisialisasi akhir
+    -- Only a fully initialized runtime blocks a later execute.
+    getgenv().XiFilTemplateGUI_State = "running"
 
 end)
