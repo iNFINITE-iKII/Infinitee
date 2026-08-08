@@ -27,6 +27,22 @@ local function ClampNumber(value, minimum, maximum, fallback)
     return math.clamp(value, minimum, maximum)
 end
 
+-- Inventory values are normally numbers, but some game updates expose
+-- stack data as a small record.  Keep all forge checks on one normalized value
+-- so the UI and the server request cannot disagree about owned materials.
+local function ReadInventoryCount(Value)
+    if type(Value) == "number" then
+        return math.max(0, math.floor(Value))
+    end
+    if type(Value) == "table" then
+        for _, Key in ipairs({"Count", "Amount", "Quantity", "Value", 1}) do
+            local Count = tonumber(Value[Key])
+            if Count then return math.max(0, math.floor(Count)) end
+        end
+    end
+    return 0
+end
+
 local _cachedFramework = nil
 local function GetFrameworkModule()
     if not _cachedFramework then
@@ -87,7 +103,7 @@ local function GetOreCatalog(forceRefresh)
             pcall(function() RarityName = RarityTiers:GetTierName(Rarity) end)
             table.insert(Out, {
                 ItemId = OreId,
-                Count  = tonumber(Ores[OreId]) or 0,
+                Count  = ReadInventoryCount(Ores[OreId]),
                 Rarity = Rarity, RarityName = RarityName,
                 Level  = tonumber(Def.Level or Def[6]) or 0,
                 Sort   = tonumber(Def.Sort  or Def[5]) or 0,
@@ -493,25 +509,63 @@ function AutoForge.GetInventory()
     return Ores, Crystals
 end
 
+function AutoForge.GetOwnedCount(Inventory, ItemId)
+    if type(Inventory) ~= "table" then return 0 end
+    return ReadInventoryCount(Inventory[ItemId])
+end
+
+function AutoForge.GetCompositionIssue(Recipe, Composition, Ores, Crystals)
+    if not Recipe then return "Recipe not found" end
+
+    local Selected = AutoForge.GetCompositionTotal(Composition)
+    if Selected <= 0 then return "Select at least 1 ore" end
+    if Selected ~= Recipe.OreCount then
+        return "Need exactly "..tostring(Recipe.OreCount)
+            .." ore (selected "..tostring(Selected)..")"
+    end
+
+    for OreId, PerCraft in pairs(Composition or {}) do
+        PerCraft = math.floor(tonumber(PerCraft) or 0)
+        if PerCraft > 0 then
+            local Owned = AutoForge.GetOwnedCount(Ores, OreId)
+            if Owned < PerCraft then
+                return "Need "..tostring(PerCraft).."x "..GetItemDisplayName(OreId)
+                    .." (owned "..tostring(Owned)..")"
+            end
+        end
+    end
+
+    if Recipe.RelicId then
+        local RelicCount = AutoForge.GetOwnedCount(Crystals, Recipe.RelicId)
+        if RelicCount < 1 then
+            return "Need 1x "..GetItemDisplayName(Recipe.RelicId)
+                .." (owned "..tostring(RelicCount)..")"
+        end
+    end
+    return nil
+end
+
 function AutoForge.CalculateLimit(Recipe, Composition, Ores, Crystals)
-    if not Recipe or AutoForge.GetCompositionTotal(Composition) ~= Recipe.OreCount then
-        return 0, nil, "Composition must equal "..tostring(Recipe and Recipe.OreCount or 0)
+    local CompositionIssue = AutoForge.GetCompositionIssue(Recipe, Composition, Ores, Crystals)
+    if CompositionIssue then
+        return 0, nil, CompositionIssue
     end
     local MaxCrafts, LimitingItemId = math.huge, nil
     for OreId, PerCraft in pairs(Composition) do
         PerCraft = math.floor(tonumber(PerCraft) or 0)
         if PerCraft > 0 then
-            local Owned = tonumber(Ores[OreId]) or 0
+            local Owned = AutoForge.GetOwnedCount(Ores, OreId)
             local N     = math.floor(Owned / PerCraft)
             if N < MaxCrafts then MaxCrafts=N; LimitingItemId=OreId end
         end
     end
     if Recipe.RelicId then
-        local RelicCount = tonumber((Crystals or {})[Recipe.RelicId]) or 0
+        local RelicCount = AutoForge.GetOwnedCount(Crystals, Recipe.RelicId)
         if RelicCount < MaxCrafts then MaxCrafts=RelicCount; LimitingItemId=Recipe.RelicId end
     end
     MaxCrafts = math.max(0, math.floor(MaxCrafts == math.huge and 0 or MaxCrafts))
-    return MaxCrafts, LimitingItemId, MaxCrafts>0 and nil or "Insufficient materials"
+    return MaxCrafts, LimitingItemId, MaxCrafts>0 and nil
+        or "Insufficient materials for the selected composition"
 end
 
 -- ── Engine state ──────────────────────────────────────────────────────────────
@@ -676,7 +730,11 @@ function AutoForge.StartBatch()
 
     local Recipe     = AutoForge.Recipes[AutoForge.RecipeId]
     local Composition = CopyMap(AutoForge.Composition)
-    local Ores, Crystals = AutoForge.GetInventory()
+    local InventoryOk, Ores, Crystals = pcall(AutoForge.GetInventory)
+    if not InventoryOk then
+        AutoForge.SetStatus("INVENTORY UNAVAILABLE")
+        return false
+    end
     local MaxCrafts, LimitingItemId, Reason = AutoForge.CalculateLimit(Recipe, Composition, Ores, Crystals)
 
     if MaxCrafts <= 0 then
@@ -702,7 +760,11 @@ function AutoForge.StartBatch()
                 if not AutoForge.State.Token.Alive or not _G.AutoForge then break end
                 if not IsInLobby() then error("left lobby") end
 
-                local CurrOres, CurrCrystals = AutoForge.GetInventory()
+                local InventoryOk, CurrOres, CurrCrystals = pcall(AutoForge.GetInventory)
+                if not InventoryOk then
+                    FinalStatus = "STOPPED - INVENTORY UNAVAILABLE"
+                    break
+                end
                 if AutoForge.CalculateLimit(Recipe, Composition, CurrOres, CurrCrystals) <= 0 then
                     FinalStatus = "STOPPED - MATERIALS EXHAUSTED"
                     break

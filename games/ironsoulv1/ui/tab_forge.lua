@@ -506,7 +506,7 @@ RebuildOreRows = function()
         PlusBtn.MouseButton1Click:Connect(function()
             local Recipe = AutoForge.Recipes[AutoForge.RecipeId] or AutoForge.Recipes.WeaponSword
             local OkInv, OresNow = pcall(function() return (AutoForge.GetInventory()) end)
-            local OwnedNow = OkInv and (tonumber((OresNow or {})[capturedEntry.ItemId]) or 0) or 0
+            local OwnedNow = OkInv and AutoForge.GetOwnedCount(OresNow, capturedEntry.ItemId) or 0
             local SelNow   = tonumber(AutoForge.Composition[capturedEntry.ItemId]) or 0
             local Total    = AutoForge.GetCompositionTotal(AutoForge.Composition)
             if SelNow < OwnedNow and Total < Recipe.OreCount then
@@ -538,7 +538,7 @@ task.spawn(function()
             local ok, Ores = pcall(function() return (AutoForge.GetInventory()) end)
             if ok then
                 for _, Row in ipairs(OreRowRefs) do
-                    local Owned = tonumber((Ores or {})[Row.ItemId]) or 0
+                    local Owned = AutoForge.GetOwnedCount(Ores, Row.ItemId)
                     if Row.OwnedLbl and Row.OwnedLbl.Parent then
                         Row.OwnedLbl.Text = "x"..tostring(Owned)
                         local Sel = tonumber(AutoForge.Composition[Row.ItemId]) or 0

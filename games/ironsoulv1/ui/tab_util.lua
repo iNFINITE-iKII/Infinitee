@@ -152,6 +152,46 @@ local function getCurrentRace()
     return "Unknown"
 end
 
+local function isTargetRace(RaceName)
+    if type(RaceName) ~= "string" or RaceName == "" or RaceName == "Unknown" then
+        return false
+    end
+    local RaceLower = string.lower(RaceName)
+    for _, Race in ipairs(RACE_LIST) do
+        if EngineConfig.UtilTargetRaces[Race]
+            and string.find(RaceLower, string.lower(Race), 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+local function waitForRaceChange(PreviousRace, Timeout)
+    local Deadline = os.clock() + Timeout
+    repeat
+        local CurrentRace = getCurrentRace()
+        if CurrentRace ~= "Unknown" and CurrentRace ~= PreviousRace then
+            return CurrentRace
+        end
+        task.wait(0.1)
+    until os.clock() >= Deadline
+    return getCurrentRace()
+end
+
+local function stopOnTargetRace(RaceName)
+    task.wait(0.35)
+    local VerifiedRace = getCurrentRace()
+    if not isTargetRace(VerifiedRace) then return false end
+
+    EngineConfig.UtilAutoRerollActive = false
+    if _G.UtilAutoRerollToggle then _G.UtilAutoRerollToggle:SetValue(false) end
+    local rNum   = RACE_RARITY and RACE_RARITY[VerifiedRace]
+    local rLabel = rNum and RARITY_NAMES[rNum] or ""
+    local detail = rLabel ~= "" and (" ("..rLabel..")") or ""
+    CustomNotify("🎉 RACE DIDAPAT!", VerifiedRace..detail.." — target tercapai!", 10)
+    return true
+end
+
 -- [UTIL] TAB
 --------------------------------------------------------------------------------
 local UtilPage = CreateTab("🔧 Utilitas", "tabUtil")
@@ -356,44 +396,27 @@ task.spawn(function()
             continue
         end
 
-        -- Baca race saat ini
+        -- Always confirm the selected slot immediately before rolling.  The
+        -- server can otherwise keep the previous slot while the UI is changing.
         local currentRace = getCurrentRace()
-        local raceLower   = string.lower(currentRace)
-
-        -- Cek kecocokan
-        local isMatch = false
-        for _, race in ipairs(RACE_LIST) do
-            if EngineConfig.UtilTargetRaces[race] then
-                if string.find(raceLower, string.lower(race), 1, true) then
-                    isMatch = true; break
-                end
-            end
+        if isTargetRace(currentRace) then
+            if stopOnTargetRace(currentRace) then continue end
         end
 
-        if isMatch then
-            -- Verifikasi 2x untuk hindari desync
-            task.wait(0.5)
-            local doubleRace = getCurrentRace()
-            local dlLower    = string.lower(doubleRace)
-            local verified   = false
-            for _, race in ipairs(RACE_LIST) do
-                if EngineConfig.UtilTargetRaces[race] then
-                    if string.find(dlLower, string.lower(race), 1, true) then
-                        verified = true; break
-                    end
-                end
+        -- Wait for the character billboard to change after every roll.  A
+        -- fixed one-second delay could read the old race and fire again,
+        -- skipping a target that had just arrived.
+        local selectedOk = pcall(function()
+            re:FireServer("SelectSlot", _raceSlot)
+        end)
+        local rollingOk = selectedOk and pcall(function()
+            re:FireServer("Rolling", _raceSlot)
+        end)
+        if rollingOk then
+            local newRace = waitForRaceChange(currentRace, 5)
+            if isTargetRace(newRace) then
+                stopOnTargetRace(newRace)
             end
-            if verified then
-                EngineConfig.UtilAutoRerollActive = false
-                if _G.UtilAutoRerollToggle then _G.UtilAutoRerollToggle:SetValue(false) end
-                local rNum   = RACE_RARITY and RACE_RARITY[doubleRace]
-                local rLabel = rNum and RARITY_NAMES[rNum] or ""
-                local detail = rLabel ~= "" and (" ("..rLabel..")") or ""
-                CustomNotify("🎉 RACE DIDAPAT!", doubleRace..detail.." — target tercapai!", 10)
-            end
-        else
-            -- Belum cocok → fire Rolling pada slot yang dipilih (lokal, tidak dari EngineConfig)
-            pcall(function() re:FireServer("Rolling", _raceSlot) end)
         end
     end
 end)
