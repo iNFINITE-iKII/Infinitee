@@ -42,7 +42,7 @@ end
 local PlayerActionRE = waitChain(Services.ReplicatedStorage, "Remotes", "PlayerActionRE")
 local GameRoundRE    = waitChain(Services.ReplicatedStorage, "Remotes", "GameRoundRE")
 local EquipmentRE    = waitChain(Services.ReplicatedStorage, "Framework", "Gameplay", "EquipmentSystem", "EquipmentRE")
-local ForgeRF        = waitChain(Services.ReplicatedStorage, "Framework", "Features", "ForgeSystem", "ForgeRF")
+local ForgeRF        = waitChain(Services.ReplicatedStorage, "Framework", "Gameplay", "EquipmentSystem", "ForgeRF")
 local MaterialRE     = waitChain(Services.ReplicatedStorage, "Framework", "Gameplay", "EquipmentSystem", "MaterialUtil", "RemoteEvent")
 local WorldPlaceRE      = waitChain(Services.ReplicatedStorage, "Framework", "Gameplay", "WorldPlace", "WorldUtil", "RemoteEvent")
 local WorldBonusCardRE  = waitChain(Services.ReplicatedStorage, "Framework", "Gameplay", "WorldPlace", "WorldBonusCardUtil", "RemoteEvent")
