@@ -4,7 +4,7 @@
 --//                  S13 UI Component Builder
 --//                  S14 Main Window & Window Controls
 --//                  S15 Tab System
---//                  S16 Background Effects + Config Patch (S16b)
+--//                  S16 Background Effects
 --------------------------------------------------------------------------------
 local H                  = getgenv().XiFilTemplateGUI_Hub
 local _G                 = getgenv().XiFilTemplateGUI_G
@@ -14,13 +14,9 @@ local Services           = H.Services
 local RuntimeMaid        = H.RuntimeMaid
 local RegisterTranslation   = H.RegisterTranslation
 local RegisterTranslationFn = H.RegisterTranslationFn
--- Dependencies dari modul sebelumnya (digunakan di S16b Config Patch & ApplyAllVisuals)
-local EngineConfig       = H.EngineConfig
-local ConfigSystem       = H.ConfigSystem    -- digunakan di S16b patch SaveNew/Load
+-- Dependencies dari modul visual sebelumnya
 local NC                 = H.NC              -- notification container dari notify.lua
 local CustomNotify       = H.CustomNotify
-local HttpService        = H.HttpService
-local FOLDER_NAME        = H.FOLDER_NAME
 local ApplyTranslations  = H.ApplyTranslations
 
 -- [S11] VISUAL CONFIG & THEMES
@@ -1720,13 +1716,6 @@ local function ApplyBgColorTheme(bgName)
 end
 
 
---------------------------------------------------------------------------------
--- [S16b] CONFIG SYSTEM PATCH — VISUAL SETTINGS SAVE / LOAD
--- Di-patch DI SINI (setelah VisualConfig & semua fungsi Apply* terdefinisi)
--- agar bisa diakses sebagai upvalue. ConfigSystem asli (S05) hanya menyimpan
--- EngineConfig; patch ini menambahkan dukungan penuh untuk VisualConfig.
---------------------------------------------------------------------------------
-
 -- Patch CustomNotify agar warna notifikasi mengikuti tema aktif
 -- + menghormati NotifEnabled dan FontSize dari VisualConfig
 CustomNotify = function(title, text, duration)
@@ -1782,7 +1771,7 @@ local function ApplyAllVisuals()
     pcall(ApplyTransparency)
     pcall(ApplyTabMode, VisualConfig.TabMode)
     pcall(ApplyBgEffect, VisualConfig.BgEffect)
-    pcall(H.SetLanguage, H, VisualConfig.Language or "Indonesia")
+    pcall(H.SetLanguage, VisualConfig.Language or "Indonesia")
     pcall(ApplyTranslations)
     -- Restore ukuran window — terpisah agar pasti jalan walau ada error di atas
     pcall(function()
@@ -1794,55 +1783,6 @@ local function ApplyAllVisuals()
     end)
 end
 
--- Patch ConfigSystem.SaveNew — simpan EngineConfig + VisualConfig dalam 1 file
-ConfigSystem.SaveNew = function(name)
-    if name == "" or name == "None" then return false, "Nama tidak valid!" end
-    -- Salin VisualConfig (hindari menyimpan referensi fungsi)
-    local visualSnapshot = {}
-    for k, v in pairs(VisualConfig) do
-        if type(v) ~= "function" then visualSnapshot[k] = v end
-    end
-    local payload = { game = EngineConfig, visual = visualSnapshot }
-    local ok, encoded = pcall(HttpService.JSONEncode, HttpService, payload)
-    if not ok then return false, "Gagal encode." end
-    if pcall(writefile, FOLDER_NAME.."/"..name..".json", encoded) then return true
-    else return false, "I/O Error." end
-end
--- Overwrite = SaveNew (tetap konsisten)
-ConfigSystem.OverwriteExisting = ConfigSystem.SaveNew
-
--- Patch ConfigSystem.Load — muat EngineConfig + VisualConfig, lalu apply visual
-ConfigSystem.Load = function(name, callback)
-    if name == "None" then return false end
-    local path = FOLDER_NAME.."/"..name..".json"
-    if not isfile(path) then return false end
-    local rok, content = pcall(readfile, path)
-    if not (rok and content) then return false end
-    local dok, data = pcall(HttpService.JSONDecode, HttpService, content)
-    if not (dok and type(data) == "table") then return false end
-    -- Format baru: { game={...}, visual={...} }
-    -- Format lama (backwards compat): field EngineConfig langsung di root
-    local gameData   = data.game   or data
-    local visualData = data.visual or nil
-    -- Restore EngineConfig
-    for k, v in pairs(gameData) do
-        if EngineConfig[k] ~= nil then EngineConfig[k] = v end
-    end
-    -- Restore VisualConfig + terapkan visual secara otomatis
-    if visualData then
-        for k, v in pairs(visualData) do
-            if VisualConfig[k] ~= nil then VisualConfig[k] = v end
-        end
-        task.defer(ApplyAllVisuals)
-    end
-    if callback then callback() end
-    return true
-end
-
-
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
 -- Export ke Hub
 --------------------------------------------------------------------------------
 H.VisualConfig         = VisualConfig

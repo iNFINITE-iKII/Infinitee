@@ -5,30 +5,21 @@
 --//            S31 Inisialisasi Akhir
 --------------------------------------------------------------------------------
 local H               = getgenv().XiFilTemplateGUI_Hub
-local _G              = getgenv().XiFilTemplateGUI_G
 local VisualConfig    = H.VisualConfig
 local EngineConfig    = H.EngineConfig
-local ThemeRegistry   = H.ThemeRegistry
-local Services        = H.Services
-local LocalPlayer     = H.LocalPlayer
-local TweenService    = H.TweenService
-local GuiRoot         = H.GuiRoot
-local SafeParent      = H.SafeParent
 local MainWindow      = H.MainWindow
-local SwitchTab       = H.SwitchTab
 local ApplyAllVisuals = H.ApplyAllVisuals
-local SyncAllVisualUI = function(...) return H.SyncAllVisualUI(...) end  -- late-bound
-local ConfigSystem    = H.ConfigSystem
+local SyncAllVisualUI = function(...) return H.SyncAllVisualUI(...) end
 local CustomNotify    = H.CustomNotify
-local RegisterThemeElement = H.RegisterThemeElement
-local GetThemeColor        = H.GetThemeColor
-local RegisterPanel        = H.RegisterPanel
-local ApplyTheme           = H.ApplyTheme
-local ANIM_MAP             = H.ANIM_MAP
+local SafeParent      = H.SafeParent
+local ANIM_MAP        = H.ANIM_MAP
 -- Dari ui_core.lua
 local RuntimeMaid      = H.RuntimeMaid
 local BtnClose         = H.BtnClose
 local UserInputService = H.UserInputService
+local TweenService     = H.TweenService
+local GetThemeColor    = H.GetThemeColor
+local ApplyTheme       = H.ApplyTheme
 -- rgbHue: diakses lewat Hub agar sync dengan GetThemeColor di ui_core
 local function getRgbHue() return H.GetRgbHue() end
 local function setRgbHue(v) H.SetRgbHue(v) end
@@ -271,12 +262,7 @@ end)
 --------------------------------------------------------------------------------
 -- [S31] INISIALISASI
 --------------------------------------------------------------------------------
-SwitchTab("🏠 Farm")
-
---------------------------------------------------------------------------------
--- [S31] INISIALISASI (Bagian Akhir Script)
---------------------------------------------------------------------------------
-SwitchTab("🏠 Farm")
+H.SwitchTab("🎨 Tampilan")
 
 -- [FIX FIRST-RUN CRASH] Seluruh blok ini dibungkus pcall — kalau character/UI
 -- belum sepenuhnya siap saat cold start, error di satu langkah tidak akan
@@ -294,11 +280,7 @@ task.defer(function()
             pcall(SyncAllVisualUI)
         end
 
-        -- 3. Terapkan config mesin bawaan
-        if EngineConfig.AntiAFKActive    and _G.AntiAFKToggle    then _G.AntiAFKToggle:SetValue(true) end
-        if EngineConfig.AntiPausedActive and _G.AntiPausedToggle then _G.AntiPausedToggle:SetValue(true) end
-
-        -- 4. Mainkan animasi intro & Tampilkan Notifikasi
+        -- 3. Mainkan animasi intro & Tampilkan Notifikasi
         if PlayIntroAnimation then
             task.spawn(function()
                 pcall(function()
@@ -320,15 +302,6 @@ task.defer(function()
     end)
 end)
 
--- (Jika ada sistem Load Profile otomatis di bawah sini, biarkan saja)
-
-
-ConfigSystem.ExecuteAutoLoad(function() SyncAllVisualUI() end)
-
-
-
-
---------------------------------------------------------------------------------
 -- Export ke Hub (opsional, untuk akses eksternal jika dibutuhkan)
 --------------------------------------------------------------------------------
 H.ToggleGUI         = ToggleGUI

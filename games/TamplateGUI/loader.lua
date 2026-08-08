@@ -653,7 +653,7 @@ end
 -- runtime error "attempt to index nil value" dan seluruh script berhenti diam
 -- -diam (kelihatan seperti "tidak bisa dieksekusi di Xeno"). Tunggu juga
 -- LocalPlayer di sini, sama seperti guard yang sudah dipakai di jalur
--- autoexec (lihat ui/tab_farm.lua).
+-- autoexec untuk TemplateGUI visual.
 if not game:IsLoaded() then
     pcall(function() game.Loaded:Wait() end)
 end
@@ -691,34 +691,18 @@ startWithDRM(function(key, hwid)
     end
 
     ----------------------------------------------------------------------------
-    -- Load modul secara berurutan (urutan PENTING)
+    -- Load modul visual secara berurutan (urutan PENTING)
     ----------------------------------------------------------------------------
-    load("core.lua")             -- Services, EngineConfig, konstanta
+    load("core.lua")             -- Services dan preferensi startup GUI
     load("maid.lua")             -- Maid & RuntimeMaid
     load("notify.lua")           -- CustomNotify
-    load("config_system.lua")    -- ConfigSystem (save/load profile)
-    load("combat.lua")           -- CombatEngine, helper posisi
-    load("navigation.lua")       -- Navigation engine (search world)
-    load("farm.lua")             -- Farm loop + background loops
-    load("buff_card.lua")        -- Auto Buff Card selector
-    load("auto_potion.lua")      -- Auto Potion engine
-    load("auto_forge.lua")       -- Auto Forge V6 engine
     load("translate.lua")        -- Sistem translate multi-bahasa
 
-    -- UI — core dulu, lalu tiap tab
+    -- UI — hanya tiga tab visual yang dipertahankan
     load("ui/ui_core.lua")       -- S11-S16: VisualConfig, builder, window, tab system, BG effects
-    load("ui/tab_farm.lua")       -- Tab 1: Farm
-    load("ui/tab_vector.lua")    -- Tab 2: Vector Config
-    load("ui/tab_autopotion.lua") -- Tab 3: Auto Potion
-    load("ui/tab_forge.lua")     -- Tab 4: Auto Forge V6
-    load("ui/tab_profile.lua")   -- Tab 5: Profile / Config System
-    load("ui/tab_util.lua")      -- Tab 6: Utilitas (Redeem, Lottery, Reward, Race)
-    load("ui/tab_sell.lua")      -- Tab 7: Sell
-    load("ui/tab_room.lua")      -- Tab 8: Room Hub
-    load("ui/tab_autobuy.lua")   -- Tab 9: Auto Buy
-    load("ui/tab_visual.lua")    -- Tab 10-11: Tampilan, Font, Efek
+    load("ui/tab_visual.lua")    -- Tab: Tampilan, Font, Efek + Translate
 
-    load("ui_sync.lua")          -- Sync semua visual UI + floating toggle button
+    load("ui_sync.lua")          -- Sinkronisasi kontrol visual
     load("init.lua")             -- Intro animation, RGB loop, inisialisasi akhir
 
 end)
