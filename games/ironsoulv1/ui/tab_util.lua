@@ -69,15 +69,13 @@ end
 
 -- Kode redeem (terbaru di atas)
 local CODE_LIST = {
-    "CELEBRATEFOR150KMEMBER", "NEWMAPEXPAND",      "IRONSOULWEEKEND16",
-    "SEASON2EXPAND",          "SEASON2OPEN",       "SEASON2LIVE",
-    "IRONSOULWEEKEND13",      "NEWMAP",            "IRONSOULWEEKEND17",
+    
     "SCYTHEWEAPON","IRONSOULWEEKEND18", "IRONSOULWEEKEND19","SEASON2ENDING", "SEASON3EXPAND",
 }
 
 -- Versi reward update (tambah versi baru di sini)
 local REWARD_VERSIONS = {
-    "V10.1", "V10", "V9.5", "V9.4", "V9.3", "V9.2","V10.2", "V10.3", "V10.4", "V10.5", "V10.6", "V11",
+    "V10.1", "V10.2", "V10.3", "V10.4", "V10.5", "V10.6", "V11.0",
 }
 
 -- [UTIL] RACE LIST — dibangun dari ResRace (ReplicatedStorage.Configs.ResRace)
