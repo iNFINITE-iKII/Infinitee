@@ -442,9 +442,9 @@ local function switchTab(name)
     end
 end
 
-for _, name in ipairs({"Tampilan", "Font", "Efek"}) do
-    createSideTab(name, pages[name])
-end
+createSideTab("Tampilan", displayPage)
+createSideTab("Font", fontPage)
+createSideTab("Efek", effectPage)
 switchTab("Tampilan")
 
 _G.IronSoulTemplateGUI = {
