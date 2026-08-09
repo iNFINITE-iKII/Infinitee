@@ -21,8 +21,8 @@ local function fetch(url)
     error("HTTP GET gagal: " .. url .. "\n" .. tostring(result))
 end
 
-local function loadModule(baseUrl, path)
-    local source = fetch(baseUrl .. path)
+local function loadModule(baseUrl, cacheBuster, path)
+    local source = fetch(baseUrl .. path .. cacheBuster)
     local chunk, err = loadstring(source)
 
     if not chunk then
@@ -35,7 +35,8 @@ local function loadModule(baseUrl, path)
     end
 end
 
-return function(baseUrl)
+return function(baseUrl, cacheBuster)
+    cacheBuster = cacheBuster or "?v=20260809-3"
     local env = getgenv and getgenv() or _G
     local existing = env.MiningHub
 
@@ -43,19 +44,19 @@ return function(baseUrl)
         return existing
     end
 
-    loadModule(baseUrl, "core.lua")
-    loadModule(baseUrl, "catalog.lua")
-    loadModule(baseUrl, "navigation.lua")
-    loadModule(baseUrl, "fly.lua")
-    loadModule(baseUrl, "farm.lua")
-    loadModule(baseUrl, "ui/ui_core.lua")
-    loadModule(baseUrl, "ui/tab_action.lua")
-    loadModule(baseUrl, "ui/tab_shop.lua")
-    loadModule(baseUrl, "ui/tab_upgrades.lua")
-    loadModule(baseUrl, "ui/tab_gui.lua")
-    loadModule(baseUrl, "ui/tab_teleports.lua")
-    loadModule(baseUrl, "ui/tab_farm.lua")
-    loadModule(baseUrl, "init.lua")
+    loadModule(baseUrl, cacheBuster, "core.lua")
+    loadModule(baseUrl, cacheBuster, "catalog.lua")
+    loadModule(baseUrl, cacheBuster, "navigation.lua")
+    loadModule(baseUrl, cacheBuster, "fly.lua")
+    loadModule(baseUrl, cacheBuster, "farm.lua")
+    loadModule(baseUrl, cacheBuster, "ui/ui_core.lua")
+    loadModule(baseUrl, cacheBuster, "ui/tab_action.lua")
+    loadModule(baseUrl, cacheBuster, "ui/tab_shop.lua")
+    loadModule(baseUrl, cacheBuster, "ui/tab_upgrades.lua")
+    loadModule(baseUrl, cacheBuster, "ui/tab_gui.lua")
+    loadModule(baseUrl, cacheBuster, "ui/tab_teleports.lua")
+    loadModule(baseUrl, cacheBuster, "ui/tab_farm.lua")
+    loadModule(baseUrl, cacheBuster, "init.lua")
 
     return env.MiningHub
 end

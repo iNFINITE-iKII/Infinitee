@@ -4,6 +4,7 @@
 --------------------------------------------------------------------------------
 
 local BASE_URL = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/mininghubv1/"
+local CACHE_BUSTER = "?v=20260809-3"
 
 local function fetch(url)
     local ok, result = pcall(function()
@@ -24,14 +25,14 @@ local function fetch(url)
     error("HTTP GET gagal: " .. url .. "\n" .. tostring(result))
 end
 
-local source = fetch(BASE_URL .. "loader.lua")
+local source = fetch(BASE_URL .. "loader.lua" .. CACHE_BUSTER)
 local loader, err = loadstring(source)
 
 if not loader then
     error("MiningHub loader gagal dikompilasi:\n" .. tostring(err))
 end
 
-local ok, runtimeError = pcall(loader, BASE_URL)
+local ok, runtimeError = pcall(loader, BASE_URL, CACHE_BUSTER)
 if not ok then
     error("MiningHub gagal dijalankan:\n" .. tostring(runtimeError))
 end
