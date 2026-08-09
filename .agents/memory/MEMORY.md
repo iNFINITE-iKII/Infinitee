@@ -1,0 +1,1 @@
+- [MiningHub UI integration](mininghub-ui-integration.md) — gunakan adapter saat memindahkan builder TemplateGUI ke modul mining; kontraknya berbeda dari Rayfield.
