@@ -1,0 +1,37 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResRollingAscend
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResRollingAscend
+--------------------------------------------------
+{
+    [1] = {
+        ["ID"] = 1,
+        ["NeedLevel"] = 20,
+        ["NeedCoin"] = 100,
+        ["NextLevel"] = 50,
+    },
+    [2] = {
+        ["ID"] = 2,
+        ["NeedLevel"] = 50,
+        ["NeedCoin"] = 100,
+        ["NextLevel"] = 100,
+    },
+    [3] = {
+        ["ID"] = 3,
+        ["NeedLevel"] = 100,
+        ["NeedCoin"] = 100,
+        ["NextLevel"] = 150,
+    },
+    [4] = {
+        ["ID"] = 4,
+        ["NeedLevel"] = 150,
+        ["NeedCoin"] = 100,
+        ["NextLevel"] = 200,
+    },
+    ["__index"] = {
+        [1] = 1,
+        [2] = 2,
+        [3] = 3,
+        [4] = 4,
+    },
+}

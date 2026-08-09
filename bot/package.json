@@ -1,0 +1,26 @@
+{
+  "name": "infinitee-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "node build.mjs",
+    "start": "node dist/index.mjs",
+    "db:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "drizzle-orm": "^0.44.2",
+    "postgres": "^3.4.9",
+    "pino": "^9.14.0",
+    "pino-pretty": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "drizzle-kit": "^0.31.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

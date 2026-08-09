@@ -1,0 +1,21 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResTimedBuff
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResTimedBuff
+--------------------------------------------------
+{
+    ["__index"] = {
+        [1] = "TB_001",
+    },
+    ["TB_001"] = {
+        ["Enabled"] = true,
+        ["OreAdd"] = 1,
+        ["Id"] = "TB_001",
+        ["EndHour"] = 16,
+        ["Remark"] = "Legacy weekend bonus",
+        ["StartHour"] = 14,
+        ["CurrencyAdd"] = 1,
+        ["Days"] = "6|7",
+        ["ExpAdd"] = 1,
+    },
+}

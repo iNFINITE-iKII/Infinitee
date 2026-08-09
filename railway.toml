@@ -1,0 +1,6 @@
+[build]
+buildCommand = "cd bot && npm install --include=dev --registry=https://registry.npmjs.org && npm run build"
+
+[deploy]
+startCommand = "cd bot && npm start"
+restartPolicyType = "always"

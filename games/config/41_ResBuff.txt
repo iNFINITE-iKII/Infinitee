@@ -1,0 +1,57 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResBuff
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResBuff
+--------------------------------------------------
+{
+    ["Buff_EXPBoost_1"] = {
+        ["Id"] = "Buff_EXPBoost_1",
+        ["Value"] = 50,
+        ["Effect"] = "EXPBoost",
+    },
+    ["Buff_CHDMG_1"] = {
+        ["Id"] = "Buff_CHDMG_1",
+        ["Value"] = 30,
+        ["Effect"] = "CHDmgBonus",
+    },
+    ["Buff_AtkBonus_1"] = {
+        ["Id"] = "Buff_AtkBonus_1",
+        ["Value"] = 30,
+        ["Effect"] = "AtkBonus",
+    },
+    ["Buff_GoldBoost_1"] = {
+        ["Id"] = "Buff_GoldBoost_1",
+        ["Value"] = 50,
+        ["Effect"] = "GoldBoost",
+    },
+    ["__index"] = {
+        [1] = "Buff_GoldBoost_1",
+        [2] = "Buff_EXPBoost_1",
+        [3] = "Buff_Luck_1",
+        [4] = "Buff_DropRateBoost_1",
+        [5] = "Buff_AtkBonus_1",
+        [6] = "Buff_HpBonus_1",
+        [7] = "Buff_Critic_1",
+        [8] = "Buff_CHDMG_1",
+    },
+    ["Buff_HpBonus_1"] = {
+        ["Id"] = "Buff_HpBonus_1",
+        ["Value"] = 30,
+        ["Effect"] = "HpBonus",
+    },
+    ["Buff_Critic_1"] = {
+        ["Id"] = "Buff_Critic_1",
+        ["Value"] = 10,
+        ["Effect"] = "CHRate",
+    },
+    ["Buff_DropRateBoost_1"] = {
+        ["Id"] = "Buff_DropRateBoost_1",
+        ["Value"] = 100,
+        ["Effect"] = "DropRateBoost",
+    },
+    ["Buff_Luck_1"] = {
+        ["Id"] = "Buff_Luck_1",
+        ["Value"] = 100,
+        ["Effect"] = "Luck",
+    },
+}

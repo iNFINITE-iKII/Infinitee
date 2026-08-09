@@ -1,0 +1,45 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResHonorStore
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResHonorStore
+--------------------------------------------------
+{
+    ["HonorStore_2"] = {
+        ["ItemCount"] = 1,
+        ["ItemType"] = "Pet",
+        ["Id"] = "HonorStore_2",
+        ["Price"] = 1,
+        ["Stock"] = 18,
+        ["ItemId"] = "Pet_SkeletonDog",
+    },
+    ["__index"] = {
+        [1] = "HonorStore_1",
+        [2] = "HonorStore_2",
+        [3] = "HonorStore_3",
+        [4] = "HonorStore_4",
+    },
+    ["HonorStore_4"] = {
+        ["ItemCount"] = 1,
+        ["ItemType"] = "DataEquipment",
+        ["Id"] = "HonorStore_4",
+        ["Price"] = 1,
+        ["Stock"] = 1,
+        ["ItemId"] = "HeavyBody_Magic_Honor:HeavyBody_Magic_Honor",
+    },
+    ["HonorStore_1"] = {
+        ["ItemCount"] = 1,
+        ["ItemType"] = "DataEquipment",
+        ["Id"] = "HonorStore_1",
+        ["Price"] = 2,
+        ["Stock"] = 1,
+        ["ItemId"] = "Staff_Rastar:Staff_Rastar",
+    },
+    ["HonorStore_3"] = {
+        ["ItemCount"] = 1,
+        ["ItemType"] = "DataEquipment",
+        ["Id"] = "HonorStore_3",
+        ["Price"] = 1,
+        ["Stock"] = 1,
+        ["ItemId"] = "HeavyHead_Magic_Honor:HeavyHead_Magic_Honor",
+    },
+}

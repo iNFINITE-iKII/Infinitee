@@ -1,0 +1,30 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResUpgrade_PetBackpack
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResUpgrade_PetBackpack
+--------------------------------------------------
+{
+    [1] = {
+        ["CapacityCount"] = 40,
+        ["Level"] = 1,
+        ["ProductPackId"] = "",
+        ["Desc"] = "",
+    },
+    [2] = {
+        ["CapacityCount"] = 50,
+        ["Level"] = 2,
+        ["ProductPackId"] = "PetBackpackPack2",
+        ["Desc"] = "Pet bag capacity increased to 50.",
+    },
+    [3] = {
+        ["CapacityCount"] = 60,
+        ["Level"] = 3,
+        ["ProductPackId"] = "PetBackpackPack3",
+        ["Desc"] = "Pet bag capacity increased to 60.",
+    },
+    ["__index"] = {
+        [1] = 1,
+        [2] = 2,
+        [3] = 3,
+    },
+}

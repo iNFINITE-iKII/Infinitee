@@ -1,1 +1,8 @@
-- [MiningHub UI integration](mininghub-ui-integration.md) — gunakan adapter saat memindahkan builder TemplateGUI ke modul mining; kontraknya berbeda dari Rayfield.
+- [Luau validation](luau-validation.md) — Roblox Luau files may use syntax that standard Lua parsers reject; validate with Luau-aware tooling or targeted static checks.
+- [TemplateGUI startup ordering](templategui-startup.md) — initializer dependencies must match shared hub exports or a valid key can be followed by a missing GUI.
+- [GitHub PAT push](github-pat-push.md) — Git HTTPS accepted the PAT through Basic auth with username `x-access-token`; Bearer auth was rejected.
+- [IronSoul config map](ironsoul-config-map.md) — 66 configs are data, not remotes; use the verified remote map and staged upgrade order.
+- [Premium ticket diagnostics](premium-ticket-diagnostics.md) — ticket failures need a stage label because the generic interaction fallback hides Discord-vs-database causes.
+- [Live config scanner](live-config-scanner.md) — discover Res* objects read-only; whitelist ModuleScripts and report Folder/PackageLink or require failures explicitly.
+- [UI input compatibility](ui-input-compatibility.md) — normalize legacy and explicit CreateInputUI argument forms at the shared UI boundary.
+- [Railway npm registry](railway-npm-registry.md) — lockfiles generated in Replit can contain unreachable internal registry URLs; verify clean public-registry builds before pushing.

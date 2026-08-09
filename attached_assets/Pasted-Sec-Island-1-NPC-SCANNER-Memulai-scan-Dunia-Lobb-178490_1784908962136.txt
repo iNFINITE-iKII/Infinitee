@@ -1,0 +1,219 @@
+Sec Island 1
+========================================
+  [NPC SCANNER] Memulai scan...
+  Dunia : Lobby
+  Player: XyzZS001
+  Waktu : 2026-07-24 23:49:57
+========================================
+
+=== NPC SCAN RESULT (16 ProximityPrompt ditemukan) ===
+
+[01] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : The Guide
+     Posisi      : (27.7, 35.7, 55.4)  |  Jarak: 32 stud
+     Path        : Workspace > World > Location > DialogNpc > InteractPoint
+
+[02] Nama    : SpinWheelInteract
+     ObjectText  : (kosong)
+     ActionText  : (kosong)
+     Posisi      : (8.2, 36.1, -17.9)  |  Jarak: 63 stud
+     Path        : Workspace > World > SpinWheelInteract
+
+[03] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Talk 
+     Posisi      : (60.0, 39.9, 27.7)  |  Jarak: 65 stud
+     Path        : Workspace > World > Location > DialogEquipmentForgeNpc > InteractPoint
+
+[04] Nama    : Root
+     ObjectText  : (kosong)
+     ActionText  : Forge
+     Posisi      : (57.8, 38.6, 15.4)  |  Jarak: 67 stud
+     Path        : Workspace > Forge > ForgingFurnace > Forge > Root
+
+[05] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Grocery 
+     Posisi      : (3.3, 28.6, 133.1)  |  Jarak: 88 stud
+     Path        : Workspace > World > Location > CoinStoreNpc > InteractPoint
+
+[06] Nama    : BoardInteract
+     ObjectText  : (kosong)
+     ActionText  : Pet Expedition
+     Posisi      : (-58.1, 36.1, -30.0)  |  Jarak: 92 stud
+     Path        : Workspace > World > BoardInteract
+
+[07] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Enchantment
+     Posisi      : (-77.0, 37.0, 103.6)  |  Jarak: 94 stud
+     Path        : Workspace > World > Location > DialogEquipmentEnchantNpc > InteractPoint
+
+[08] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  :  Merchant 
+     Posisi      : (-94.8, 34.3, 21.3)  |  Jarak: 94 stud
+     Path        : Workspace > World > Location > DialogEquipmentSellNpc > InteractPoint
+
+[09] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Pets upgrade
+     Posisi      : (-76.7, 35.5, -20.8)  |  Jarak: 98 stud
+     Path        : Workspace > World > Location > DialogPetNpc > InteractPoint
+
+[10] Nama    : StoneInteract
+     ObjectText  : (kosong)
+     ActionText  : Bless Equipments
+     Posisi      : (57.4, 36.1, -32.4)  |  Jarak: 98 stud
+     Path        : Workspace > World > StoneInteract
+
+[11] Nama    : TipsInteract_Fist
+     ObjectText  : (kosong)
+     ActionText  : (kosong)
+     Posisi      : (5.8, 64.6, -88.6)  |  Jarak: 137 stud
+     Path        : Workspace > World > TipsInteract_Fist
+
+[12] Nama    : TipsInteract_Bow
+     ObjectText  : (kosong)
+     ActionText  : (kosong)
+     Posisi      : (-46.7, 64.7, -88.6)  |  Jarak: 143 stud
+     Path        : Workspace > World > TipsInteract_Bow
+
+[13] Nama    : FastPassInteract
+     ObjectText  : (kosong)
+     ActionText  : Fast Pass 
+     Posisi      : (-46.0, 65.0, -135.0)  |  Jarak: 187 stud
+     Path        : Workspace > World > Art > FastPassInteract
+
+[14] Nama    : TipsInteract_Scroll
+     ObjectText  : (kosong)
+     ActionText  : (kosong)
+     Posisi      : (5.9, 65.6, -146.0)  |  Jarak: 193 stud
+     Path        : Workspace > World > TipsInteract_Scroll
+
+[15] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Talk
+     Posisi      : (-34.4, -422.9, 144.6)  |  Jarak: 468 stud
+     Path        : Workspace > World > Art > Cave > Lod > DialogCaveNpc > InteractPoint
+
+[16] Nama    : Root
+     ObjectText  : (kosong)
+     ActionText  : Forge
+     Posisi      : (9975.8, 13.1, -57.3)  |  Jarak: 9979 stud
+     Path        : Workspace > Island2 > Art > ForgingFurnace > ForgingFurnace > Forge > Root
+
+=== SELESAI ===
+
+=== KEYWORD TERDETEKSI (untuk tab NPC) ===
+  keyword "enchant"    → InteractPoint
+  keyword "merchant"   → InteractPoint
+  keyword "upgrade"    → InteractPoint
+  keyword "guide"      → InteractPoint
+  keyword "grocery"    → InteractPoint
+  keyword "expedition" → BoardInteract
+  keyword "pet"        → BoardInteract, InteractPoint
+  keyword "grocer"     → InteractPoint
+  keyword "bless"      → StoneInteract
+  keyword "forge"      → Root, Root
+==========================================
+
+Sec Island 2 adalah yang ada Island 2 nya
+
+========================================
+  [NPC SCANNER] Memulai scan...
+  Dunia : Lobby
+  Player: XyzZS001
+  Waktu : 2026-07-24 23:50:05
+========================================
+
+=== NPC SCAN RESULT (12 ProximityPrompt ditemukan) ===
+
+[01] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : The Guide
+     Posisi      : (9938.0, 15.0, 17.4)  |  Jarak: 45 stud
+     Path        : Workspace > Island2 > Location > DialogNpc > InteractPoint
+
+[02] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Talk 
+     Posisi      : (9990.9, 14.5, -51.5)  |  Jarak: 46 stud
+     Path        : Workspace > Island2 > Location > DialogEquipmentForgeNpc > InteractPoint
+
+[03] Nama    : Root
+     ObjectText  : (kosong)
+     ActionText  : Forge
+     Posisi      : (9975.8, 13.1, -57.3)  |  Jarak: 49 stud
+     Path        : Workspace > Island2 > Art > ForgingFurnace > ForgingFurnace > Forge > Root
+
+[04] Nama    : SpinWheelInteract
+     ObjectText  : (kosong)
+     ActionText  : (kosong)
+     Posisi      : (9915.1, 15.0, 13.6)  |  Jarak: 64 stud
+     Path        : Workspace > Island2 > Art > SpinWheelInteract
+
+[05] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  :  Merchant 
+     Posisi      : (9924.5, 14.6, -48.3)  |  Jarak: 65 stud
+     Path        : Workspace > Island2 > Location > DialogEquipmentSellNpc > InteractPoint
+
+[06] Nama    : BoardInteract
+     ObjectText  : (kosong)
+     ActionText  : Pet Expedition
+     Posisi      : (10039.5, 15.1, 17.1)  |  Jarak: 68 stud
+     Path        : Workspace > Island2 > BoardInteract
+
+[07] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Grocery 
+     Posisi      : (10051.7, 13.6, -56.0)  |  Jarak: 89 stud
+     Path        : Workspace > Island2 > Location > CoinStoreNpc > InteractPoint
+
+[08] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Pets upgrade
+     Posisi      : (10066.0, 15.2, 1.1)  |  Jarak: 90 stud
+     Path        : Workspace > Island2 > Location > DialogPetNpc > InteractPoint
+
+[09] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Enchantment
+     Posisi      : (9893.1, 14.6, -58.6)  |  Jarak: 97 stud
+     Path        : Workspace > Island2 > Location > DialogEquipmentEnchantNpc > InteractPoint
+
+[10] Nama    : StoneInteract
+     ObjectText  : (kosong)
+     ActionText  : Bless Equipments
+     Posisi      : (9862.4, 13.6, -17.6)  |  Jarak: 113 stud
+     Path        : Workspace > Island2 > StoneInteract
+
+[11] Nama    : Root
+     ObjectText  : (kosong)
+     ActionText  : Forge
+     Posisi      : (57.8, 38.6, 15.4)  |  Jarak: 9918 stud
+     Path        : Workspace > Forge > ForgingFurnace > Forge > Root
+
+[12] Nama    : InteractPoint
+     ObjectText  : (kosong)
+     ActionText  : Grocery 
+     Posisi      : (3.3, 28.6, 133.1)  |  Jarak: 9973 stud
+     Path        : Workspace > World > Location > CoinStoreNpc > InteractPoint
+
+=== SELESAI ===
+
+=== KEYWORD TERDETEKSI (untuk tab NPC) ===
+  keyword "enchant"    → InteractPoint
+  keyword "merchant"   → InteractPoint
+  keyword "upgrade"    → InteractPoint
+  keyword "guide"      → InteractPoint
+  keyword "pet"        → BoardInteract, InteractPoint
+  keyword "expedition" → BoardInteract
+  keyword "grocery"    → InteractPoint, InteractPoint
+  keyword "grocer"     → InteractPoint, InteractPoint
+  keyword "bless"      → StoneInteract
+  keyword "forge"      → Root, Root
+==========================================
+

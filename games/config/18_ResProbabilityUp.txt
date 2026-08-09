@@ -1,0 +1,39 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResProbabilityUp
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResProbabilityUp
+--------------------------------------------------
+{
+    ["Fist"] = {
+        ["Relic"] = "FistRelic_1:3;FistRelic_2:20",
+        ["Class"] = "Fist",
+    },
+    ["__index"] = {
+        [1] = "Sword",
+        [2] = "Heavy",
+        [3] = "Staff",
+        [4] = "Greatsword",
+        [5] = "Fist",
+        [6] = "Bow",
+    },
+    ["Staff"] = {
+        ["Relic"] = "",
+        ["Class"] = "Staff",
+    },
+    ["Greatsword"] = {
+        ["Relic"] = "",
+        ["Class"] = "Greatsword",
+    },
+    ["Sword"] = {
+        ["Relic"] = "",
+        ["Class"] = "Sword",
+    },
+    ["Bow"] = {
+        ["Relic"] = "BowRelic_1:3;BowRelic_2:20",
+        ["Class"] = "Bow",
+    },
+    ["Heavy"] = {
+        ["Relic"] = "",
+        ["Class"] = "Heavy",
+    },
+}

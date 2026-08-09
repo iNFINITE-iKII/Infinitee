@@ -1,0 +1,69 @@
+--------------------------------------------------
+📦 NAMA CONFIG : ResDailyQuest
+   Tipe        : ModuleScript
+   Path        : ReplicatedStorage.Configs.ResDailyQuest
+--------------------------------------------------
+{
+    ["DQ_003"] = {
+        ["Sort"] = 3,
+        ["Title"] = "K_DQ_003Title",
+        ["ActionParam2"] = "",
+        ["ID"] = "DQ_003",
+        ["ActionParam1"] = 3,
+        ["Action"] = "WorldClear",
+        ["Desc"] = "K_DQ_003Desc",
+    },
+    ["DQ_004"] = {
+        ["Sort"] = 4,
+        ["Title"] = "K_DQ_004Title",
+        ["ActionParam2"] = "",
+        ["ID"] = "DQ_004",
+        ["ActionParam1"] = 3,
+        ["Action"] = "ForgeThing",
+        ["Desc"] = "K_DQ_004Desc",
+    },
+    ["DQ_002"] = {
+        ["Sort"] = 2,
+        ["Title"] = "K_DQ_002Title",
+        ["ActionParam2"] = "",
+        ["ID"] = "DQ_002",
+        ["ActionParam1"] = 100,
+        ["Action"] = "KillMon",
+        ["Desc"] = "K_DQ_002Desc",
+    },
+    ["DQ_005"] = {
+        ["Sort"] = 5,
+        ["Title"] = "K_DQ_005Title",
+        ["ActionParam2"] = "Currency1",
+        ["ID"] = "DQ_005",
+        ["ActionParam1"] = 5000,
+        ["Action"] = "CurrencySpend",
+        ["Desc"] = "K_DQ_005Desc",
+    },
+    ["__index"] = {
+        [1] = "DQ_001",
+        [2] = "DQ_002",
+        [3] = "DQ_003",
+        [4] = "DQ_004",
+        [5] = "DQ_005",
+        [6] = "DQ_006",
+    },
+    ["DQ_001"] = {
+        ["Sort"] = 1,
+        ["Title"] = "K_DQ_001Title",
+        ["ActionParam2"] = "",
+        ["ID"] = "DQ_001",
+        ["ActionParam1"] = 1,
+        ["Action"] = "Login",
+        ["Desc"] = "K_DQ_001Desc",
+    },
+    ["DQ_006"] = {
+        ["Sort"] = 6,
+        ["Title"] = "K_DQ_006Title",
+        ["ActionParam2"] = "",
+        ["ID"] = "DQ_006",
+        ["ActionParam1"] = 30,
+        ["Action"] = "OnlineTime",
+        ["Desc"] = "K_DQ_006Desc",
+    },
+}

@@ -1,0 +1,407 @@
+-- ====================================================================
+-- STANDALONE AUTO SELL GUI (MOBILE OPTIMIZED)
+-- Extracted from IRON SOUL SCRIPT V6 - BUG FIX (VISUAL SYNC)
+-- ====================================================================
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local FolderNama = "IronSoulConfig"
+local FileNama = FolderNama .. "/MobileAutoSellConfig.json"
+
+local Config = {
+    AutoSell = false,
+    SellByRarity = 5,
+    OreSellModes = {}
+}
+
+local function CopyMap(Source)
+    local Result = {}
+    for Key, Value in pairs(Source or {}) do
+        Result[Key] = Value
+    end
+    return Result
+end
+
+local function LoadConfig()
+    if readfile and isfile and isfile(FileNama) then
+        pcall(function()
+            local Data = HttpService:JSONDecode(readfile(FileNama))
+            if type(Data) == "table" then
+                Config.AutoSell = Data.AutoSell == true
+                Config.SellByRarity = tonumber(Data.SellByRarity) or 5
+                if type(Data.OreSellModes) == "table" then
+                    Config.OreSellModes = CopyMap(Data.OreSellModes)
+                end
+            end
+        end)
+    end
+end
+
+local function SaveConfig()
+    if writefile then
+        pcall(function()
+            if makefolder then makefolder(FolderNama) end
+            writefile(FileNama, HttpService:JSONEncode(Config))
+        end)
+    end
+end
+LoadConfig()
+
+-- Framework & Remote Hooks
+local FrameworkModule, ForgeRemoteFunction, TaskRemoteEvent
+local CachedOreCatalog = nil
+local RefreshUIList = nil -- Placeholder untuk fungsi refresh GUI
+
+local function GetFrameworkModule()
+    if not FrameworkModule then
+        FrameworkModule = require(ReplicatedStorage:WaitForChild("Framework"))
+    end
+    return FrameworkModule
+end
+
+local function GetForgeRemoteFunction()
+    if not ForgeRemoteFunction then
+        ForgeRemoteFunction = ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("ForgeSystem"):WaitForChild("ForgeRF")
+    end
+    return ForgeRemoteFunction
+end
+
+local function GetTaskRemoteEvent()
+    if not TaskRemoteEvent then
+        TaskRemoteEvent = ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("TaskSystem"):WaitForChild("TaskRE")
+    end
+    return TaskRemoteEvent
+end
+
+local function GetOreCatalog(ForceRefresh)
+    if CachedOreCatalog and not ForceRefresh then return CachedOreCatalog end
+    local Framework = GetFrameworkModule()
+    local DataUtil = Framework.Modules.DataUtil
+    local ForgeUtil = Framework.Modules.ForgeUtil
+    local RarityTiers = Framework.Modules.RarityTiers
+    local Ores = DataUtil:GetValue(LocalPlayer, {"Ores"}) or {}
+    local ResOres = require(ReplicatedStorage:WaitForChild("Configs"):WaitForChild("ResOres"))
+    
+    local Result = {}
+    local Seen = {}
+    local function AddOre(OreId)
+        if type(OreId) ~= "string" or OreId == "" or Seen[OreId] then return end
+        Seen[OreId] = true
+        local Def = ForgeUtil:GetDef(OreId) or ResOres[OreId]
+        if Def then
+            local Rarity = tonumber(Def.Rarity) or 0
+            local RarityName = tostring(Rarity)
+            pcall(function() RarityName = RarityTiers:GetTierName(Rarity) end)
+            table.insert(Result, {
+                ItemId = OreId,
+                Count = tonumber(Ores[OreId]) or 0,
+                Rarity = Rarity,
+                RarityName = RarityName,
+                Def = Def
+            })
+        end
+    end
+
+    if type(ResOres.__index) == "table" then
+        for _, OreId in ipairs(ResOres.__index) do AddOre(OreId) end
+    end
+    for OreId in pairs(ResOres) do if OreId ~= "__index" then AddOre(OreId) end end
+    for OreId in pairs(Ores) do AddOre(OreId) end
+
+    table.sort(Result, function(A, B)
+        if A.Count ~= B.Count then return A.Count > B.Count end
+        if A.Rarity ~= B.Rarity then return A.Rarity > B.Rarity end
+        return tostring(A.ItemId) < tostring(B.ItemId)
+    end)
+    CachedOreCatalog = Result
+    return CachedOreCatalog
+end
+
+local function GetItemDisplayName(ItemId)
+    local RawId = tostring(ItemId or "Unknown")
+    local BaseId = string.split(RawId, ":")[1]
+    local Key = "K_" .. string.upper(BaseId)
+    local DisplayName = nil
+    pcall(function() DisplayName = GetFrameworkModule().Modules.TranslationUtil:TranslateByKey(Key) end)
+    if type(DisplayName) == "string" and DisplayName ~= "" and DisplayName ~= Key then return DisplayName end
+    return string.gsub(BaseId, "_", " ")
+end
+
+local function ShouldSellOre(OreId, Def)
+    local Mode = Config.OreSellModes[OreId] or "OFF"
+    if Mode == "SIMPAN" then return false end
+    if Mode == "JUAL" then return true end
+    local Rarity = Def and tonumber(Def.Rarity)
+    return Config.SellByRarity > 0 and Rarity and Rarity <= Config.SellByRarity
+end
+
+local function GetRarityNameDisplay(level)
+    if level <= 0 then return "OFF" end
+    local catalog = GetOreCatalog(false)
+    if catalog then
+        for _, entry in ipairs(catalog) do
+            if entry.Rarity == level then
+                return entry.RarityName
+            end
+        end
+    end
+    return "Level " .. level
+end
+
+local LastAutoSellContextRequest = 0
+local function TryAutoSellOresOnce()
+    local Framework = GetFrameworkModule()
+    local DataUtil = Framework.Modules.DataUtil
+    local ForgeUtil = Framework.Modules.ForgeUtil
+    local Ores = DataUtil:GetValue(LocalPlayer, {"Ores"}) or {}
+    local SellList = {}
+
+    for OreId, Count in pairs(Ores) do
+        Count = tonumber(Count) or 0
+        local Def = ForgeUtil:GetDef(OreId)
+        if Count > 0 and ShouldSellOre(OreId, Def) then
+            table.insert(SellList, OreId)
+        end
+    end
+
+    if #SellList <= 0 then return end
+
+    if (os.clock() - LastAutoSellContextRequest) >= 10.0 then
+        LastAutoSellContextRequest = os.clock()
+        local TaskRemote = GetTaskRemoteEvent()
+        pcall(function()
+            TaskRemote:FireServer("UpdateTaskProgress", "DialogNpc", "EquipmentSellNpc1|1")
+            TaskRemote:FireServer("UpdateTaskProgress", "DialogNpc", "EquipmentSellNpc1|0")
+            TaskRemote:FireServer("UpdateTaskProgress", "OpenGUIWindow", "ScreenEquipSell")
+            TaskRemote:FireServer("UpdateTaskProgress", "OpenGUIWindow", "ScreenTips")
+        end)
+        task.wait(0.25)
+    end
+
+    local Success = pcall(function() GetForgeRemoteFunction():InvokeServer("JUAL", SellList) end)
+    if Success and RefreshUIList then
+        task.wait(0.5) -- Beri waktu server sinkronisasi tas sebelum refresh
+        pcall(RefreshUIList)
+    end
+end
+
+task.spawn(function()
+    while true do
+        task.wait(5.0)
+        if Config.AutoSell then pcall(TryAutoSellOresOnce) end
+    end
+end)
+
+-- ====================================================================
+-- MOBILE UI CREATION (V6 STYLE)
+-- ====================================================================
+local Theme = {
+    Background = Color3.fromRGB(13, 16, 22),
+    Panel = Color3.fromRGB(20, 24, 32),
+    Surface = Color3.fromRGB(28, 33, 43),
+    Border = Color3.fromRGB(58, 68, 86),
+    Text = Color3.fromRGB(235, 239, 247),
+    Muted = Color3.fromRGB(147, 158, 179),
+    Accent = Color3.fromRGB(71, 134, 255),
+    Enabled = Color3.fromRGB(40, 190, 112),
+    Disabled = Color3.fromRGB(91, 101, 119),
+    Sell = Color3.fromRGB(230, 157, 52),
+    Keep = Color3.fromRGB(217, 75, 75)
+}
+
+local function AddCorner(Object, Radius)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, Radius or 6)
+    Corner.Parent = Object
+end
+
+local function MakeDraggable(Handle, Target)
+    local Dragging, DragInput, DragStart, StartPosition
+    Handle.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = true
+            DragStart = Input.Position
+            StartPosition = Target.Position
+            Input.Changed:Connect(function()
+                if Input.UserInputState == Enum.UserInputState.End then Dragging = false end
+            end)
+        end
+    end)
+    Handle.InputChanged:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+            DragInput = Input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(Input)
+        if Dragging and Input == DragInput then
+            local Delta = Input.Position - DragStart
+            Target.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
+        end
+    end)
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MobileAutoSellGUI"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.fromOffset(340, 440)
+MainFrame.Position = UDim2.fromScale(0.5, 0.5)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Theme.Panel
+MainFrame.BorderSizePixel = 0
+AddCorner(MainFrame, 10)
+
+local Header = Instance.new("Frame", MainFrame)
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Theme.Background
+AddCorner(Header, 10)
+MakeDraggable(Header, MainFrame)
+
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.fromOffset(10, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Auto Sell (Mobile)"
+Title.TextColor3 = Theme.Text
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseBtn = Instance.new("TextButton", Header)
+CloseBtn.Size = UDim2.fromOffset(30, 30)
+CloseBtn.Position = UDim2.new(1, -40, 0, 5)
+CloseBtn.BackgroundColor3 = Theme.Keep
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.Font = Enum.Font.GothamBold
+AddCorner(CloseBtn, 5)
+CloseBtn.Activated:Connect(function() ScreenGui:Destroy() end)
+
+local Content = Instance.new("Frame", MainFrame)
+Content.Size = UDim2.new(1, -20, 1, -50)
+Content.Position = UDim2.fromOffset(10, 45)
+Content.BackgroundTransparency = 1
+
+local ToggleBtn = Instance.new("TextButton", Content)
+ToggleBtn.Size = UDim2.new(1, 0, 0, 35)
+ToggleBtn.BackgroundColor3 = Config.AutoSell and Theme.Enabled or Theme.Disabled
+ToggleBtn.Text = Config.AutoSell and "AUTO SELL: ON" or "AUTO SELL: OFF"
+ToggleBtn.TextColor3 = Color3.new(1,1,1)
+ToggleBtn.Font = Enum.Font.GothamBold
+AddCorner(ToggleBtn, 6)
+
+local RarityBtn = Instance.new("TextButton", Content)
+RarityBtn.Size = UDim2.new(1, 0, 0, 30)
+RarityBtn.Position = UDim2.fromOffset(0, 40)
+RarityBtn.BackgroundColor3 = Theme.Surface
+RarityBtn.Text = "  Sell By Rarity: " .. GetRarityNameDisplay(Config.SellByRarity)
+RarityBtn.TextColor3 = Theme.Text
+RarityBtn.Font = Enum.Font.GothamMedium
+RarityBtn.TextXAlignment = Enum.TextXAlignment.Left
+AddCorner(RarityBtn, 6)
+
+local List = Instance.new("ScrollingFrame", Content)
+List.Size = UDim2.new(1, 0, 1, -80)
+List.Position = UDim2.fromOffset(0, 80)
+List.BackgroundColor3 = Theme.Background
+List.BorderSizePixel = 0
+List.ScrollBarThickness = 4
+List.AutomaticCanvasSize = Enum.AutomaticSize.Y
+AddCorner(List, 6)
+
+local ListLayout = Instance.new("UIListLayout", List)
+ListLayout.Padding = UDim.new(0, 5)
+
+local function RefreshList()
+    local SavedScroll = List.CanvasPosition -- Menyimpan posisi scroll agar layar tidak lompat saat me-refresh
+    
+    for _, child in ipairs(List:GetChildren()) do
+        if child:IsA("Frame") then child:Destroy() end
+    end
+    
+    local Catalog = GetOreCatalog(true)
+    for _, Entry in ipairs(Catalog) do
+        local Row = Instance.new("Frame", List)
+        Row.Size = UDim2.new(1, -4, 0, 46)
+        Row.BackgroundColor3 = Theme.Surface
+        Row.BorderSizePixel = 0
+        AddCorner(Row, 5)
+        
+        local ItemTitle = Instance.new("TextLabel", Row)
+        ItemTitle.Size = UDim2.new(1, -75, 0, 22)
+        ItemTitle.Position = UDim2.fromOffset(10, 3)
+        ItemTitle.BackgroundTransparency = 1
+        ItemTitle.Text = GetItemDisplayName(Entry.ItemId)
+        ItemTitle.TextColor3 = Theme.Text
+        ItemTitle.Font = Enum.Font.GothamMedium
+        ItemTitle.TextSize = 12
+        ItemTitle.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local Detail = Instance.new("TextLabel", Row)
+        Detail.Name = "Detail"
+        Detail.Size = UDim2.new(1, -75, 0, 18)
+        Detail.Position = UDim2.fromOffset(10, 23)
+        Detail.BackgroundTransparency = 1
+        Detail.Text = Entry.ItemId .. " · " .. tostring(Entry.RarityName) .. " · Level " .. tostring(Entry.Rarity) .. " · owned " .. tostring(Entry.Count)
+        Detail.TextColor3 = Theme.Muted
+        Detail.Font = Enum.Font.Gotham
+        Detail.TextSize = 10
+        Detail.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local ModeBtn = Instance.new("TextButton", Row)
+        ModeBtn.Size = UDim2.fromOffset(58, 25)
+        ModeBtn.Position = UDim2.new(1, -66, 0.5, -12.5)
+        ModeBtn.AutoButtonColor = false
+        ModeBtn.BorderSizePixel = 0
+        AddCorner(ModeBtn, 5)
+        
+        local function UpdateModeBtn()
+            local Mode = Config.OreSellModes[Entry.ItemId] or "OFF"
+            ModeBtn.Text = Mode
+            ModeBtn.BackgroundColor3 = Mode == "JUAL" and Theme.Sell or (Mode == "SIMPAN" and Theme.Keep or Theme.Accent)
+        end
+        UpdateModeBtn()
+        ModeBtn.TextColor3 = Theme.Text
+        ModeBtn.Font = Enum.Font.GothamBold
+        ModeBtn.TextSize = 10
+        
+        ModeBtn.Activated:Connect(function()
+            local Mode = Config.OreSellModes[Entry.ItemId] or "OFF"
+            if Mode == "OFF" then Config.OreSellModes[Entry.ItemId] = "JUAL"
+            elseif Mode == "JUAL" then Config.OreSellModes[Entry.ItemId] = "SIMPAN"
+            else Config.OreSellModes[Entry.ItemId] = nil end
+            UpdateModeBtn()
+            SaveConfig()
+        end)
+    end
+    
+    -- Mengembalikan posisi scroll
+    task.spawn(function()
+        task.wait()
+        List.CanvasPosition = SavedScroll
+    end)
+end
+
+-- Menyambungkan fungsi refresh ke variabel global agar bisa dipanggil sistem autosell
+RefreshUIList = RefreshList
+
+ToggleBtn.Activated:Connect(function()
+    Config.AutoSell = not Config.AutoSell
+    ToggleBtn.BackgroundColor3 = Config.AutoSell and Theme.Enabled or Theme.Disabled
+    ToggleBtn.Text = Config.AutoSell and "AUTO SELL: ON" or "AUTO SELL: OFF"
+    SaveConfig()
+end)
+
+RarityBtn.Activated:Connect(function()
+    Config.SellByRarity = Config.SellByRarity >= 7 and 0 or Config.SellByRarity + 1
+    RarityBtn.Text = "  Sell By Rarity: " .. GetRarityNameDisplay(Config.SellByRarity)
+    SaveConfig()
+end)
+
+pcall(RefreshList)
