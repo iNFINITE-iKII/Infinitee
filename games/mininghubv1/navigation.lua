@@ -2,7 +2,8 @@
 -- Mining Hub V1 — navigation, NPC, GUI target, dan backpack
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local Workspace = Hub.Services.Workspace
 local LocalPlayer = Hub.Services.LocalPlayer
 local PlayerGui = Hub.Services.PlayerGui

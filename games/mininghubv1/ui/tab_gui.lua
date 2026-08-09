@@ -2,7 +2,8 @@
 -- Mining Hub V1 — tab GUI Controls
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local ui = Hub.UI
 
 local tab = ui.CreateTab("GUI Controls", 4483345998)

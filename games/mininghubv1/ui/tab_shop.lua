@@ -2,7 +2,8 @@
 -- Mining Hub V1 — tab Shop & Equip
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local data = Hub.Data
 local ui = Hub.UI
 local remotes = Hub.Services.Remotes

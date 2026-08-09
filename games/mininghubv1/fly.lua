@@ -2,7 +2,8 @@
 -- Mining Hub V1 — fly controller
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local LocalPlayer = Hub.Services.LocalPlayer
 local Workspace = Hub.Services.Workspace
 local RunService = Hub.Services.RunService

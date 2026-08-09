@@ -2,7 +2,8 @@
 -- Mining Hub V1 — shared UI setup
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local Rayfield = Hub.Rayfield
 
 local window = Rayfield:CreateWindow({

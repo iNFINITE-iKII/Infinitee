@@ -2,7 +2,8 @@
 -- Mining Hub V1 — tab Sell & Action
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local state = Hub.State
 local data = Hub.Data
 local ui = Hub.UI

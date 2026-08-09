@@ -3,7 +3,7 @@
 -- Service Roblox, state bersama, konfigurasi, dan utilitas dasar.
 --------------------------------------------------------------------------------
 
-local env = getgenv()
+local env = getgenv and getgenv() or _G
 local Hub = env.MiningHub or {}
 env.MiningHub = Hub
 
@@ -13,7 +13,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
-local localPlayer = Players.LocalPlayer
+local localPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
 Hub.Services = {
     Players = Players,
@@ -96,5 +96,39 @@ Hub.Data = {}
 Hub.Functions = {}
 Hub.UI = {}
 Hub.Connections = {}
-Hub.Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local function loadRayfield()
+    local rayfieldUrl = "https://sirius.menu/rayfield"
+    local ok, source = pcall(function()
+        return game:HttpGet(rayfieldUrl)
+    end)
+
+    if not ok or type(source) ~= "string" or #source == 0 then
+        local requestFunction = request or http_request or (syn and syn.request)
+        if type(requestFunction) == "function" then
+            local response = requestFunction({Url = rayfieldUrl, Method = "GET"})
+            if response and response.Success ~= false and response.Body then
+                source = response.Body
+                ok = true
+            end
+        end
+    end
+
+    if not ok or type(source) ~= "string" or #source == 0 then
+        error("Rayfield tidak dapat diunduh dari sirius.menu. Pastikan HTTP request aktif.")
+    end
+
+    local chunk, err = loadstring(source)
+    if not chunk then
+        error("Rayfield gagal dikompilasi: " .. tostring(err))
+    end
+
+    local loaded, result = pcall(chunk)
+    if not loaded or not result then
+        error("Rayfield gagal dijalankan: " .. tostring(result))
+    end
+
+    return result
+end
+
+Hub.Rayfield = loadRayfield()
 Hub.Loaded = false

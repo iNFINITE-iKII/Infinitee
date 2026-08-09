@@ -2,7 +2,8 @@
 -- Mining Hub V1 — tab Upgrades
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local ui = Hub.UI
 local remotes = Hub.Services.Remotes
 

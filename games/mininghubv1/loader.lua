@@ -2,17 +2,41 @@
 -- Mining Hub V1 — module loader
 --------------------------------------------------------------------------------
 
+local function fetch(url)
+    local ok, result = pcall(function()
+        return game:HttpGet(url)
+    end)
+    if ok and type(result) == "string" and #result > 0 then
+        return result
+    end
+
+    local requestFunction = request or http_request or (syn and syn.request)
+    if type(requestFunction) == "function" then
+        local response = requestFunction({Url = url, Method = "GET"})
+        if response and response.Success ~= false and response.Body then
+            return response.Body
+        end
+    end
+
+    error("HTTP GET gagal: " .. url .. "\n" .. tostring(result))
+end
+
 local function loadModule(baseUrl, path)
-    local source = game:HttpGet(baseUrl .. path)
+    local source = fetch(baseUrl .. path)
     local chunk, err = loadstring(source)
 
-    assert(chunk, "Gagal memuat " .. path .. ": " .. tostring(err))
+    if not chunk then
+        error("Gagal mengompilasi " .. path .. ":\n" .. tostring(err))
+    end
+
     local ok, runtimeErr = pcall(chunk)
-    assert(ok, "Error saat menjalankan " .. path .. ": " .. tostring(runtimeErr))
+    if not ok then
+        error("Error saat menjalankan " .. path .. ":\n" .. tostring(runtimeErr))
+    end
 end
 
 return function(baseUrl)
-    local env = getgenv()
+    local env = getgenv and getgenv() or _G
     local existing = env.MiningHub
 
     if existing and existing.Loaded then

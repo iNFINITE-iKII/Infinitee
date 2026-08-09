@@ -2,7 +2,8 @@
 -- Mining Hub V1 — tab Farm
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local state = Hub.State
 local config = Hub.Config
 local ui = Hub.UI

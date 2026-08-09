@@ -2,7 +2,8 @@
 -- Mining Hub V1 — target scanner dan farm loop
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local Workspace = Hub.Services.Workspace
 local RunService = Hub.Services.RunService
 local LocalPlayer = Hub.Services.LocalPlayer

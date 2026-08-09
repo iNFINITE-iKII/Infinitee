@@ -2,7 +2,8 @@
 -- Mining Hub V1 — final initialization
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local UserInputService = Hub.Services.UserInputService
 
 if Hub.Connections.InputBegan then

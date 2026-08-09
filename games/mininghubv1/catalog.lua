@@ -2,7 +2,8 @@
 -- Mining Hub V1 — live catalog reader
 --------------------------------------------------------------------------------
 
-local Hub = getgenv().MiningHub
+local env = getgenv and getgenv() or _G
+local Hub = env.MiningHub
 local ReplicatedStorage = Hub.Services.ReplicatedStorage
 
 local function getLiveModuleData(path)
