@@ -3,8 +3,8 @@
 -- Jalankan file ini. Modul lain dimuat dari folder games/mininghubv1/.
 --------------------------------------------------------------------------------
 
-local BASE_URL = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/mininghubv1/"
-local CACHE_BUSTER = "?v=20260809-3"
+local BASE_URL = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/d4d4889072709f6040d0f9c479330a6b314aa4c7/games/mininghubv1/"
+local CACHE_BUSTER = "?v=20260809-immutable"
 
 local function fetch(url)
     local ok, result = pcall(function()
