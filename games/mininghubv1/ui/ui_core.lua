@@ -125,6 +125,16 @@ local function wrapTab(page)
         return api
     end
 
+    function tab:CreateMultiDropdown(options)
+        return Template.CreateScrollableMultiSelectUI(
+            page,
+            options.Name,
+            options.Options,
+            options.States,
+            options.Callbacks
+        )
+    end
+
     function tab:CreateButton(options)
         return Template.CreateButton(page, options.Name, options.Callback)
     end

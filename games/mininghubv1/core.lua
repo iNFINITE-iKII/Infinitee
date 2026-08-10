@@ -53,6 +53,27 @@ Hub.State = {
     CurrentPrompt = nil,
     FarmTask = nil,
     NukeStatsParagraph = nil,
+    IsRuneFarmOn = false,
+    IsBoulderFarmOn = false,
+    BoulderFarmTask = nil,
+    BoulderCurrentTarget = nil,
+    BoulderMasterESP = true,
+    BoulderESPEnabled = {
+        Mossite = true,
+        Voltite = true,
+        Gildrite = true,
+        Rimeveil = true,
+        Nocturnite = true,
+    },
+    BoulderFarmEnabled = {
+        Mossite = false,
+        Voltite = false,
+        Gildrite = false,
+        Rimeveil = false,
+        Nocturnite = false,
+    },
+    BoulderFarmDelay = 0.1,
+    BoulderPromptSpamCount = 10,
 }
 
 Hub.Config = {

@@ -83,6 +83,72 @@ tab:CreateInput({
     end,
 })
 
+tab:CreateSection("Farm Rune")
+tab:CreateToggle({
+    Name = "🪨 Auto Rune (Prioritas)",
+    CurrentValue = state.IsRuneFarmOn,
+    Flag = "BoulderRuneToggle",
+    Callback = function(value)
+        state.IsRuneFarmOn = value == true
+        if state.IsRuneFarmOn or state.IsBoulderFarmOn then
+            Hub.Functions.StartBoulderFarmLoop()
+        else
+            Hub.Functions.StopBoulderFarmLoop()
+        end
+    end,
+})
+tab:CreateMultiDropdown((function()
+    local names, states, callbacks = Hub.Functions.GetBoulderSelectionData("Farm")
+    return {
+        Name = "Select Auto-Farm Target",
+        Options = names,
+        States = states,
+        Callbacks = callbacks,
+    }
+end)())
+tab:CreateInput({
+    Name = "Boulder Prompt Spam / Burst",
+    CurrentValue = tostring(state.BoulderPromptSpamCount),
+    PlaceholderText = "10",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        local value = tonumber(text)
+        if value and value >= 1 then
+            state.BoulderPromptSpamCount = math.floor(value)
+        end
+    end,
+})
+
+tab:CreateSection("Boulder ESP")
+tab:CreateToggle({
+    Name = "👁️ Master Boulder ESP",
+    CurrentValue = state.BoulderMasterESP,
+    Flag = "BoulderMasterESP",
+    Callback = function(value)
+        state.BoulderMasterESP = value == true
+    end,
+})
+tab:CreateMultiDropdown((function()
+    local names, states, callbacks = Hub.Functions.GetBoulderSelectionData("ESP")
+    return {
+        Name = "Select ESP Boulders",
+        Options = names,
+        States = states,
+        Callbacks = callbacks,
+    }
+end)())
+tab:CreateButton({
+    Name = "🔄 Refresh Boulder ESP",
+    Callback = function()
+        Hub.Functions.ScanBoulders()
+        ui.Notify({
+            Title = "Boulder ESP",
+            Content = "Daftar boulder dan ESP sudah diperbarui.",
+            Duration = 2,
+        })
+    end,
+})
+
 tab:CreateSection("Target Filters")
 local sizeDropdown = tab:CreateDropdown({
     Name = "Size Filter",
@@ -204,6 +270,35 @@ tab:CreateToggle({
         Hub.Functions.UpdateFly()
     end,
 })
+
+tab:CreateSection("Farm Nuke")
+tab:CreateInput({
+    Name = "Boulder Farm Delay (detik)",
+    CurrentValue = tostring(state.BoulderFarmDelay),
+    PlaceholderText = "0.1",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        local value = tonumber(text)
+        if value and value >= 0 then
+            state.BoulderFarmDelay = value
+        end
+    end,
+})
+local boulderNukeToggle
+boulderNukeToggle = tab:CreateToggle({
+    Name = "⚡ ACTIVATE BOULDER NUKE FARM",
+    CurrentValue = state.IsBoulderFarmOn,
+    Flag = "BoulderNukeFarmToggle",
+    Callback = function(value)
+        state.IsBoulderFarmOn = value == true
+        if state.IsBoulderFarmOn or state.IsRuneFarmOn then
+            Hub.Functions.StartBoulderFarmLoop()
+        else
+            Hub.Functions.StopBoulderFarmLoop()
+        end
+    end,
+})
+
 local nukeToggle
 nukeToggle = tab:CreateToggle({
     Name = "⚡ ACTIVATE NUKE FARM",
