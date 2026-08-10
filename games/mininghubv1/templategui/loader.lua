@@ -831,11 +831,9 @@ startWithDRM(function(key, hwid)
     end
 
     ----------------------------------------------------------------------------
-    -- Load modul visual secara berurutan (urutan PENTING).
-    -- Intro dipanggil oleh templategui/init.lua di tahap ini, jadi ia hanya
-    -- dapat berjalan setelah callback DRM berhasil dipanggil.
+    -- Siapkan TemplateGUI sampai builder tab tersedia.
     ----------------------------------------------------------------------------
-    local visualModules = {
+    local visualCoreModules = {
         "bridge.lua",
         "core.lua",
         "maid.lua",
@@ -843,13 +841,10 @@ startWithDRM(function(key, hwid)
         "config_system.lua",
         "translate.lua",
         "ui/ui_core.lua",
-        "ui/tab_visual.lua",
-        "ui/tab_profile.lua",
         "ui_sync.lua",
-        "init.lua",
     }
 
-    for _, path in ipairs(visualModules) do
+    for _, path in ipairs(visualCoreModules) do
         local ok, err = load(path)
         if not ok then
             clearRuntimeState()
@@ -859,21 +854,56 @@ startWithDRM(function(key, hwid)
     end
 
     ----------------------------------------------------------------------------
-    -- Load tab MiningHub setelah TemplateGUI siap.
+    -- Buat tab gameplay terlebih dahulu:
+    -- Auto Farm Mining → Buy & Sell → Shop & Equip → Upgrades →
+    -- GUI Controls → Teleports.
     ----------------------------------------------------------------------------
     local hubUiModules = {
         "ui/ui_core.lua",
+        "ui/tab_farm.lua",
         "ui/tab_action.lua",
         "ui/tab_shop.lua",
         "ui/tab_upgrades.lua",
         "ui/tab_gui.lua",
         "ui/tab_teleports.lua",
-        "ui/tab_farm.lua",
-        "init.lua",
     }
 
     for _, path in ipairs(hubUiModules) do
         local ok, err = load(path, GAME_BASE)
+        if not ok then
+            clearRuntimeState()
+            notifyStartupError(path, err)
+            return
+        end
+    end
+
+    ----------------------------------------------------------------------------
+    -- Tab profil dan visual dibuat terakhir:
+    -- Profil → Tampilan → Font → Efek.
+    ----------------------------------------------------------------------------
+    local visualTabModules = {
+        "ui/tab_profile.lua",
+        "ui/tab_visual.lua",
+    }
+
+    for _, path in ipairs(visualTabModules) do
+        local ok, err = load(path)
+        if not ok then
+            clearRuntimeState()
+            notifyStartupError(path, err)
+            return
+        end
+    end
+
+    ----------------------------------------------------------------------------
+    -- Init terakhir agar intro melihat semua tab yang sudah dibuat.
+    ----------------------------------------------------------------------------
+    local finalModules = {
+        "init.lua",
+    }
+
+    for _, path in ipairs(finalModules) do
+        local ok, err = load(path)
         if not ok then
             clearRuntimeState()
             notifyStartupError(path, err)

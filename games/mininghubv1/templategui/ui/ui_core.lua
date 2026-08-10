@@ -1418,7 +1418,7 @@ end
 
 local function CreateTab(tabName, langKey)
     local tabBtn = Instance.new("TextButton", TabBar)
-    tabBtn.BackgroundTransparency = 1; tabBtn.Size = UDim2.new(0, 70, 1, -8)
+    tabBtn.BackgroundTransparency = 1; tabBtn.Size = UDim2.new(0, 118, 1, -8)
     tabBtn.Font = Enum.Font.GothamSemibold; tabBtn.Text = tabName
     tabBtn.TextColor3 = Color3.fromRGB(140, 140, 165); tabBtn.TextSize = 10
     tabBtn.AutoButtonColor = false; tabBtn.ZIndex = 4

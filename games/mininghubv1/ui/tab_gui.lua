@@ -6,7 +6,7 @@ local env = getgenv and getgenv() or _G
 local Hub = env.MiningHub
 local ui = Hub.UI
 
-local tab = ui.CreateTab("GUI Controls", 4483345998)
+local tab = ui.CreateTab("⚙️ GUI Controls", 4483345998)
 tab:CreateSection("Toggle Game Menus")
 
 local guiTargets = {

@@ -8,7 +8,7 @@ local data = Hub.Data
 local ui = Hub.UI
 local remotes = Hub.Services.Remotes
 
-local tab = ui.CreateTab("Shop & Equip", 4483345998)
+local tab = ui.CreateTab("🛒 Shop & Equip", 4483345998)
 tab:CreateSection("Live Pickaxe Menu")
 
 local pickaxeBuyText = data.Pickaxes.Options[1]

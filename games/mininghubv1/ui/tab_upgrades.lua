@@ -7,7 +7,7 @@ local Hub = env.MiningHub
 local ui = Hub.UI
 local remotes = Hub.Services.Remotes
 
-local tab = ui.CreateTab("Upgrades", 4483345998)
+local tab = ui.CreateTab("⬆️ Upgrades", 4483345998)
 tab:CreateSection("Air Upgrades")
 local airLevel = 1
 tab:CreateDropdown({

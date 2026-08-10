@@ -7,7 +7,7 @@ local Hub = env.MiningHub
 local ui = Hub.UI
 local remotes = Hub.Services.Remotes
 
-local tab = ui.CreateTab("Teleports", 4483345998)
+local tab = ui.CreateTab("🗺️ Teleports", 4483345998)
 tab:CreateSection("NPC Locations")
 
 local npcTargets = {

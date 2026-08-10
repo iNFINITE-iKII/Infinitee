@@ -9,7 +9,7 @@ local config = Hub.Config
 local ui = Hub.UI
 local data = Hub.Data
 
-local tab = ui.CreateTab("Farm", 4483345998)
+local tab = ui.CreateTab("⛏️ Auto Farm Mining", 4483345998)
 state.NukeStatsParagraph = tab:CreateParagraph({
     Title = "Nuke Stats & Status",
     Content = "Nuke: 0% | Server Hit: 0% [0/0]\nTargets: 0 | Mode: [AUTO-SWITCH]",

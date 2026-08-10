@@ -10,7 +10,7 @@ local ui = Hub.UI
 local remotes = Hub.Services.Remotes
 local player = Hub.Services.LocalPlayer
 
-local tab = ui.CreateTab("Sell & Action", 4483345998)
+local tab = ui.CreateTab("💰 Buy & Sell", 4483345998)
 tab:CreateSection("Sell Options")
 tab:CreateButton({
     Name = "Sell All",

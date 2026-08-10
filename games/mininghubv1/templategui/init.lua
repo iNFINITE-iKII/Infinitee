@@ -279,7 +279,8 @@ end)
 --------------------------------------------------------------------------------
 -- [S31] INISIALISASI
 --------------------------------------------------------------------------------
-H.SwitchTab("🎨 Tampilan")
+-- Tab pertama mengikuti urutan utama: Auto Farm Mining.
+H.SwitchTab("⛏️ Auto Farm Mining")
 
 -- [FIX FIRST-RUN CRASH] Seluruh blok ini dibungkus pcall — kalau character/UI
 -- belum sepenuhnya siap saat cold start, error di satu langkah tidak akan
