@@ -7,6 +7,7 @@
 local SERVER_URL  = "https://xifil-hub-production.up.railway.app"
 local KEY_FILE    = "XiFilTemplateGUI_Configs/license.key"
 local FOLDER_NAME = "XiFilTemplateGUI_Configs"
+local MODULE_CACHE_BUSTER = "?v=20260810-autosell-v8"
 local RUNTIME_GUI_NAMES = {
     "XiFilTemplateGUI_Modern",
     "XiFilTemplateGUI_Toggle",
@@ -797,7 +798,7 @@ startWithDRM(function(key, hwid)
     local function load(path, base)
         base = base or BASE
         local ok, err = pcall(function()
-            local source = game:HttpGet(base .. path, true)
+            local source = game:HttpGet(base .. path .. MODULE_CACHE_BUSTER, true)
             local chunk, compileErr = loadstring(source, "@XiFilTemplateGUI/" .. path)
             if type(chunk) ~= "function" then
                 error(compileErr or "modul tidak bisa dikompilasi")
