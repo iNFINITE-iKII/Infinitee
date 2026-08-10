@@ -36,7 +36,6 @@ Hub.State = {
     PromptSpamCount = 15,
     BlacklistDuration = 1.5,
     FarmSpeedMs = 33,
-    StatsRefreshInterval = 0.15,
     SelectedTier = "All",
     SelectedCrystalName = "All",
     SelectedDroppedName = "All",

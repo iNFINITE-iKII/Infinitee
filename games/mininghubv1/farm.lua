@@ -14,11 +14,13 @@ local stats = Hub.Stats
 local config = Hub.Config
 local Vector3_new = Vector3.new
 local CFrame_lookAt = CFrame.lookAt
-local lastStatsRefresh = 0
 
 local Things = Workspace:WaitForChild("Things", 5)
 local crystalsFolder = Things and Things:WaitForChild("Crystals", 5) or nil
-local droppedFolder = Workspace:FindFirstChild("DroppedCrystals")
+
+local function getDroppedFolder()
+    return Workspace:FindFirstChild("DroppedCrystals")
+end
 
 local function getAttribute(object, name)
     if not cache.Attribute[object] then
@@ -54,7 +56,7 @@ local function getUniqueAttributes(name, prefix, suffix)
     end
 
     scanFolder(crystalsFolder)
-    scanFolder(droppedFolder)
+    scanFolder(getDroppedFolder())
     table.sort(results)
     return results
 end
@@ -141,23 +143,16 @@ local function updateTargetCache()
     end
 
     processFolder(crystalsFolder, state.SelectedCrystalName)
-    processFolder(droppedFolder, state.SelectedDroppedName)
+    processFolder(getDroppedFolder(), state.SelectedDroppedName)
 end
 
 local function resetFireStats()
     stats.Attempts = 0
     stats.LocalSuccess = 0
     stats.ServerSuccess = 0
-    lastStatsRefresh = 0
 end
 
-local function updateFireStatus(force)
-    local now = os.clock()
-    if not force and now - lastStatsRefresh < state.StatsRefreshInterval then
-        return
-    end
-
-    lastStatsRefresh = now
+local function updateFireStatus()
     local localRate = stats.Attempts > 0 and math.floor((stats.LocalSuccess / stats.Attempts) * 100 + 0.5) or 0
     local serverRate = stats.LocalSuccess > 0 and math.floor((stats.ServerSuccess / stats.LocalSuccess) * 100 + 0.5) or 0
     local lockStatus = state.IsTargetLocked and "[LOCKED]" or "[AUTO-SWITCH]"
@@ -300,6 +295,8 @@ local function startFarmLoop()
             if #cache.ValidTargets == 0 then
                 updateTargetCache()
                 if #cache.ValidTargets == 0 then
+                    root.AssemblyLinearVelocity = Vector3_new(0, 0, 0)
+                    root.AssemblyAngularVelocity = Vector3_new(0, 0, 0)
                     task.wait(0.2)
                     continue
                 end
@@ -324,6 +321,8 @@ local function startFarmLoop()
                     cache.BlacklistedCrystals[state.CurrentTarget] = os.clock() + state.BlacklistDuration
                 end
             else
+                root.AssemblyLinearVelocity = Vector3_new(0, 0, 0)
+                root.AssemblyAngularVelocity = Vector3_new(0, 0, 0)
                 table.clear(cache.BlacklistedCrystals)
                 updateTargetCache()
                 task.wait(0.05)
@@ -352,13 +351,12 @@ end
 
 local function refreshTargetData()
     table.clear(cache.Attribute)
-    droppedFolder = Workspace:FindFirstChild("DroppedCrystals")
     updateTargetCache()
     return {
         Sizes = getUniqueAttributes("SizeClass", "[", "]"),
         Tiers = getUniqueAttributes("TierName"),
         Crystals = getUniqueCrystalNames(crystalsFolder, state.SelectedTier),
-        Dropped = getUniqueCrystalNames(droppedFolder, "All"),
+    Dropped = getUniqueCrystalNames(getDroppedFolder(), "All"),
     }
 end
 
@@ -366,7 +364,7 @@ Hub.Data.Targets = {
     GetSizes = function() return getUniqueAttributes("SizeClass", "[", "]") end,
     GetTiers = function() return getUniqueAttributes("TierName") end,
     GetCrystals = function(tier) return getUniqueCrystalNames(crystalsFolder, tier) end,
-    GetDropped = function() return getUniqueCrystalNames(droppedFolder, "All") end,
+    GetDropped = function() return getUniqueCrystalNames(getDroppedFolder(), "All") end,
 }
 
 Hub.Functions.UpdateTargetCache = updateTargetCache
@@ -380,5 +378,5 @@ Hub.Functions.FirePromptBurst = firePromptBurst
 
 Hub.Data.TargetFolders = {
     Crystals = function() return crystalsFolder end,
-    Dropped = function() return droppedFolder end,
+    Dropped = getDroppedFolder,
 }

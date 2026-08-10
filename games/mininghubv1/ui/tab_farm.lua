@@ -29,7 +29,7 @@ tab:CreateInput({
     RemoveTextAfterFocusLost = false,
     Callback = function(text)
         local value = tonumber(text)
-        if value then state.FarmSpeedMs = math.max(0, value) end
+        if value then state.FarmSpeedMs = value end
     end,
 })
 tab:CreateInput({
@@ -49,7 +49,7 @@ tab:CreateInput({
     RemoveTextAfterFocusLost = false,
     Callback = function(text)
         local value = tonumber(text)
-        if value then state.PromptSpamCount = math.max(1, math.floor(value)) end
+        if value then state.PromptSpamCount = value end
     end,
 })
 tab:CreateInput({
@@ -59,7 +59,7 @@ tab:CreateInput({
     RemoveTextAfterFocusLost = false,
     Callback = function(text)
         local value = tonumber(text)
-        if value then state.BlacklistDuration = math.max(0, value) end
+        if value then state.BlacklistDuration = value end
     end,
 })
 
@@ -72,7 +72,7 @@ local sizeDropdown = tab:CreateDropdown({
     Callback = function(options)
         state.SelectedSize = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus(true)
+        Hub.Functions.UpdateFireStatus()
     end,
 })
 tab:CreateDropdown({
@@ -83,7 +83,7 @@ tab:CreateDropdown({
     Callback = function(options)
         state.SelectedWeight = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus(true)
+        Hub.Functions.UpdateFireStatus()
     end,
 })
 tab:CreateDropdown({
@@ -94,7 +94,7 @@ tab:CreateDropdown({
     Callback = function(options)
         state.SelectedValue = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus(true)
+        Hub.Functions.UpdateFireStatus()
     end,
 })
 
@@ -111,7 +111,7 @@ local tierDropdown = tab:CreateDropdown({
         end
         state.SelectedCrystalName = "All"
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus(true)
+        Hub.Functions.UpdateFireStatus()
     end,
 })
 crystalDropdown = tab:CreateDropdown({
@@ -122,7 +122,7 @@ crystalDropdown = tab:CreateDropdown({
     Callback = function(options)
         state.SelectedCrystalName = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus(true)
+        Hub.Functions.UpdateFireStatus()
     end,
 })
 local droppedDropdown = tab:CreateDropdown({
@@ -133,7 +133,7 @@ local droppedDropdown = tab:CreateDropdown({
     Callback = function(options)
         state.SelectedDroppedName = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus(true)
+        Hub.Functions.UpdateFireStatus()
     end,
 })
 
@@ -144,7 +144,7 @@ tab:CreateToggle({
     Flag = "LockTargetToggle",
     Callback = function(value)
         state.IsTargetLocked = value
-        Hub.Functions.UpdateFireStatus(true)
+        Hub.Functions.UpdateFireStatus()
         if value and state.CurrentTarget then
             ui.Notify({
                 Title = "Target Locked",
@@ -172,7 +172,7 @@ tab:CreateInput({
     RemoveTextAfterFocusLost = false,
     Callback = function(text)
         local value = tonumber(text)
-        if value then state.FlySpeed = math.max(0, value) end
+        if value then state.FlySpeed = value end
     end,
 })
 tab:CreateToggle({
@@ -194,11 +194,11 @@ nukeToggle = tab:CreateToggle({
         if value then
             Hub.Functions.ResetFireStats()
             Hub.Functions.UpdateTargetCache()
-            Hub.Functions.UpdateFireStatus(true)
+            Hub.Functions.UpdateFireStatus()
             Hub.Functions.StartFarmLoop()
         else
             Hub.Functions.StopFarmLoop()
-            Hub.Functions.UpdateFireStatus(true)
+            Hub.Functions.UpdateFireStatus()
         end
     end,
 })
@@ -210,7 +210,7 @@ tab:CreateButton({
         tierDropdown:Refresh(refreshed.Tiers, true)
         crystalDropdown:Refresh(refreshed.Crystals, true)
         droppedDropdown:Refresh(refreshed.Dropped, true)
-        Hub.Functions.UpdateFireStatus(true)
+        Hub.Functions.UpdateFireStatus()
     end,
 })
 
