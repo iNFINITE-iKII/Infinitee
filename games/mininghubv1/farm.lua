@@ -165,12 +165,13 @@ local function updateFireStatus()
     local line1 = "Nuke: " .. localRate .. "% | Server Hit: " .. serverRate .. "% [" ..
         stats.ServerSuccess .. "/" .. stats.LocalSuccess .. "]"
     local line2 = "Targets: " .. #cache.ValidTargets .. " | Mode: " .. lockStatus
-    local line3 = "Auto Sell: " .. autoSellStatus .. " | Bag: " .. backpackStatus
+    local line3 = "Live Value: " .. backpackStatus
+    local line4 = "Auto Sell: " .. autoSellStatus
 
     if state.NukeStatsParagraph then
         state.NukeStatsParagraph:Set({
             Title = "🔥 Nuke Stats & Status",
-            Content = line1 .. "\n" .. line2 .. "\n" .. line3,
+            Content = line1 .. "\n" .. line2 .. "\n" .. line3 .. "\n" .. line4,
         })
     end
 end
