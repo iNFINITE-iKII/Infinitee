@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- Mining Hub V1 — entry point
--- Loader utama berada di folder games/mininghubv1/.
+-- Jalankan file ini. Modul lain dimuat dari folder games/mininghubv1/.
 --------------------------------------------------------------------------------
 
 local BASE_URL = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/mininghubv1/"
@@ -25,9 +25,9 @@ local function fetch(url)
     error("HTTP GET gagal: " .. url .. "\n" .. tostring(result))
 end
 
--- Gunakan loader utama MiningHub. Loader ini mengatur urutan modul gameplay,
--- TemplateGUI, dan validasi startup dari satu tempat.
-local source = fetch(BASE_URL .. "loader.lua" .. CACHE_BUSTER)
+-- DRM harus menjadi tahap pertama. Loader ini menampilkan GUI key dan hanya
+-- menjalankan modul MiningHub setelah key tersimpan/tervalidasi.
+local source = fetch(BASE_URL .. "templategui/loader.lua" .. CACHE_BUSTER)
 local loader, err = loadstring(source)
 
 if not loader then
