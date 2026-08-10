@@ -15,6 +15,12 @@ const GAMES_DIR = path.resolve(__dirname, '../../games');
 // URL lama yang di-hardcode di semua file Lua
 const RAILWAY_URL = 'https://xifil-hub-production.up.railway.app';
 
+// Nama game publik dapat berbeda dari nama file internal di repository.
+// Alias ini menjaga URL loader tetap singkat tanpa menduplikasi entry point Lua.
+const GAME_ALIASES: Record<string, string> = {
+  mountainamine: 'mininghubv1',
+};
+
 /**
  * Kembalikan base URL server ini berdasarkan header request.
  * Urutan prioritas:
@@ -190,12 +196,13 @@ function handleLoader(
 ) {
   if (!isRobloxRequest(req)) return json(res, 403, { error: 'Akses ditolak.' });
 
-  const game = (query.game ?? '').replace(/[^a-zA-Z0-9_-]/g, '');
-  if (!game) return json(res, 400, { error: 'Parameter game wajib diisi.' });
+  const requestedGame = (query.game ?? '').replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+  if (!requestedGame) return json(res, 400, { error: 'Parameter game wajib diisi.' });
 
+  const game = GAME_ALIASES[requestedGame] ?? requestedGame;
   const filePath = path.join(GAMES_DIR, `${game}.lua`);
   if (!fs.existsSync(filePath)) {
-    return json(res, 404, { error: `Game "${game}" tidak ditemukan.` });
+    return json(res, 404, { error: `Game "${requestedGame}" tidak ditemukan.` });
   }
 
   try {
