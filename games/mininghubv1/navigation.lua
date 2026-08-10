@@ -163,6 +163,20 @@ local function getBackpackStatus()
         }
     end
 
+    -- Jalur utama mengikuti live backpack GUI:
+    -- PlayerGui > ExplorerHud > BackpackPanel > Value.Text
+    local valueLabel = panel:FindFirstChild("Value")
+    local valueText = getGuiText(valueLabel)
+    local current, capacity, full = parseBackpackCapacity(valueText)
+    if current and capacity then
+        return {
+            Full = full,
+            Current = current,
+            Capacity = capacity,
+            Text = valueText,
+        }
+    end
+
     local candidates = {}
     local seen = {}
     local function addCandidate(object)

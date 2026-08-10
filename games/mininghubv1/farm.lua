@@ -367,6 +367,25 @@ local function startBurstLoop()
                 continue
             end
 
+            -- Pause penuh: jangan pindah target atau menembak prompt selama
+            -- Auto Sell sedang berjalan. Jika tas sudah penuh tetapi task
+            -- Auto Sell belum sempat mengambilnya, jalankan dari loop Farm
+            -- agar jeda terjadi sebelum aksi mining berikutnya.
+            if state.IsAutoSellOn then
+                local backpackFull = Hub.Functions.IsBackpackFull()
+                if backpackFull or state.IsAutoSelling then
+                    root.AssemblyLinearVelocity = Vector3_new(0, 0, 0)
+                    root.AssemblyAngularVelocity = Vector3_new(0, 0, 0)
+
+                    if backpackFull and not state.IsAutoSelling then
+                        performAutoSell()
+                    end
+
+                    task.wait(0.1)
+                    continue
+                end
+            end
+
             if #cache.ValidTargets == 0 then
                 updateTargetCache()
                 if #cache.ValidTargets == 0 then
