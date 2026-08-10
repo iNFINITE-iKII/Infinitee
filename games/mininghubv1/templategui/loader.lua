@@ -789,9 +789,9 @@ startWithDRM(function(key, hwid)
     getgenv().XiFilTemplateGUI_Hub.RuntimeActive = true
 
     ----------------------------------------------------------------------------
-    -- URL base modul (ambil langsung dari repo Beta)
+    -- URL base modul mininghubv1 yang sama dengan entry point.
     ----------------------------------------------------------------------------
-    local BASE = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/TamplateGUI/"
+    local BASE = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/mininghubv1/templategui/"
 
     local function load(path)
         local ok, err = pcall(function()

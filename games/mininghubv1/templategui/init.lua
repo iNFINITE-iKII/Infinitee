@@ -284,38 +284,28 @@ H.SwitchTab("🎨 Tampilan")
 -- [FIX FIRST-RUN CRASH] Seluruh blok ini dibungkus pcall — kalau character/UI
 -- belum sepenuhnya siap saat cold start, error di satu langkah tidak akan
 -- mematikan thread ini (dan sisa script yang sudah ter-load tetap jalan).
-task.defer(function()
+-- Mulai langsung pada thread terpisah. task.defer + task.spawn membuat intro
+-- bisa tertunda atau terlewati pada sebagian executor ketika loadstring selesai.
+task.spawn(function()
+    -- 1. Terapkan visual default untuk user baru.
     pcall(function()
-        -- 1. TERAPKAN VISUAL DEFAULT UNTUK USER BARU
-        -- Ini akan langsung memunculkan Nano Dust, Font, dan Warna tanpa perlu diklik!
-        if ApplyAllVisuals then
-            pcall(ApplyAllVisuals)
-        end
+        if ApplyAllVisuals then ApplyAllVisuals() end
+    end)
 
-        -- 2. Sinkronkan tombol di UI agar menampilkan teks bawaan yang benar
-        if SyncAllVisualUI then
-            pcall(SyncAllVisualUI)
-        end
+    -- 2. Sinkronkan tombol UI sebelum intro ditampilkan.
+    pcall(function()
+        if SyncAllVisualUI then SyncAllVisualUI() end
+    end)
 
-        -- 3. Mainkan animasi intro & Tampilkan Notifikasi
-        if PlayIntroAnimation then
-            task.spawn(function()
-                pcall(function()
-                    -- 1. Jalankan animasinya terlebih dahulu
-                    PlayIntroAnimation()
+    -- 3. Mainkan intro secara langsung dari startup thread.
+    local introOk, introErr = pcall(PlayIntroAnimation)
+    if not introOk then
+        warn("[XiFil] Intro animation gagal: " .. tostring(introErr))
+    end
 
-                    -- 2. Beri jeda waktu sampai animasi benar-benar selesai dan menjadi Floating.
-                    -- (Sesuaikan angka 2.5 ini dengan durasi detik animasi intro kamu)
-                    task.wait(2.5)
-
-                    -- 3. Panggil Notifikasi
-                    -- Ganti "SendNotification" dengan nama fungsi notifikasimu yang sebenarnya jika berbeda
-                    pcall(function()
-                        CustomNotify("XIFIL HUB", "Script berhasil dieksekusi dan siap digunakan!", 5)
-                    end)
-                end)
-            end)
-        end
+    task.wait(0.15)
+    pcall(function()
+        CustomNotify("XIFIL HUB", "Script berhasil dieksekusi dan siap digunakan!", 5)
     end)
 end)
 
