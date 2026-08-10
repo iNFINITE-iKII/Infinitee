@@ -122,6 +122,11 @@ local function parseBackpackCapacity(text)
     end
 
     local normalized = text:gsub(",", ""):gsub("%s+", " ")
+    local upper = normalized:upper()
+    if upper:match("^FULL!?$") or upper:match("^FULL[%s!%.%-]*$") then
+        return nil, nil, true
+    end
+
     local current, capacity = normalized:match("([%d%.]+)%s*/%s*([%d%.]+)")
 
     if not current or not capacity then
@@ -135,6 +140,10 @@ local function parseBackpackCapacity(text)
     end
 
     return current, capacity, current >= (capacity - 1)
+end
+
+local function isBackpackFull(current, capacity, full)
+    return full == true or (current ~= nil and capacity ~= nil and full == true)
 end
 
 local function getGuiText(object)
@@ -170,7 +179,7 @@ local function getBackpackStatus()
     local current, capacity, full = parseBackpackCapacity(valueText)
     if valueText and valueText ~= "" then
         return {
-            Full = current and capacity and full or false,
+            Full = isBackpackFull(current, capacity, full),
             Current = current,
             Capacity = capacity,
             Text = valueText,
@@ -203,7 +212,7 @@ local function getBackpackStatus()
         local current, capacity, full = parseBackpackCapacity(text)
         if text and text ~= "" then
             return {
-                Full = current and capacity and full or false,
+                Full = isBackpackFull(current, capacity, full),
                 Current = current,
                 Capacity = capacity,
                 Text = text,

@@ -36,7 +36,7 @@ local function loadModule(baseUrl, cacheBuster, path)
 end
 
 return function(baseUrl, cacheBuster)
-    cacheBuster = cacheBuster or "?v=20260809-3"
+    cacheBuster = cacheBuster or "?v=20260810-1"
     local env = getgenv and getgenv() or _G
     local existing = env.MiningHub
 
