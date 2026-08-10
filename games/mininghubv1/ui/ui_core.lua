@@ -23,7 +23,6 @@ local function createParagraph(parent, options)
     frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     frame.BackgroundTransparency = 0.2
     frame.BorderSizePixel = 0
-    frame.Size = UDim2.new(1, 0, 0, 64)
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 
     local title = Instance.new("TextLabel", frame)
@@ -48,10 +47,24 @@ local function createParagraph(parent, options)
     content.TextXAlignment = Enum.TextXAlignment.Left
     content.TextYAlignment = Enum.TextYAlignment.Top
 
+    local function resizeForContent(text)
+        local lineCount = 1
+        for _ in string.gmatch(tostring(text or ""), "\n") do
+            lineCount += 1
+        end
+
+        local contentHeight = math.max(28, lineCount * 14)
+        frame.Size = UDim2.new(1, 0, 0, contentHeight + 36)
+        content.Size = UDim2.new(1, -28, 0, contentHeight)
+    end
+
+    resizeForContent(options.Content)
+
     local api = {}
     function api:Set(nextOptions)
         title.Text = tostring(nextOptions.Title or "")
         content.Text = tostring(nextOptions.Content or "")
+        resizeForContent(nextOptions.Content)
     end
     return api
 end
