@@ -176,6 +176,20 @@ local function updateFireStatus()
     end
 end
 
+local function startStatusLoop()
+    if state.StatusTask then
+        task.cancel(state.StatusTask)
+    end
+
+    state.StatusTask = task.spawn(function()
+        while state.NukeStatsParagraph do
+            updateFireStatus()
+            task.wait(0.5)
+        end
+        state.StatusTask = nil
+    end)
+end
+
 local function firePromptBurst(prompt, target)
     if type(fireproximityprompt) ~= "function" then
         return false
@@ -466,6 +480,7 @@ Hub.Functions.UpdateTargetCache = updateTargetCache
 Hub.Functions.RefreshTargetData = refreshTargetData
 Hub.Functions.ResetFireStats = resetFireStats
 Hub.Functions.UpdateFireStatus = updateFireStatus
+Hub.Functions.StartStatusLoop = startStatusLoop
 Hub.Functions.StartFarmLoop = startBurstLoop
 Hub.Functions.StopFarmLoop = stopBurstLoop
 Hub.Functions.StartBurstLoop = startBurstLoop

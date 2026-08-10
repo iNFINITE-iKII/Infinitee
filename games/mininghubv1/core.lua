@@ -33,6 +33,7 @@ Hub.State = {
     AutoSellCooldown = 2,
     AutoSellTask = nil,
     AutoSellLastAt = 0,
+    StatusTask = nil,
     IsTargetLocked = false,
     IsFlying = false,
     IsFarmOn = false,
