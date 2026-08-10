@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 
 local BASE_URL = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/mininghubv1/"
-local CACHE_BUSTER = "?v=20260810-intro-fix"
+local CACHE_BUSTER = "?v=20260810-drm-intro-fix"
 
 local function fetch(url)
     local ok, result = pcall(function()
@@ -25,7 +25,9 @@ local function fetch(url)
     error("HTTP GET gagal: " .. url .. "\n" .. tostring(result))
 end
 
-local source = fetch(BASE_URL .. "loader.lua" .. CACHE_BUSTER)
+-- DRM harus menjadi tahap pertama. Loader ini menampilkan GUI key dan hanya
+-- menjalankan modul MiningHub setelah key tersimpan/tervalidasi.
+local source = fetch(BASE_URL .. "templategui/loader.lua" .. CACHE_BUSTER)
 local loader, err = loadstring(source)
 
 if not loader then

@@ -792,10 +792,12 @@ startWithDRM(function(key, hwid)
     -- URL base modul mininghubv1 yang sama dengan entry point.
     ----------------------------------------------------------------------------
     local BASE = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/mininghubv1/templategui/"
+    local GAME_BASE = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/mininghubv1/"
 
-    local function load(path)
+    local function load(path, base)
+        base = base or BASE
         local ok, err = pcall(function()
-            local source = game:HttpGet(BASE .. path, true)
+            local source = game:HttpGet(base .. path, true)
             local chunk, compileErr = loadstring(source, "@XiFilTemplateGUI/" .. path)
             if type(chunk) ~= "function" then
                 error(compileErr or "modul tidak bisa dikompilasi")
@@ -809,9 +811,32 @@ startWithDRM(function(key, hwid)
     end
 
     ----------------------------------------------------------------------------
-    -- Load modul visual secara berurutan (urutan PENTING)
+    -- Load modul MiningHub setelah key valid, sebelum UI visual dibuat.
     ----------------------------------------------------------------------------
-    local modules = {
+    local gameModules = {
+        "core.lua",
+        "catalog.lua",
+        "navigation.lua",
+        "fly.lua",
+        "farm.lua",
+    }
+
+    for _, path in ipairs(gameModules) do
+        local ok, err = load(path, GAME_BASE)
+        if not ok then
+            clearRuntimeState()
+            notifyStartupError(path, err)
+            return
+        end
+    end
+
+    ----------------------------------------------------------------------------
+    -- Load modul visual secara berurutan (urutan PENTING).
+    -- Intro dipanggil oleh templategui/init.lua di tahap ini, jadi ia hanya
+    -- dapat berjalan setelah callback DRM berhasil dipanggil.
+    ----------------------------------------------------------------------------
+    local visualModules = {
+        "bridge.lua",
         "core.lua",
         "maid.lua",
         "notify.lua",
@@ -824,8 +849,31 @@ startWithDRM(function(key, hwid)
         "init.lua",
     }
 
-    for _, path in ipairs(modules) do
+    for _, path in ipairs(visualModules) do
         local ok, err = load(path)
+        if not ok then
+            clearRuntimeState()
+            notifyStartupError(path, err)
+            return
+        end
+    end
+
+    ----------------------------------------------------------------------------
+    -- Load tab MiningHub setelah TemplateGUI siap.
+    ----------------------------------------------------------------------------
+    local hubUiModules = {
+        "ui/ui_core.lua",
+        "ui/tab_action.lua",
+        "ui/tab_shop.lua",
+        "ui/tab_upgrades.lua",
+        "ui/tab_gui.lua",
+        "ui/tab_teleports.lua",
+        "ui/tab_farm.lua",
+        "init.lua",
+    }
+
+    for _, path in ipairs(hubUiModules) do
+        local ok, err = load(path, GAME_BASE)
         if not ok then
             clearRuntimeState()
             notifyStartupError(path, err)
