@@ -12,6 +12,7 @@ local state = Hub.State
 local cache = Hub.Cache
 local stats = Hub.Stats
 local config = Hub.Config
+local math_huge = math.huge
 local Vector3_new = Vector3.new
 local CFrame_lookAt = CFrame.lookAt
 
@@ -150,6 +151,9 @@ local function resetFireStats()
     stats.Attempts = 0
     stats.LocalSuccess = 0
     stats.ServerSuccess = 0
+    stats.PendingTarget = nil
+    stats.PendingPrompt = nil
+    stats.PendingAt = 0
 end
 
 local function updateFireStatus()
@@ -162,13 +166,13 @@ local function updateFireStatus()
 
     if state.NukeStatsParagraph then
         state.NukeStatsParagraph:Set({
-            Title = "Nuke Stats & Status",
+            Title = "🔥 Nuke Stats & Status",
             Content = line1 .. "\n" .. line2,
         })
     end
 end
 
-local function firePromptBurst(prompt)
+local function firePromptBurst(prompt, target)
     if type(fireproximityprompt) ~= "function" then
         return false
     end
@@ -238,15 +242,14 @@ local function acquireTarget(root)
     state.CurrentPrompt = bestEntry.Prompt
     pcall(function()
         state.CurrentPrompt.RequiresLineOfSight = false
-        state.CurrentPrompt.MaxActivationDistance = math.huge
+        state.CurrentPrompt.MaxActivationDistance = math_huge
         state.CurrentPrompt.HoldDuration = 0
     end)
 
     return true
 end
 
-local function stopFarmLoop()
-    state.IsFarmOn = false
+local function stopBurstLoop()
     if state.FarmTask then
         task.cancel(state.FarmTask)
         state.FarmTask = nil
@@ -265,12 +268,11 @@ local function stopFarmLoop()
     end
 end
 
-local function startFarmLoop()
+local function startBurstLoop()
     if state.FarmTask then
         task.cancel(state.FarmTask)
     end
 
-    state.IsFarmOn = true
     state.FarmTask = task.spawn(function()
         while state.IsFarmOn do
             local character = LocalPlayer.Character
@@ -313,7 +315,7 @@ local function startFarmLoop()
                 end
 
                 if state.CurrentTarget and state.CurrentTarget.Parent and state.CurrentPrompt and state.CurrentPrompt.Enabled then
-                    firePromptBurst(state.CurrentPrompt)
+                    firePromptBurst(state.CurrentPrompt, state.CurrentTarget)
                     stats.ServerSuccess += 1
                 end
 
@@ -356,7 +358,7 @@ local function refreshTargetData()
         Sizes = getUniqueAttributes("SizeClass", "[", "]"),
         Tiers = getUniqueAttributes("TierName"),
         Crystals = getUniqueCrystalNames(crystalsFolder, state.SelectedTier),
-    Dropped = getUniqueCrystalNames(getDroppedFolder(), "All"),
+        Dropped = getUniqueCrystalNames(getDroppedFolder(), "All"),
     }
 end
 
@@ -371,8 +373,10 @@ Hub.Functions.UpdateTargetCache = updateTargetCache
 Hub.Functions.RefreshTargetData = refreshTargetData
 Hub.Functions.ResetFireStats = resetFireStats
 Hub.Functions.UpdateFireStatus = updateFireStatus
-Hub.Functions.StartFarmLoop = startFarmLoop
-Hub.Functions.StopFarmLoop = stopFarmLoop
+Hub.Functions.StartFarmLoop = startBurstLoop
+Hub.Functions.StopFarmLoop = stopBurstLoop
+Hub.Functions.StartBurstLoop = startBurstLoop
+Hub.Functions.StopBurstLoop = stopBurstLoop
 Hub.Functions.SwitchTarget = switchTarget
 Hub.Functions.FirePromptBurst = firePromptBurst
 

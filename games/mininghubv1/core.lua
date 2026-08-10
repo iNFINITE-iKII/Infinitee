@@ -90,6 +90,9 @@ Hub.Stats = {
     Attempts = 0,
     LocalSuccess = 0,
     ServerSuccess = 0,
+    PendingTarget = nil,
+    PendingPrompt = nil,
+    PendingAt = 0,
 }
 
 Hub.Data = {}

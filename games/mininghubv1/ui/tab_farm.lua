@@ -11,13 +11,13 @@ local data = Hub.Data
 
 local tab = ui.CreateTab("⛏️ Auto Farm Mining", 4483345998)
 state.NukeStatsParagraph = tab:CreateParagraph({
-    Title = "Nuke Stats & Status",
+    Title = "🔥 Nuke Stats & Status",
     Content = "Nuke: 0% | Server Hit: 0% [0/0]\nTargets: 0 | Mode: [AUTO-SWITCH]",
 })
 
-tab:CreateSection("Nuke Farm Settings")
+tab:CreateSection("Nuke Brutal Settings")
 tab:CreateToggle({
-    Name = "Auto Sell (Jika Tas Penuh)",
+    Name = "💰 Auto Sell (Jika Tas Penuh)",
     CurrentValue = false,
     Flag = "AutoSellFlag",
     Callback = function(value) state.IsAutoSellOn = value end,
@@ -139,7 +139,7 @@ local droppedDropdown = tab:CreateDropdown({
 
 tab:CreateSection("Farm Controls & Target Manipulation")
 tab:CreateToggle({
-    Name = "Lock Target (Tetap di 1 Crystal)",
+    Name = "🔒 Lock Target (Tetap di 1 Crystal)",
     CurrentValue = false,
     Flag = "LockTargetToggle",
     Callback = function(value)
@@ -155,7 +155,7 @@ tab:CreateToggle({
     end,
 })
 tab:CreateButton({
-    Name = "Switch Target (Pindah Paksa)",
+    Name = "⏭️ Switch Target (Pindah Paksa)",
     Callback = function()
         Hub.Functions.SwitchTarget()
         ui.Notify({
@@ -176,7 +176,7 @@ tab:CreateInput({
     end,
 })
 tab:CreateToggle({
-    Name = "Enable Fly (Anti-Fall & Anti-Gravity)",
+    Name = "🕊️ Enable Fly (Anti-Fall & Anti-Gravity)",
     CurrentValue = false,
     Flag = "FlyToggle",
     Callback = function(value)
@@ -186,7 +186,7 @@ tab:CreateToggle({
 })
 local nukeToggle
 nukeToggle = tab:CreateToggle({
-    Name = "ACTIVATE NUKE FARM",
+    Name = "⚡ ACTIVATE NUKE FARM",
     CurrentValue = false,
     Flag = "NukeFarmToggle",
     Callback = function(value)
@@ -203,7 +203,7 @@ nukeToggle = tab:CreateToggle({
     end,
 })
 tab:CreateButton({
-    Name = "Refresh Target List",
+    Name = "🔄 Refresh Target List",
     Callback = function()
         local refreshed = Hub.Functions.RefreshTargetData()
         sizeDropdown:Refresh(refreshed.Sizes, true)
