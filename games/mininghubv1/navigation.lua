@@ -116,45 +116,108 @@ local function getTargetObject(path)
     return current
 end
 
-local function isBackpackFull()
+local function parseBackpackCapacity(text)
+    if type(text) ~= "string" or text == "" then
+        return nil
+    end
+
+    local normalized = text:gsub(",", ""):gsub("%s+", " ")
+    local current, capacity = normalized:match("([%d%.]+)%s*/%s*([%d%.]+)")
+
+    if not current or not capacity then
+        current, capacity = normalized:match("([%d%.]+)%s+[Oo][Ff]%s+([%d%.]+)")
+    end
+
+    current = tonumber(current)
+    capacity = tonumber(capacity)
+    if not current or not capacity or capacity <= 0 then
+        return nil
+    end
+
+    return current, capacity, current >= (capacity - 1)
+end
+
+local function getGuiText(object)
+    if not object then
+        return nil
+    end
+
+    local text
+    pcall(function()
+        if type(object.Text) == "string" then
+            text = object.Text
+        elseif object:IsA("ValueBase") then
+            text = tostring(object.Value)
+        end
+    end)
+    return text
+end
+
+local function getBackpackStatus()
     local hud = PlayerGui:FindFirstChild("ExplorerHud")
     local panel = hud and hud:FindFirstChild("BackpackPanel")
-    local valueLabel = panel and panel:FindFirstChild("Value")
-    if not valueLabel then
-        return false
+    if not panel then
+        return {
+            Full = false,
+            Text = "",
+        }
     end
 
-    local text = ""
-    pcall(function()
-        text = valueLabel.Text
-    end)
-
-    if not text or text == "" then
-        pcall(function()
-            text = tostring(valueLabel.Value)
-        end)
-    end
-
-    if type(text) ~= "string" or text == "" then
-        return false
-    end
-
-    local numbers = {}
-    for numberText in string.gmatch(string.gsub(text, ",", ""), "%d+%.?%d*") do
-        local number = tonumber(numberText)
-        if number then
-            table.insert(numbers, number)
+    local candidates = {}
+    local seen = {}
+    local function addCandidate(object)
+        if object and not seen[object] then
+            seen[object] = true
+            table.insert(candidates, object)
         end
     end
 
-    if #numbers >= 2 then
-        return numbers[1] >= (numbers[2] - 1)
+    addCandidate(panel:FindFirstChild("Value"))
+    for _, object in ipairs(panel:GetDescendants()) do
+        local name = object.Name:lower()
+        if name == "value"
+            or name == "capacity"
+            or name == "count"
+            or name == "backpackvalue"
+            or name == "backpackcapacity" then
+            addCandidate(object)
+        end
     end
 
-    return false
+    for _, object in ipairs(candidates) do
+        local text = getGuiText(object)
+        local current, capacity, full = parseBackpackCapacity(text)
+        if current and capacity then
+            return {
+                Full = full,
+                Current = current,
+                Capacity = capacity,
+                Text = text,
+            }
+        end
+    end
+
+    return {
+        Full = false,
+        Text = "",
+    }
+end
+
+local function isBackpackFull()
+    return getBackpackStatus().Full
+end
+
+local function getBackpackStatusText()
+    local status = getBackpackStatus()
+    if status.Text and status.Text ~= "" then
+        return status.Text
+    end
+    return "Unknown"
 end
 
 Hub.Functions.FindNPCTarget = findNPCTarget
 Hub.Functions.TeleportToNPC = teleportToNPC
 Hub.Functions.GetTargetObject = getTargetObject
 Hub.Functions.IsBackpackFull = isBackpackFull
+Hub.Functions.GetBackpackStatus = getBackpackStatus
+Hub.Functions.GetBackpackStatusText = getBackpackStatusText

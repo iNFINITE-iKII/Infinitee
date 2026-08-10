@@ -28,6 +28,11 @@ Hub.Services = {
 
 Hub.State = {
     IsAutoSellOn = false,
+    IsAutoSelling = false,
+    AutoSellStatus = "Disabled",
+    AutoSellCooldown = 2,
+    AutoSellTask = nil,
+    AutoSellLastAt = 0,
     IsTargetLocked = false,
     IsFlying = false,
     IsFarmOn = false,

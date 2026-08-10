@@ -160,14 +160,17 @@ local function updateFireStatus()
     local localRate = stats.Attempts > 0 and math.floor((stats.LocalSuccess / stats.Attempts) * 100 + 0.5) or 0
     local serverRate = stats.LocalSuccess > 0 and math.floor((stats.ServerSuccess / stats.LocalSuccess) * 100 + 0.5) or 0
     local lockStatus = state.IsTargetLocked and "[LOCKED]" or "[AUTO-SWITCH]"
+    local autoSellStatus = state.IsAutoSelling and "Selling" or (state.IsAutoSellOn and "Ready" or "Off")
+    local backpackStatus = Hub.Functions.GetBackpackStatusText and Hub.Functions.GetBackpackStatusText() or "Unknown"
     local line1 = "Nuke: " .. localRate .. "% | Server Hit: " .. serverRate .. "% [" ..
         stats.ServerSuccess .. "/" .. stats.LocalSuccess .. "]"
     local line2 = "Targets: " .. #cache.ValidTargets .. " | Mode: " .. lockStatus
+    local line3 = "Auto Sell: " .. autoSellStatus .. " | Bag: " .. backpackStatus
 
     if state.NukeStatsParagraph then
         state.NukeStatsParagraph:Set({
             Title = "🔥 Nuke Stats & Status",
-            Content = line1 .. "\n" .. line2,
+            Content = line1 .. "\n" .. line2 .. "\n" .. line3,
         })
     end
 end
@@ -268,6 +271,86 @@ local function stopBurstLoop()
     end
 end
 
+local function performAutoSell()
+    if not state.IsAutoSellOn or state.IsAutoSelling then
+        return false
+    end
+
+    if not Hub.Functions.IsBackpackFull() then
+        state.AutoSellStatus = "Ready"
+        return false
+    end
+
+    local now = os.clock()
+    if now - state.AutoSellLastAt < math.max(tonumber(state.AutoSellCooldown) or 2, 1) then
+        return false
+    end
+
+    state.AutoSellLastAt = now
+    state.IsAutoSelling = true
+    state.AutoSellStatus = "Selling"
+    updateFireStatus()
+
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if root then
+        root.AssemblyLinearVelocity = Vector3_new(0, 0, 0)
+        root.AssemblyAngularVelocity = Vector3_new(0, 0, 0)
+    end
+
+    local goHome = Remotes:FindFirstChild("GoHome")
+    local sellRequest = Remotes:FindFirstChild("SellRequest")
+    if not goHome or not sellRequest then
+        state.IsAutoSelling = false
+        state.AutoSellStatus = "Remote Missing"
+        updateFireStatus()
+        return true
+    end
+
+    pcall(function()
+        goHome:FireServer("sell")
+    end)
+    task.wait(1)
+    pcall(function()
+        sellRequest:FireServer("all")
+    end)
+    task.wait(1.5)
+
+    state.IsAutoSelling = false
+    state.AutoSellStatus = state.IsAutoSellOn and "Ready" or "Disabled"
+    state.AutoSellLastAt = os.clock()
+    updateFireStatus()
+    return true
+end
+
+local function stopAutoSellLoop()
+    local taskRef = state.AutoSellTask
+    state.AutoSellTask = nil
+    if taskRef then
+        task.cancel(taskRef)
+    end
+
+    state.IsAutoSelling = false
+    state.AutoSellStatus = "Disabled"
+    updateFireStatus()
+end
+
+local function startAutoSellLoop()
+    stopAutoSellLoop()
+    if not state.IsAutoSellOn then
+        return
+    end
+
+    state.AutoSellStatus = "Ready"
+    state.AutoSellTask = task.spawn(function()
+        while state.IsAutoSellOn do
+            performAutoSell()
+            task.wait(0.25)
+        end
+    end)
+    updateFireStatus()
+end
+
 local function startBurstLoop()
     if state.FarmTask then
         task.cancel(state.FarmTask)
@@ -281,16 +364,6 @@ local function startBurstLoop()
 
             if not root or not humanoid or humanoid.Health <= 0 then
                 task.wait(0.1)
-                continue
-            end
-
-            if state.IsAutoSellOn and Hub.Functions.IsBackpackFull() then
-                root.AssemblyLinearVelocity = Vector3_new(0, 0, 0)
-                root.AssemblyAngularVelocity = Vector3_new(0, 0, 0)
-                Remotes:WaitForChild("GoHome"):FireServer("sell")
-                task.wait(1)
-                Remotes:WaitForChild("SellRequest"):FireServer("all")
-                task.wait(1.5)
                 continue
             end
 
@@ -377,6 +450,8 @@ Hub.Functions.StartFarmLoop = startBurstLoop
 Hub.Functions.StopFarmLoop = stopBurstLoop
 Hub.Functions.StartBurstLoop = startBurstLoop
 Hub.Functions.StopBurstLoop = stopBurstLoop
+Hub.Functions.StartAutoSellLoop = startAutoSellLoop
+Hub.Functions.StopAutoSellLoop = stopAutoSellLoop
 Hub.Functions.SwitchTarget = switchTarget
 Hub.Functions.FirePromptBurst = firePromptBurst
 

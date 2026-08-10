@@ -17,10 +17,29 @@ state.NukeStatsParagraph = tab:CreateParagraph({
 
 tab:CreateSection("Nuke Brutal Settings")
 tab:CreateToggle({
-    Name = "💰 Auto Sell (Jika Tas Penuh)",
+    Name = "💰 Auto Sell (Tas Penuh)",
     CurrentValue = false,
     Flag = "AutoSellFlag",
-    Callback = function(value) state.IsAutoSellOn = value end,
+    Callback = function(value)
+        state.IsAutoSellOn = value
+        if value then
+            Hub.Functions.StartAutoSellLoop()
+        else
+            Hub.Functions.StopAutoSellLoop()
+        end
+    end,
+})
+tab:CreateInput({
+    Name = "Auto Sell Cooldown (detik)",
+    CurrentValue = tostring(state.AutoSellCooldown),
+    PlaceholderText = "2",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        local value = tonumber(text)
+        if value and value >= 1 then
+            state.AutoSellCooldown = value
+        end
+    end,
 })
 tab:CreateInput({
     Name = "Kecepatan Farm (milidetik)",
