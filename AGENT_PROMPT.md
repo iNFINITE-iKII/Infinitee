@@ -214,15 +214,39 @@ Thread berhenti saat `_farmLoopRunning == false`.
 - Remote: `https://github.com/iNFINITE-iKII/Infinitee`
 - Branch utama: `main`
 - **Selalu push normal** (jangan `--force` kecuali diminta eksplisit)
-- Token push menggunakan secret `GITHUB_PERSONAL_ACCESS_TOKEN` via Basic auth:
+- Token push menggunakan secret `GITHUB_TOKEN` via Basic auth:
 
 ```bash
-basic=$(printf 'x-access-token:%s' "$GITHUB_PERSONAL_ACCESS_TOKEN" | base64 -w0)
+basic=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)
 git -c credential.helper= -c "http.extraheader=AUTHORIZATION: Basic ${basic}" push origin main
 ```
 
 - Setelah push, selalu verifikasi dengan `git log -1 --oneline` dan `git status --short`
 - Pesan commit: singkat, deskriptif, Inggris (konvensi standar Git)
+
+### Push cepat
+
+Jika user sudah meminta push, gunakan jalur cepat berikut:
+
+1. Jangan clone atau fetch seluruh repository jika perubahan sudah ada di lokal.
+2. Jalankan `git status --short` dan `git diff --check`.
+3. Commit hanya file yang terkait dengan `git add <file>`, lalu `git commit -m "<pesan>"`.
+4. Push langsung ke `main` memakai Basic auth dan `GITHUB_TOKEN`:
+
+```bash
+basic=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)
+git -c credential.helper= -c "http.extraheader=AUTHORIZATION: Basic ${basic}" \
+  push "https://github.com/iNFINITE-iKII/Infinitee.git" HEAD:main
+```
+
+5. Verifikasi cepat tanpa clone ulang:
+
+```bash
+git ls-remote "https://github.com/iNFINITE-iKII/Infinitee.git" refs/heads/main
+```
+
+- Jangan tampilkan nilai token, jangan menyimpannya ke remote URL atau file, dan jangan memakai `Bearer`.
+- Jika push ditolak karena remote lebih baru, jangan force-push; hentikan dan sinkronkan riwayat terlebih dahulu.
 
 ---
 
