@@ -168,9 +168,9 @@ local function getBackpackStatus()
     local valueLabel = panel:FindFirstChild("Value")
     local valueText = getGuiText(valueLabel)
     local current, capacity, full = parseBackpackCapacity(valueText)
-    if current and capacity then
+    if valueText and valueText ~= "" then
         return {
-            Full = full,
+            Full = current and capacity and full or false,
             Current = current,
             Capacity = capacity,
             Text = valueText,
@@ -201,9 +201,9 @@ local function getBackpackStatus()
     for _, object in ipairs(candidates) do
         local text = getGuiText(object)
         local current, capacity, full = parseBackpackCapacity(text)
-        if current and capacity then
+        if text and text ~= "" then
             return {
-                Full = full,
+                Full = current and capacity and full or false,
                 Current = current,
                 Capacity = capacity,
                 Text = text,
