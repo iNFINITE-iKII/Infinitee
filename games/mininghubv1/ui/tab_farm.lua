@@ -72,7 +72,7 @@ local sizeDropdown = tab:CreateDropdown({
     Callback = function(options)
         state.SelectedSize = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus()
+        Hub.Functions.UpdateFireStatus(true)
     end,
 })
 tab:CreateDropdown({
@@ -83,7 +83,7 @@ tab:CreateDropdown({
     Callback = function(options)
         state.SelectedWeight = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus()
+        Hub.Functions.UpdateFireStatus(true)
     end,
 })
 tab:CreateDropdown({
@@ -94,7 +94,7 @@ tab:CreateDropdown({
     Callback = function(options)
         state.SelectedValue = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus()
+        Hub.Functions.UpdateFireStatus(true)
     end,
 })
 
@@ -111,7 +111,7 @@ local tierDropdown = tab:CreateDropdown({
         end
         state.SelectedCrystalName = "All"
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus()
+        Hub.Functions.UpdateFireStatus(true)
     end,
 })
 crystalDropdown = tab:CreateDropdown({
@@ -122,7 +122,7 @@ crystalDropdown = tab:CreateDropdown({
     Callback = function(options)
         state.SelectedCrystalName = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus()
+        Hub.Functions.UpdateFireStatus(true)
     end,
 })
 local droppedDropdown = tab:CreateDropdown({
@@ -133,7 +133,7 @@ local droppedDropdown = tab:CreateDropdown({
     Callback = function(options)
         state.SelectedDroppedName = options[1]
         Hub.Functions.UpdateTargetCache()
-        Hub.Functions.UpdateFireStatus()
+        Hub.Functions.UpdateFireStatus(true)
     end,
 })
 
@@ -144,7 +144,7 @@ tab:CreateToggle({
     Flag = "LockTargetToggle",
     Callback = function(value)
         state.IsTargetLocked = value
-        Hub.Functions.UpdateFireStatus()
+        Hub.Functions.UpdateFireStatus(true)
         if value and state.CurrentTarget then
             ui.Notify({
                 Title = "Target Locked",
@@ -194,11 +194,11 @@ nukeToggle = tab:CreateToggle({
         if value then
             Hub.Functions.ResetFireStats()
             Hub.Functions.UpdateTargetCache()
-            Hub.Functions.UpdateFireStatus()
+            Hub.Functions.UpdateFireStatus(true)
             Hub.Functions.StartFarmLoop()
         else
             Hub.Functions.StopFarmLoop()
-            Hub.Functions.UpdateFireStatus()
+            Hub.Functions.UpdateFireStatus(true)
         end
     end,
 })
@@ -210,7 +210,7 @@ tab:CreateButton({
         tierDropdown:Refresh(refreshed.Tiers, true)
         crystalDropdown:Refresh(refreshed.Crystals, true)
         droppedDropdown:Refresh(refreshed.Dropped, true)
-        Hub.Functions.UpdateFireStatus()
+        Hub.Functions.UpdateFireStatus(true)
     end,
 })
 

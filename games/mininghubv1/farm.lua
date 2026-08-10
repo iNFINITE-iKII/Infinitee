@@ -14,6 +14,7 @@ local stats = Hub.Stats
 local config = Hub.Config
 local Vector3_new = Vector3.new
 local CFrame_lookAt = CFrame.lookAt
+local lastStatsRefresh = 0
 
 local Things = Workspace:WaitForChild("Things", 5)
 local crystalsFolder = Things and Things:WaitForChild("Crystals", 5) or nil
@@ -147,9 +148,16 @@ local function resetFireStats()
     stats.Attempts = 0
     stats.LocalSuccess = 0
     stats.ServerSuccess = 0
+    lastStatsRefresh = 0
 end
 
-local function updateFireStatus()
+local function updateFireStatus(force)
+    local now = os.clock()
+    if not force and now - lastStatsRefresh < state.StatsRefreshInterval then
+        return
+    end
+
+    lastStatsRefresh = now
     local localRate = stats.Attempts > 0 and math.floor((stats.LocalSuccess / stats.Attempts) * 100 + 0.5) or 0
     local serverRate = stats.LocalSuccess > 0 and math.floor((stats.ServerSuccess / stats.LocalSuccess) * 100 + 0.5) or 0
     local lockStatus = state.IsTargetLocked and "[LOCKED]" or "[AUTO-SWITCH]"
