@@ -16,7 +16,8 @@ state.NukeStatsParagraph = tab:CreateParagraph({
 })
 Hub.Functions.StartStatusLoop()
 
-tab:CreateSection("Nuke Brutal Settings")
+tab:CreateSection("SEC 1 — NUKE FARM CRYSTAL")
+local nukeToggle
 tab:CreateToggle({
     Name = "💰 Auto Sell (Tas Penuh)",
     CurrentValue = false,
@@ -27,6 +28,48 @@ tab:CreateToggle({
             Hub.Functions.StartAutoSellLoop()
         else
             Hub.Functions.StopAutoSellLoop()
+        end
+    end,
+})
+tab:CreateToggle({
+    Name = "🔒 Lock Target (Tetap di 1 Crystal)",
+    CurrentValue = false,
+    Flag = "LockTargetToggle",
+    Callback = function(value)
+        state.IsTargetLocked = value
+        Hub.Functions.UpdateFireStatus()
+        if value and state.CurrentTarget then
+            ui.Notify({
+                Title = "Target Locked",
+                Content = "Script tidak akan berpindah dari target saat ini.",
+                Duration = 2,
+            })
+        end
+    end,
+})
+tab:CreateToggle({
+    Name = "🕊️ Enable Fly (Anti-Fall & Anti-Gravity)",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Callback = function(value)
+        state.IsFlying = value
+        Hub.Functions.UpdateFly()
+    end,
+})
+nukeToggle = tab:CreateToggle({
+    Name = "⚡ ACTIVATE NUKE FARM CRYSTAL",
+    CurrentValue = false,
+    Flag = "NukeFarmToggle",
+    Callback = function(value)
+        state.IsFarmOn = value
+        if value then
+            Hub.Functions.ResetFireStats()
+            Hub.Functions.UpdateTargetCache()
+            Hub.Functions.UpdateFireStatus()
+            Hub.Functions.StartFarmLoop()
+        else
+            Hub.Functions.StopFarmLoop()
+            Hub.Functions.UpdateFireStatus()
         end
     end,
 })
@@ -80,115 +123,6 @@ tab:CreateInput({
     Callback = function(text)
         local value = tonumber(text)
         if value then state.BlacklistDuration = value end
-    end,
-})
-
-local boulderNames = {}
-for _, definition in ipairs(data.Boulders or {}) do
-    table.insert(boulderNames, definition.Name)
-end
-if #boulderNames == 0 then
-    boulderNames = {"Mossite", "Voltite", "Gildrite", "Rimeveil", "Nocturnite"}
-end
-
-local function setFarmBoulder(name)
-    for _, boulderName in ipairs(boulderNames) do
-        state.BoulderFarmEnabled[boulderName] = boulderName == name
-    end
-end
-
-local function setESPBoulder(name)
-    for _, boulderName in ipairs(boulderNames) do
-        state.BoulderESPEnabled[boulderName] = name == "All" or boulderName == name
-    end
-end
-
-tab:CreateSection("Farm Rune & Boulder Builder")
-tab:CreateToggle({
-    Name = "🪨 Auto Rune (Prioritas)",
-    CurrentValue = state.IsRuneFarmOn,
-    Flag = "BoulderRuneToggle",
-    Callback = function(value)
-        state.IsRuneFarmOn = value == true
-        if state.IsRuneFarmOn or state.IsBoulderFarmOn then
-            Hub.Functions.StartBoulderFarmLoop()
-        else
-            Hub.Functions.StopBoulderFarmLoop()
-        end
-    end,
-})
-tab:CreateDropdown({
-    Name = "🧱 Auto Farm Boulder Builder",
-    Options = (function()
-        local options = {"None"}
-        for _, name in ipairs(boulderNames) do
-            table.insert(options, name)
-        end
-        return options
-    end)(),
-    CurrentOption = {"None"},
-    MultipleOptions = false,
-    Callback = function(options)
-        setFarmBoulder(options[1])
-    end,
-})
-tab:CreateToggle({
-    Name = "⚒️ Enable Auto Farm Boulder Builder",
-    CurrentValue = state.IsBoulderFarmOn,
-    Flag = "BoulderBuilderFarmToggle",
-    Callback = function(value)
-        state.IsBoulderFarmOn = value == true
-        if state.IsBoulderFarmOn or state.IsRuneFarmOn then
-            Hub.Functions.StartBoulderFarmLoop()
-        else
-            Hub.Functions.StopBoulderFarmLoop()
-        end
-    end,
-})
-tab:CreateInput({
-    Name = "Boulder Prompt Spam / Burst",
-    CurrentValue = tostring(state.BoulderPromptSpamCount),
-    PlaceholderText = "10",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        local value = tonumber(text)
-        if value and value >= 1 then
-            state.BoulderPromptSpamCount = math.floor(value)
-        end
-    end,
-})
-
-tab:CreateSection("Boulder ESP")
-tab:CreateToggle({
-    Name = "👁️ Master Boulder ESP",
-    CurrentValue = state.BoulderMasterESP,
-    Flag = "BoulderMasterESP",
-    Callback = function(value)
-        state.BoulderMasterESP = value == true
-    end,
-})
-local espOptions = {"All"}
-for _, name in ipairs(boulderNames) do
-    table.insert(espOptions, name)
-end
-tab:CreateDropdown({
-    Name = "👁️ ESP Boulder Builder",
-    Options = espOptions,
-    CurrentOption = {"All"},
-    MultipleOptions = false,
-    Callback = function(options)
-        setESPBoulder(options[1])
-    end,
-})
-tab:CreateButton({
-    Name = "🔄 Refresh Boulder ESP",
-    Callback = function()
-        Hub.Functions.ScanBoulders()
-        ui.Notify({
-            Title = "Boulder ESP",
-            Content = "Daftar boulder dan ESP sudah diperbarui.",
-            Duration = 2,
-        })
     end,
 })
 
@@ -267,22 +201,6 @@ local droppedDropdown = tab:CreateDropdown({
 })
 
 tab:CreateSection("Farm Controls & Target Manipulation")
-tab:CreateToggle({
-    Name = "🔒 Lock Target (Tetap di 1 Crystal)",
-    CurrentValue = false,
-    Flag = "LockTargetToggle",
-    Callback = function(value)
-        state.IsTargetLocked = value
-        Hub.Functions.UpdateFireStatus()
-        if value and state.CurrentTarget then
-            ui.Notify({
-                Title = "Target Locked",
-                Content = "Script tidak akan berpindah dari target saat ini.",
-                Duration = 2,
-            })
-        end
-    end,
-})
 tab:CreateButton({
     Name = "⏭️ Switch Target (Pindah Paksa)",
     Callback = function()
@@ -304,17 +222,92 @@ tab:CreateInput({
         if value then state.FlySpeed = value end
     end,
 })
-tab:CreateToggle({
-    Name = "🕊️ Enable Fly (Anti-Fall & Anti-Gravity)",
-    CurrentValue = false,
-    Flag = "FlyToggle",
-    Callback = function(value)
-        state.IsFlying = value
-        Hub.Functions.UpdateFly()
+tab:CreateButton({
+    Name = "🔄 Refresh Target List",
+    Callback = function()
+        local refreshed = Hub.Functions.RefreshTargetData()
+        sizeDropdown:Refresh(refreshed.Sizes, true)
+        tierDropdown:Refresh(refreshed.Tiers, true)
+        crystalDropdown:Refresh(refreshed.Crystals, true)
+        droppedDropdown:Refresh(refreshed.Dropped, true)
+        Hub.Functions.UpdateFireStatus()
     end,
 })
 
-tab:CreateSection("Farm Nuke")
+local boulderNames = {}
+for _, definition in ipairs(data.Boulders or {}) do
+    table.insert(boulderNames, definition.Name)
+end
+if #boulderNames == 0 then
+    boulderNames = {"Mossite", "Voltite", "Gildrite", "Rimeveil", "Nocturnite"}
+end
+
+local function setFarmBoulder(name)
+    for _, boulderName in ipairs(boulderNames) do
+        state.BoulderFarmEnabled[boulderName] = boulderName == name
+    end
+end
+
+local function setESPBoulder(name)
+    for _, boulderName in ipairs(boulderNames) do
+        state.BoulderESPEnabled[boulderName] = name == "All" or boulderName == name
+    end
+end
+
+tab:CreateSection("SEC 2 — FARM RUNE & BOULDER BUILDER")
+tab:CreateToggle({
+    Name = "🪨 Auto Rune (Prioritas)",
+    CurrentValue = state.IsRuneFarmOn,
+    Flag = "BoulderRuneToggle",
+    Callback = function(value)
+        state.IsRuneFarmOn = value == true
+        if state.IsRuneFarmOn or state.IsBoulderFarmOn then
+            Hub.Functions.StartBoulderFarmLoop()
+        else
+            Hub.Functions.StopBoulderFarmLoop()
+        end
+    end,
+})
+tab:CreateDropdown({
+    Name = "🧱 Auto Farm Boulder Builder",
+    Options = (function()
+        local options = {"None"}
+        for _, name in ipairs(boulderNames) do
+            table.insert(options, name)
+        end
+        return options
+    end)(),
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Callback = function(options)
+        setFarmBoulder(options[1])
+    end,
+})
+tab:CreateToggle({
+    Name = "⚒️ Enable Auto Farm Boulder Builder",
+    CurrentValue = state.IsBoulderFarmOn,
+    Flag = "BoulderBuilderFarmToggle",
+    Callback = function(value)
+        state.IsBoulderFarmOn = value == true
+        if state.IsBoulderFarmOn or state.IsRuneFarmOn then
+            Hub.Functions.StartBoulderFarmLoop()
+        else
+            Hub.Functions.StopBoulderFarmLoop()
+        end
+    end,
+})
+tab:CreateInput({
+    Name = "Boulder Prompt Spam / Burst",
+    CurrentValue = tostring(state.BoulderPromptSpamCount),
+    PlaceholderText = "10",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        local value = tonumber(text)
+        if value and value >= 1 then
+            state.BoulderPromptSpamCount = math.floor(value)
+        end
+    end,
+})
 tab:CreateInput({
     Name = "Boulder Farm Delay (detik)",
     CurrentValue = tostring(state.BoulderFarmDelay),
@@ -327,8 +320,7 @@ tab:CreateInput({
         end
     end,
 })
-local boulderNukeToggle
-boulderNukeToggle = tab:CreateToggle({
+tab:CreateToggle({
     Name = "⚡ ACTIVATE BOULDER NUKE FARM",
     CurrentValue = state.IsBoulderFarmOn,
     Flag = "BoulderNukeFarmToggle",
@@ -342,33 +334,37 @@ boulderNukeToggle = tab:CreateToggle({
     end,
 })
 
-local nukeToggle
-nukeToggle = tab:CreateToggle({
-    Name = "⚡ ACTIVATE NUKE FARM",
-    CurrentValue = false,
-    Flag = "NukeFarmToggle",
+tab:CreateSection("SEC 3 — BOULDER ESP")
+tab:CreateToggle({
+    Name = "👁️ Master Boulder ESP",
+    CurrentValue = state.BoulderMasterESP,
+    Flag = "BoulderMasterESP",
     Callback = function(value)
-        state.IsFarmOn = value
-        if value then
-            Hub.Functions.ResetFireStats()
-            Hub.Functions.UpdateTargetCache()
-            Hub.Functions.UpdateFireStatus()
-            Hub.Functions.StartFarmLoop()
-        else
-            Hub.Functions.StopFarmLoop()
-            Hub.Functions.UpdateFireStatus()
-        end
+        state.BoulderMasterESP = value == true
+    end,
+})
+local espOptions = {"All"}
+for _, name in ipairs(boulderNames) do
+    table.insert(espOptions, name)
+end
+tab:CreateDropdown({
+    Name = "👁️ ESP Boulder Builder",
+    Options = espOptions,
+    CurrentOption = {"All"},
+    MultipleOptions = false,
+    Callback = function(options)
+        setESPBoulder(options[1])
     end,
 })
 tab:CreateButton({
-    Name = "🔄 Refresh Target List",
+    Name = "🔄 Refresh Boulder ESP",
     Callback = function()
-        local refreshed = Hub.Functions.RefreshTargetData()
-        sizeDropdown:Refresh(refreshed.Sizes, true)
-        tierDropdown:Refresh(refreshed.Tiers, true)
-        crystalDropdown:Refresh(refreshed.Crystals, true)
-        droppedDropdown:Refresh(refreshed.Dropped, true)
-        Hub.Functions.UpdateFireStatus()
+        Hub.Functions.ScanBoulders()
+        ui.Notify({
+            Title = "Boulder ESP",
+            Content = "Daftar boulder dan ESP sudah diperbarui.",
+            Duration = 2,
+        })
     end,
 })
 

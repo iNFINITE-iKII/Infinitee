@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 
 local BASE_URL = "https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/mininghubv1/"
-local CACHE_BUSTER = "?v=20260810-boulder-farm-v2"
+local CACHE_BUSTER = "?v=20260810-boulder-farm-v3"
 
 local function fetch(url)
     local ok, result = pcall(function()
