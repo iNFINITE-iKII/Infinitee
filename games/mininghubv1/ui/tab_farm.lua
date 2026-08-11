@@ -83,7 +83,27 @@ tab:CreateInput({
     end,
 })
 
-tab:CreateSection("Farm Rune")
+local boulderNames = {}
+for _, definition in ipairs(data.Boulders or {}) do
+    table.insert(boulderNames, definition.Name)
+end
+if #boulderNames == 0 then
+    boulderNames = {"Mossite", "Voltite", "Gildrite", "Rimeveil", "Nocturnite"}
+end
+
+local function setFarmBoulder(name)
+    for _, boulderName in ipairs(boulderNames) do
+        state.BoulderFarmEnabled[boulderName] = boulderName == name
+    end
+end
+
+local function setESPBoulder(name)
+    for _, boulderName in ipairs(boulderNames) do
+        state.BoulderESPEnabled[boulderName] = name == "All" or boulderName == name
+    end
+end
+
+tab:CreateSection("Farm Rune & Boulder Builder")
 tab:CreateToggle({
     Name = "🪨 Auto Rune (Prioritas)",
     CurrentValue = state.IsRuneFarmOn,
@@ -97,15 +117,34 @@ tab:CreateToggle({
         end
     end,
 })
-tab:CreateMultiDropdown((function()
-    local names, states, callbacks = Hub.Functions.GetBoulderSelectionData("Farm")
-    return {
-        Name = "Select Auto-Farm Target",
-        Options = names,
-        States = states,
-        Callbacks = callbacks,
-    }
-end)())
+tab:CreateDropdown({
+    Name = "🧱 Auto Farm Boulder Builder",
+    Options = (function()
+        local options = {"None"}
+        for _, name in ipairs(boulderNames) do
+            table.insert(options, name)
+        end
+        return options
+    end)(),
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Callback = function(options)
+        setFarmBoulder(options[1])
+    end,
+})
+tab:CreateToggle({
+    Name = "⚒️ Enable Auto Farm Boulder Builder",
+    CurrentValue = state.IsBoulderFarmOn,
+    Flag = "BoulderBuilderFarmToggle",
+    Callback = function(value)
+        state.IsBoulderFarmOn = value == true
+        if state.IsBoulderFarmOn or state.IsRuneFarmOn then
+            Hub.Functions.StartBoulderFarmLoop()
+        else
+            Hub.Functions.StopBoulderFarmLoop()
+        end
+    end,
+})
 tab:CreateInput({
     Name = "Boulder Prompt Spam / Burst",
     CurrentValue = tostring(state.BoulderPromptSpamCount),
@@ -128,15 +167,19 @@ tab:CreateToggle({
         state.BoulderMasterESP = value == true
     end,
 })
-tab:CreateMultiDropdown((function()
-    local names, states, callbacks = Hub.Functions.GetBoulderSelectionData("ESP")
-    return {
-        Name = "Select ESP Boulders",
-        Options = names,
-        States = states,
-        Callbacks = callbacks,
-    }
-end)())
+local espOptions = {"All"}
+for _, name in ipairs(boulderNames) do
+    table.insert(espOptions, name)
+end
+tab:CreateDropdown({
+    Name = "👁️ ESP Boulder Builder",
+    Options = espOptions,
+    CurrentOption = {"All"},
+    MultipleOptions = false,
+    Callback = function(options)
+        setESPBoulder(options[1])
+    end,
+})
 tab:CreateButton({
     Name = "🔄 Refresh Boulder ESP",
     Callback = function()

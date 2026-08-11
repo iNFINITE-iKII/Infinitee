@@ -7,7 +7,7 @@
 local SERVER_URL  = "https://xifil-hub-production.up.railway.app"
 local KEY_FILE    = "XiFilTemplateGUI_Configs/license.key"
 local FOLDER_NAME = "XiFilTemplateGUI_Configs"
-local MODULE_CACHE_BUSTER = "?v=20260810-boulder-farm-v1"
+local MODULE_CACHE_BUSTER = "?v=20260810-boulder-farm-v2"
 local RUNTIME_GUI_NAMES = {
     "XiFilTemplateGUI_Modern",
     "XiFilTemplateGUI_Toggle",
