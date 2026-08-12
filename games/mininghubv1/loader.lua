@@ -68,6 +68,7 @@ return function(baseUrl, cacheBuster)
     loadModule(baseUrl, cacheBuster, "ui/tab_gui.lua")
     loadModule(baseUrl, cacheBuster, "ui/tab_teleports.lua")
     loadModule(baseUrl, cacheBuster, "ui/tab_farm.lua")
+    loadModule(baseUrl, cacheBuster, "ui/tab_auto_dig.lua")
     loadModule(baseUrl, cacheBuster, "init.lua")
 
     return env.MiningHub
