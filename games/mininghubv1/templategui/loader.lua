@@ -857,12 +857,13 @@ startWithDRM(function(key, hwid)
 
     ----------------------------------------------------------------------------
     -- Buat tab gameplay terlebih dahulu:
-    -- Auto Farm Mining → Buy & Sell → Shop & Equip → Upgrades →
-    -- GUI Controls → Teleports.
+    -- Auto Farm Mining → Auto Dig → Buy & Sell → Shop & Equip →
+    -- Upgrades → GUI Controls → Teleports.
     ----------------------------------------------------------------------------
     local hubUiModules = {
         "ui/ui_core.lua",
         "ui/tab_farm.lua",
+        "ui/tab_auto_dig.lua",
         "ui/tab_action.lua",
         "ui/tab_shop.lua",
         "ui/tab_upgrades.lua",
