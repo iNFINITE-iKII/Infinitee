@@ -25,10 +25,10 @@ local remote = remotesFolder
 state.AutoDigEnabled = false
 state.AutoDigWaypoints = {}
 state.AutoDigIsNoclip = false
-state.AutoDigIsAntiFall = false
+state.AutoDigActivatedFly = false
 state.AutoDigLayerDelay = 0.01
-state.AutoDigMoveSpeed = 0
-state.AutoDigRadius = 5
+state.AutoDigMoveSpeed = 0.05
+state.AutoDigRadius = 1
 state.AutoDigStepSize = 2
 state.AutoDigForwardStep = 2
 state.AutoDigSpeedHeight = 0
@@ -67,12 +67,32 @@ local function toggleNoclip(enabled)
     end)
 end
 
-local function toggleAntiFall(enabled)
-    state.AutoDigIsAntiFall = enabled == true
-    local character = player.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.Anchored = state.AutoDigIsAntiFall
+local function setAutoDigFly(enabled)
+    if enabled then
+        if state.IsFlying then
+            return
+        end
+
+        state.AutoDigActivatedFly = true
+        if Hub.UI.FlyToggle then
+            Hub.UI.FlyToggle:Set(true)
+        else
+            state.IsFlying = true
+            Hub.Functions.UpdateFly()
+        end
+        return
+    end
+
+    if not state.AutoDigActivatedFly then
+        return
+    end
+
+    state.AutoDigActivatedFly = false
+    if Hub.UI.FlyToggle then
+        Hub.UI.FlyToggle:Set(false)
+    else
+        state.IsFlying = false
+        Hub.Functions.UpdateFly()
     end
 end
 
@@ -133,17 +153,13 @@ local function stopDigging()
         task.cancel(state.AutoDigTask)
         state.AutoDigTask = nil
     end
-    local character = player.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.Anchored = state.AutoDigIsAntiFall
-    end
+    setAutoDigFly(false)
 end
 
 local function executeDigging()
     local layerDelay = numberValue(state.AutoDigLayerDelay, 0.01, 0)
-    local moveSpeed = numberValue(state.AutoDigMoveSpeed, 0, 0)
-    local radius = math.floor(numberValue(state.AutoDigRadius, 5, 1))
+    local moveSpeed = numberValue(state.AutoDigMoveSpeed, 0.05, 0)
+    local radius = math.floor(numberValue(state.AutoDigRadius, 1, 1))
     local stepSize = numberValue(state.AutoDigStepSize, 2, 0.1)
     local forwardStep = numberValue(state.AutoDigForwardStep, 2, 0.1)
     local speedHeight = tonumber(state.AutoDigSpeedHeight) or 0
@@ -171,7 +187,6 @@ local function executeDigging()
                     tween:Play()
                     tween.Completed:Wait()
                 end
-                root.Anchored = true
             end
 
             for index, position in ipairs(buildTargets(baseCFrame, radius, stepSize)) do
@@ -184,9 +199,6 @@ local function executeDigging()
                 end
             end
 
-            if root then
-                root.Anchored = state.AutoDigIsAntiFall
-            end
             waypoint.CFrame = baseCFrame * CFrame.new(0, 0, -forwardStep)
             if layerDelay <= 0 then
                 RunService.Heartbeat:Wait()
@@ -225,6 +237,7 @@ startToggle = tab:CreateToggle({
             return
         end
         state.AutoDigEnabled = true
+        setAutoDigFly(true)
         setStatus(statusParagraph, "OMEGA GOD MODE V15 — ACTIVE", "DIGGING")
         state.AutoDigTask = task.spawn(executeDigging)
     end,
@@ -234,11 +247,6 @@ tab:CreateToggle({
     Name = "Noclip",
     CurrentValue = false,
     Callback = toggleNoclip,
-})
-tab:CreateToggle({
-    Name = "Anti Fall",
-    CurrentValue = false,
-    Callback = toggleAntiFall,
 })
 tab:CreateButton({
     Name = "SET ASCENSION POINT",

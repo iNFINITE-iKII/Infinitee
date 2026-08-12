@@ -47,8 +47,8 @@ tab:CreateToggle({
         end
     end,
 })
-tab:CreateToggle({
-    Name = "🕊️ Enable Fly (Anti-Fall & Anti-Gravity)",
+local flyToggle = tab:CreateToggle({
+    Name = "🕊️ Enable Fly",
     CurrentValue = false,
     Flag = "FlyToggle",
     Callback = function(value)
@@ -56,6 +56,7 @@ tab:CreateToggle({
         Hub.Functions.UpdateFly()
     end,
 })
+Hub.UI.FlyToggle = flyToggle
 nukeToggle = tab:CreateToggle({
     Name = "⚡ ACTIVATE NUKE FARM CRYSTAL",
     CurrentValue = false,
