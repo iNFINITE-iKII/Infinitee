@@ -8,13 +8,14 @@ local Hub = env.MiningHub
 local state = Hub.State
 local ui = Hub.UI
 local services = Hub.Services
+local data = Hub.Data
 
 local Players = services.Players
 local RunService = services.RunService
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = services.ReplicatedStorage
 local player = Players.LocalPlayer
-local toolName = "The Terminus"
+local toolName
 
 local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
     or ReplicatedStorage:WaitForChild("Remotes", 3)
@@ -96,13 +97,73 @@ local function setAutoDigFly(enabled)
     end
 end
 
+local function normalizeToolName(value)
+    return string.lower((tostring(value or ""):gsub("[^%w]", "")))
+end
+
+local function getPickaxeReferences()
+    local references = {}
+    local pickaxes = data.Pickaxes
+
+    for _, option in ipairs((pickaxes and pickaxes.Options) or {}) do
+        local displayName = string.match(option, "^(.-)%s+%-%s*%$")
+        local pickaxeId = pickaxes.Map[option]
+
+        if displayName then
+            references[normalizeToolName(displayName)] = true
+        end
+        if pickaxeId then
+            references[normalizeToolName(pickaxeId)] = true
+        end
+    end
+
+    return references
+end
+
+local function findPickaxe()
+    local references = getPickaxeReferences()
+    local character = player.Character
+    local equippedTool = character and character:FindFirstChildOfClass("Tool")
+
+    if equippedTool then
+        local equippedName = normalizeToolName(equippedTool.Name)
+        if references[equippedName] or next(references) == nil then
+            return equippedTool
+        end
+    end
+
+    for _, container in ipairs({character, player.Backpack}) do
+        if container then
+            for _, item in ipairs(container:GetChildren()) do
+                if item:IsA("Tool")
+                    and references[normalizeToolName(item.Name)] then
+                    return item
+                end
+            end
+        end
+    end
+
+    -- Jika catalog belum memuat nama Pickaxe baru, tetap dukung Pickaxe
+    -- yang sedang dipegang pengguna sebagai fallback yang aman.
+    return equippedTool
+end
+
 local function equipTool()
     local character = player.Character
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    local tool = player.Backpack:FindFirstChild(toolName)
-    if humanoid and tool then
+    local tool = findPickaxe()
+
+    if not tool then
+        toolName = nil
+        return nil
+    end
+
+    if humanoid and tool.Parent ~= character then
         humanoid:EquipTool(tool)
     end
+
+    toolName = tool.Name
+    return toolName
 end
 
 local function numberValue(value, fallback, minimum)
@@ -138,10 +199,11 @@ local function fireTarget(position)
         remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
         remote = remotesFolder and remotesFolder:FindFirstChild("DigRequest")
     end
-    if remote then
+    local activeToolName = toolName or equipTool()
+    if remote and activeToolName then
         task.spawn(function()
             pcall(function()
-                remote:FireServer(toolName, position)
+                remote:FireServer(activeToolName, position)
             end)
         end)
     end
@@ -233,6 +295,15 @@ startToggle = tab:CreateToggle({
                 Title = "No Waypoint",
                 Content = "Set ascension point terlebih dahulu.",
                 Duration = 2,
+            })
+            return
+        end
+        if not equipTool() then
+            startToggle:Set(false)
+            ui.Notify({
+                Title = "Pickaxe Tidak Ditemukan",
+                Content = "Pegang atau simpan Pickaxe yang tersedia di Shop & Equip.",
+                Duration = 3,
             })
             return
         end
