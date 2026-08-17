@@ -75,12 +75,28 @@ function patchLuaUrls(content: string, req: http.IncomingMessage): string {
 }
 
 /**
- * Roblox executors tidak konsisten meneruskan User-Agent. Sebagian
- * mengirim "Roblox", sebagian memakai User-Agent executor, dan sebagian
- * mengosongkannya. Endpoint ini memang hanya menyajikan source loader publik,
- * jadi User-Agent bukan kontrol akses yang valid dan tidak boleh dipakai untuk
- * menghentikan eksekusi sebelum GUI dibuat.
+ * Batasi source loader ke request yang mengaku berasal dari Roblox.
+ *
+ * `game:HttpGet()` meneruskan User-Agent Roblox pada jalur loader normal.
+ * Request browser, curl, dan client umum tidak memiliki penanda ini.
+ * Ini adalah filter akses dasar berbasis HTTP; User-Agent tetap dapat dipalsukan
+ * oleh client yang sengaja menirunya.
  */
+function isRobloxRequest(req: http.IncomingMessage): boolean {
+  const userAgent = req.headers['user-agent'];
+  const value = Array.isArray(userAgent) ? userAgent[0] : userAgent;
+  return typeof value === 'string' && value.toLowerCase().includes('roblox');
+}
+
+function rejectNonRobloxRequest(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): boolean {
+  if (isRobloxRequest(req)) return false;
+  json(res, 403, { error: 'Endpoint loader hanya dapat diakses dari Roblox.' });
+  return true;
+}
+
 function parseQuery(url: string): Record<string, string> {
   const q: Record<string, string> = {};
   const idx = url.indexOf('?');
@@ -212,6 +228,8 @@ function handleLoader(
   res: http.ServerResponse,
   query: Record<string, string>,
 ) {
+  if (rejectNonRobloxRequest(req, res)) return;
+
   const requestedGame = (query.game ?? '').replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
   if (!requestedGame) return json(res, 400, { error: 'Parameter game wajib diisi.' });
 
@@ -235,6 +253,8 @@ function handleModule(
   res: http.ServerResponse,
   pathname: string,
 ) {
+  if (rejectNonRobloxRequest(req, res)) return;
+
   // pathname contoh: /api/lua/module/ironsoulv1/ui/tab_farm.lua
   const prefix = '/api/lua/module/';
   const rest = pathname.slice(prefix.length); // ironsoulv1/ui/tab_farm.lua
