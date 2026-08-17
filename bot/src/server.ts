@@ -12,8 +12,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Games ada di <root>/games
 const GAMES_DIR = path.resolve(__dirname, '../../games');
 
-// URL lama yang di-hardcode di semua file Lua
+// URL lama yang di-hardcode di semua file Lua.
+// Nilai ini tetap dipakai sebagai marker ketika file Lua masih berisi URL
+// Railway lama, lalu diganti ke origin request yang sedang melayani file.
 const RAILWAY_URL = 'https://xifil-hub-production.up.railway.app';
+const RAW_GITHUB_GAME_BASE =
+  'https://raw.githubusercontent.com/iNFINITE-iKII/Infinitee/main/games/mininghubv1/';
+const RAW_GITHUB_TEMPLATE_BASE = `${RAW_GITHUB_GAME_BASE}templategui/`;
 
 // Nama game publik dapat berbeda dari nama file internal di repository.
 // Alias ini menjaga URL loader tetap singkat tanpa menduplikasi entry point Lua.
@@ -50,26 +55,32 @@ function getServerBaseUrl(req: http.IncomingMessage): string {
 }
 
 /**
- * Ganti semua referensi ke Railway URL di dalam konten Lua dengan
- * URL server yang sedang berjalan, supaya script tetap bekerja
- * di platform manapun (Railway → Replit → dst).
+ * Ganti semua URL runtime di dalam konten Lua dengan endpoint server yang
+ * sedang berjalan. Loader entry point sebelumnya mengambil modul lanjutan
+ * langsung dari raw.githubusercontent.com. Itu membuat loadstring dari
+ * endpoint ini bergantung pada repo/branch publik dan dapat berhenti sebelum
+ * GUI dibuat. Semua modul sekarang diambil lewat router server yang sama.
  */
 function patchLuaUrls(content: string, req: http.IncomingMessage): string {
   const base = getServerBaseUrl(req);
-  if (base === RAILWAY_URL) return content; // sudah benar, tidak perlu patch
-  return content.replaceAll(RAILWAY_URL, base);
+  const gameModuleBase = `${base}/api/lua/module/mininghubv1/`;
+  const templateModuleBase = `${gameModuleBase}templategui/`;
+
+  return content
+    .replaceAll(RAILWAY_URL, base)
+    // Replace the longer template URL first so it is not partially replaced
+    // by the generic game base replacement below.
+    .replaceAll(RAW_GITHUB_TEMPLATE_BASE, templateModuleBase)
+    .replaceAll(RAW_GITHUB_GAME_BASE, gameModuleBase);
 }
 
 /**
- * Pastikan request berasal dari Roblox HttpService.
- * game:HttpGet() selalu mengirim User-Agent yang mengandung "Roblox".
- * Browser / curl / tool lain tidak punya header ini → tolak.
+ * Roblox executors tidak konsisten meneruskan User-Agent. Sebagian
+ * mengirim "Roblox", sebagian memakai User-Agent executor, dan sebagian
+ * mengosongkannya. Endpoint ini memang hanya menyajikan source loader publik,
+ * jadi User-Agent bukan kontrol akses yang valid dan tidak boleh dipakai untuk
+ * menghentikan eksekusi sebelum GUI dibuat.
  */
-function isRobloxRequest(req: http.IncomingMessage): boolean {
-  const ua = (req.headers['user-agent'] ?? '').toLowerCase();
-  return ua.includes('roblox');
-}
-
 function parseQuery(url: string): Record<string, string> {
   const q: Record<string, string> = {};
   const idx = url.indexOf('?');
@@ -78,8 +89,15 @@ function parseQuery(url: string): Record<string, string> {
     .slice(idx + 1)
     .split('&')
     .forEach((part) => {
-      const [k, v] = part.split('=');
-      if (k) q[decodeURIComponent(k)] = decodeURIComponent(v ?? '');
+      const separator = part.indexOf('=');
+      const rawKey = separator === -1 ? part : part.slice(0, separator);
+      const rawValue = separator === -1 ? '' : part.slice(separator + 1);
+      if (!rawKey) return;
+      try {
+        q[decodeURIComponent(rawKey)] = decodeURIComponent(rawValue);
+      } catch {
+        // Ignore malformed query fragments instead of crashing the request.
+      }
     });
   return q;
 }
@@ -194,8 +212,6 @@ function handleLoader(
   res: http.ServerResponse,
   query: Record<string, string>,
 ) {
-  if (!isRobloxRequest(req)) return json(res, 403, { error: 'Akses ditolak.' });
-
   const requestedGame = (query.game ?? '').replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
   if (!requestedGame) return json(res, 400, { error: 'Parameter game wajib diisi.' });
 
@@ -219,8 +235,6 @@ function handleModule(
   res: http.ServerResponse,
   pathname: string,
 ) {
-  if (!isRobloxRequest(req)) return json(res, 403, { error: 'Akses ditolak.' });
-
   // pathname contoh: /api/lua/module/ironsoulv1/ui/tab_farm.lua
   const prefix = '/api/lua/module/';
   const rest = pathname.slice(prefix.length); // ironsoulv1/ui/tab_farm.lua
@@ -234,7 +248,7 @@ function handleModule(
   const filePath = path.join(GAMES_DIR, normalized);
 
   // Pastikan file masih di dalam GAMES_DIR
-  if (!filePath.startsWith(GAMES_DIR)) {
+  if (filePath !== GAMES_DIR && !filePath.startsWith(`${GAMES_DIR}${path.sep}`)) {
     return json(res, 403, { error: 'Akses ditolak.' });
   }
 
