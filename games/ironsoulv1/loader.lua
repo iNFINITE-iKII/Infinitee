@@ -67,4 +67,4 @@ end
     load("ui_sync.lua")          -- Sync semua visual UI + floating toggle button
     load("init.lua")             -- Intro animation, RGB loop, inisialisasi akhir
 
-end)
+
